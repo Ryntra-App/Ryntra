@@ -76,7 +76,7 @@ struct OverviewView: View {
         HStack(spacing: 7) {
             Image(systemName: symbol)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.rinthyGreen)
+                .foregroundStyle(.secondary)
             VStack(alignment: .leading, spacing: 1) {
                 Text(label)
                     .font(.caption2)

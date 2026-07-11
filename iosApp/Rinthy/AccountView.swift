@@ -24,7 +24,7 @@ struct AccountView: View {
                         Text(account.username).font(.title2.bold())
                         Text(account.role.capitalized)
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color.rinthyGreen)
+                            .foregroundStyle(.secondary)
                     }
                 }
                 if let bio = account.bio, !bio.isEmpty {

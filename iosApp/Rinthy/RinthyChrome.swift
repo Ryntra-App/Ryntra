@@ -90,18 +90,18 @@ struct RinthyTabBar: View {
                         Image(systemName: destination.symbol)
                             .font(.system(size: 18, weight: .semibold))
                             .frame(width: 38, height: 28)
-                            .background(
-                                selection == destination
-                                    ? Color.rinthyGreen.opacity(0.13)
-                                    : Color.clear,
-                                in: RoundedRectangle(cornerRadius: 11)
-                            )
                         Text(destination.label)
                             .font(.caption2.weight(selection == destination ? .semibold : .regular))
                             .lineLimit(1)
                     }
                     .foregroundStyle(selection == destination ? Color.rinthyGreen : Color.secondary)
                     .frame(maxWidth: .infinity, minHeight: 60)
+                    .background(
+                        selection == destination
+                            ? Color.rinthyGreen.opacity(0.13)
+                            : Color.clear,
+                        in: RoundedRectangle(cornerRadius: 20)
+                    )
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)

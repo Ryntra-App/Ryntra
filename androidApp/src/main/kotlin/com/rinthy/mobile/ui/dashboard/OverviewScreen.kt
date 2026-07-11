@@ -9,12 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Download
-import androidx.compose.material.icons.rounded.Favorite
-import androidx.compose.material.icons.rounded.Inventory2
-import androidx.compose.material.icons.rounded.TaskAlt
-import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +23,12 @@ import androidx.compose.ui.unit.dp
 import com.rinthy.mobile.ui.theme.RinthyDesign
 import com.rinthy.shared.model.Dashboard
 import com.rinthy.shared.model.Project
+import com.composables.icons.lucide.CircleCheckBig
+import com.composables.icons.lucide.Download
+import com.composables.icons.lucide.Heart
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Package
+import com.composables.icons.lucide.TriangleAlert
 
 @Composable
 fun OverviewScreen(dashboard: Dashboard) {
@@ -116,9 +116,9 @@ private fun MetricStrip(downloads: Long, followers: Long, projectCount: Int) {
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(modifier = Modifier.padding(vertical = 13.dp)) {
-            OverviewMetric(Icons.Rounded.Download, formatCompact(downloads), "Downloads", Modifier.weight(1f))
-            OverviewMetric(Icons.Rounded.Favorite, formatCompact(followers), "Followers", Modifier.weight(1f))
-            OverviewMetric(Icons.Rounded.Inventory2, projectCount.toString(), "Projects", Modifier.weight(1f))
+            OverviewMetric(Lucide.Download, formatCompact(downloads), "Downloads", Modifier.weight(1f))
+            OverviewMetric(Lucide.Heart, formatCompact(followers), "Followers", Modifier.weight(1f))
+            OverviewMetric(Lucide.Package, projectCount.toString(), "Projects", Modifier.weight(1f))
         }
     }
 }
@@ -135,7 +135,7 @@ private fun OverviewMetric(
         horizontalArrangement = Arrangement.Center,
         modifier = modifier,
     ) {
-        Icon(icon, contentDescription = null, tint = RinthyDesign.colors.positive, modifier = Modifier.size(18.dp))
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
         Column(modifier = Modifier.padding(start = 7.dp)) {
             Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
             Text(value, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
@@ -175,7 +175,7 @@ private fun AttentionRow(project: Project) {
             )
         }
         Icon(
-            Icons.Rounded.WarningAmber,
+            Lucide.TriangleAlert,
             contentDescription = "Attention required",
             tint = MaterialTheme.colorScheme.tertiary,
         )
@@ -195,7 +195,7 @@ private fun AllClearRow() {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.padding(14.dp),
         ) {
-            Icon(Icons.Rounded.TaskAlt, contentDescription = null, tint = RinthyDesign.colors.positive)
+            Icon(Lucide.CircleCheckBig, contentDescription = null, tint = RinthyDesign.colors.positive)
             Column {
                 Text("All clear", fontWeight = FontWeight.SemiBold)
                 Text(

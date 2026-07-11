@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -25,6 +23,8 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.rinthy.shared.model.Account
 import com.rinthy.mobile.ui.components.RinthySecondaryButton
+import com.composables.icons.lucide.LogOut
+import com.composables.icons.lucide.Lucide
 
 @Composable
 fun AccountScreen(
@@ -58,7 +58,7 @@ fun AccountScreen(
                 )
                 Text(
                     text = account.role.replaceFirstChar(Char::uppercase),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelLarge,
                 )
             }
@@ -79,7 +79,7 @@ fun AccountScreen(
         }
         RinthySecondaryButton(
             text = "Sign out",
-            icon = Icons.AutoMirrored.Rounded.Logout,
+            icon = Lucide.LogOut,
             onClick = onSignOut,
             isDestructive = true,
             modifier = Modifier

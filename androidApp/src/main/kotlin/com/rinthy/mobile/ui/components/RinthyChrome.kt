@@ -41,6 +41,10 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.rinthy.mobile.ui.theme.RinthyDesign
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeEffect
 
 @Immutable
 data class RinthyTab(
@@ -58,6 +62,7 @@ fun RinthyTopBar(
     refreshIcon: ImageVector,
     onRefresh: () -> Unit,
     onAvatarClick: () -> Unit,
+    hazeState: HazeState,
     modifier: Modifier = Modifier,
 ) {
     GlassSurface(
@@ -65,6 +70,7 @@ fun RinthyTopBar(
             .statusBarsPadding()
             .padding(start = 16.dp, top = 8.dp, end = 16.dp),
         shape = RinthyDesign.chromeShape,
+        hazeState = hazeState,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -116,6 +122,7 @@ fun RinthyTabBar(
     tabs: List<RinthyTab>,
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
+    hazeState: HazeState,
     modifier: Modifier = Modifier,
 ) {
     GlassSurface(
@@ -123,6 +130,7 @@ fun RinthyTabBar(
             .navigationBarsPadding()
             .padding(start = 16.dp, end = 16.dp, bottom = 10.dp),
         shape = RoundedCornerShape(28.dp),
+        hazeState = hazeState,
     ) {
         Row(
             horizontalArrangement = Arrangement.SpaceEvenly,
@@ -159,6 +167,11 @@ private fun RowScope.RinthyTabItem(
         modifier = Modifier
             .weight(1f)
             .height(68.dp)
+            .padding(horizontal = 3.dp, vertical = 7.dp)
+            .background(
+                if (isSelected) color.copy(alpha = 0.13f) else androidx.compose.ui.graphics.Color.Transparent,
+                RoundedCornerShape(20.dp),
+            )
             .clip(RoundedCornerShape(18.dp))
             .clickable(role = Role.Tab, onClick = onClick)
             .semantics { selected = isSelected },
@@ -168,9 +181,6 @@ private fun RowScope.RinthyTabItem(
             modifier = Modifier
                 .size(width = 38.dp, height = 30.dp)
                 .clip(RoundedCornerShape(11.dp))
-                .background(
-                    if (isSelected) color.copy(alpha = 0.13f) else androidx.compose.ui.graphics.Color.Transparent,
-                ),
         ) {
             Icon(tab.icon, contentDescription = null, tint = color, modifier = Modifier.size(21.dp))
         }
@@ -188,20 +198,32 @@ private fun RowScope.RinthyTabItem(
 private fun GlassSurface(
     modifier: Modifier,
     shape: RoundedCornerShape,
+    hazeState: HazeState,
     content: @Composable () -> Unit,
 ) {
+    val chrome = RinthyDesign.colors.chrome
+    val hazeStyle = HazeStyle(
+        backgroundColor = MaterialTheme.colorScheme.surface,
+        tint = HazeTint(chrome.copy(alpha = 0.58f)),
+        blurRadius = 26.dp,
+        noiseFactor = 0.035f,
+        fallbackTint = HazeTint(chrome),
+    )
     Surface(
-        color = RinthyDesign.colors.chrome,
+        color = androidx.compose.ui.graphics.Color.Transparent,
         contentColor = MaterialTheme.colorScheme.onSurface,
         shape = shape,
         border = BorderStroke(1.dp, RinthyDesign.colors.chromeBorder),
-        modifier = modifier.shadow(
-            elevation = 12.dp,
-            shape = shape,
-            clip = false,
-            ambientColor = MaterialTheme.colorScheme.background.copy(alpha = 0.28f),
-            spotColor = MaterialTheme.colorScheme.background.copy(alpha = 0.38f),
-        ),
+        modifier = modifier
+            .shadow(
+                elevation = 12.dp,
+                shape = shape,
+                clip = false,
+                ambientColor = MaterialTheme.colorScheme.background.copy(alpha = 0.28f),
+                spotColor = MaterialTheme.colorScheme.background.copy(alpha = 0.38f),
+            )
+            .clip(shape)
+            .hazeEffect(state = hazeState, style = hazeStyle),
         content = content,
     )
 }

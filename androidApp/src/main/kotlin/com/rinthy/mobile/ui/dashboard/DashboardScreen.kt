@@ -5,12 +5,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AccountCircle
-import androidx.compose.material.icons.rounded.Dashboard
-import androidx.compose.material.icons.rounded.Groups
-import androidx.compose.material.icons.rounded.Inventory2
-import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -30,15 +24,23 @@ import com.rinthy.mobile.ui.components.RinthyTab
 import com.rinthy.mobile.ui.components.RinthyTabBar
 import com.rinthy.mobile.ui.components.RinthyTopBar
 import com.rinthy.shared.model.Dashboard
+import com.composables.icons.lucide.CircleUserRound
+import com.composables.icons.lucide.LayoutGrid
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Package
+import com.composables.icons.lucide.RefreshCw
+import com.composables.icons.lucide.UsersRound
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 
 private enum class DashboardDestination(
     val label: String,
     val icon: ImageVector,
 ) {
-    Overview("Overview", Icons.Rounded.Dashboard),
-    Projects("Projects", Icons.Rounded.Inventory2),
-    Organizations("Teams", Icons.Rounded.Groups),
-    Account("Account", Icons.Rounded.AccountCircle),
+    Overview("Overview", Lucide.LayoutGrid),
+    Projects("Projects", Lucide.Package),
+    Organizations("Teams", Lucide.UsersRound),
+    Account("Account", Lucide.CircleUserRound),
 }
 
 @Composable
@@ -51,6 +53,7 @@ fun DashboardScreen(
 ) {
     var destination by rememberSaveable { mutableStateOf(DashboardDestination.Overview) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val hazeState = rememberHazeState()
 
     LaunchedEffect(errorMessage) {
         errorMessage?.let { snackbarHostState.showSnackbar(it) }
@@ -69,6 +72,7 @@ fun DashboardScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .hazeSource(hazeState)
                     .statusBarsPadding()
                     .navigationBarsPadding()
                     .padding(top = 78.dp, bottom = 88.dp),
@@ -91,7 +95,8 @@ fun DashboardScreen(
                 avatarDescription = "Open ${dashboard.account.username}'s account",
                 isRefreshing = isRefreshing,
                 canRefresh = destination != DashboardDestination.Account,
-                refreshIcon = Icons.Rounded.Refresh,
+                refreshIcon = Lucide.RefreshCw,
+                hazeState = hazeState,
                 onRefresh = onRefresh,
                 onAvatarClick = { destination = DashboardDestination.Account },
                 modifier = Modifier.align(Alignment.TopCenter),
@@ -100,6 +105,7 @@ fun DashboardScreen(
                 tabs = tabs,
                 selectedIndex = destination.ordinal,
                 onSelect = { destination = destinations[it] },
+                hazeState = hazeState,
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
             SnackbarHost(

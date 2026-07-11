@@ -13,9 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Key
-import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,6 +33,9 @@ import com.rinthy.mobile.R
 import com.rinthy.mobile.ui.components.RinthyPrimaryButton
 import com.rinthy.mobile.ui.components.RinthySecondaryButton
 import com.rinthy.mobile.ui.components.RinthyTextField
+import com.composables.icons.lucide.Globe
+import com.composables.icons.lucide.KeyRound
+import com.composables.icons.lucide.Lucide
 
 @Composable
 fun LoginScreen(
@@ -80,7 +80,7 @@ fun LoginScreen(
             )
             RinthyPrimaryButton(
                 text = "Continue with Modrinth",
-                icon = Icons.Rounded.Public,
+                icon = Lucide.Globe,
                 onClick = onStartOAuth,
                 enabled = !isLoading,
                 isLoading = isLoading,
@@ -97,7 +97,7 @@ fun LoginScreen(
             }
             RinthySecondaryButton(
                 text = if (isPatVisible) "Hide access token" else "Use personal access token",
-                icon = Icons.Rounded.Key,
+                icon = Lucide.KeyRound,
                 onClick = { isPatVisible = !isPatVisible },
                 enabled = !isLoading,
                 modifier = Modifier.padding(top = 10.dp),
@@ -108,7 +108,7 @@ fun LoginScreen(
                     onValueChange = { token = it },
                     enabled = !isLoading,
                     placeholder = "Personal access token",
-                    leadingIcon = Icons.Rounded.Key,
+                    leadingIcon = Lucide.KeyRound,
                     leadingIconDescription = null,
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -118,7 +118,7 @@ fun LoginScreen(
                 )
                 RinthySecondaryButton(
                     text = "Sign in with PAT",
-                    icon = Icons.Rounded.Key,
+                    icon = Lucide.KeyRound,
                     onClick = { onSignIn(token) },
                     enabled = token.isNotBlank() && !isLoading,
                     modifier = Modifier

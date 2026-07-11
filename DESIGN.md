@@ -12,6 +12,8 @@ A creator checks project health one-handed between tasks, sometimes outdoors and
 
 Restrained, with a vivid Rinthy green reserved for primary actions, selection, and positive movement. Cyan is an informational accent. Amber and red are semantic only. Neutral surfaces carry a subtle green cast and never use pure black or pure white.
 
+Green must not color passive metadata, project types, decorative metrics, or every approved row. A screen should still read as neutral when viewed at a distance; tint identifies interaction and meaning rather than filling the composition.
+
 ### Semantic Roles
 
 - `brand`: Rinthy green, primary actions and active navigation.
@@ -38,6 +40,12 @@ The default destination is Overview. It answers three questions in order: what c
 ## Materials
 
 Translucency communicates chrome and layers only. On iOS 26 and newer, SwiftUI uses Liquid Glass. iOS 16 through 25 use system materials with the same silhouette. Compose reproduces the material using controlled translucent tonal surfaces, borders, and state layers while preserving Android rendering performance. Content surfaces remain opaque for predictable contrast and scan speed.
+
+Android 12 and newer use real backdrop blur for floating chrome. Android 8 through 11 use a translucent tonal fallback because platform rendering cannot provide the same live blur reliably. Both variants keep the same geometry, border, tint, and contrast.
+
+## Iconography
+
+iOS uses SF Symbols. Their license does not permit using the Apple symbol set as Android application artwork. Android uses Lucide glyphs selected to match the same metaphors, optical size, and stroke weight. A destination keeps one metaphor across platforms; filled selection is expressed by the containing selection material rather than mixing unrelated filled and outline families.
 
 ## States
 

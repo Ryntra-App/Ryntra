@@ -63,15 +63,15 @@ struct ProjectRow: View {
                 HStack {
                     Text(project.title).fontWeight(.bold).lineLimit(1)
                     Spacer()
-                    if showStatus {
+                    if showStatus, project.status != "approved" {
                         Text(project.status.capitalized)
                             .font(.caption2.weight(.semibold))
-                            .foregroundStyle(project.status == "approved" ? Color.rinthyGreen : .orange)
+                            .foregroundStyle(project.status == "rejected" ? Color.red : Color.orange)
                     }
                 }
                 Text(project.projectType.capitalized)
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.rinthyGreen)
+                    .foregroundStyle(.secondary)
                 if showDescription, !project.description_.isEmpty {
                     Text(project.description_)
                         .font(.caption)

@@ -15,10 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Download
-import androidx.compose.material.icons.rounded.Favorite
-import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -42,6 +38,10 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.rinthy.shared.model.Project
 import com.rinthy.mobile.ui.components.RinthySearchField
+import com.composables.icons.lucide.Download
+import com.composables.icons.lucide.Heart
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Search
 
 @Composable
 fun ProjectsScreen(projects: List<Project>) {
@@ -66,7 +66,7 @@ fun ProjectsScreen(projects: List<Project>) {
                 value = query,
                 onValueChange = { query = it },
                 placeholder = "Search projects",
-                leadingIcon = Icons.Rounded.Search,
+                leadingIcon = Lucide.Search,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp, bottom = 6.dp),
@@ -115,13 +115,13 @@ internal fun ProjectRow(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
-                if (showStatus) {
+                if (showStatus && project.status != "approved") {
                     StatusLabel(project.status)
                 }
             }
             Text(
                 text = project.projectType.replaceFirstChar(Char::uppercase),
-                color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.labelMedium,
             )
             if (showDescription && project.description.isNotBlank()) {
@@ -138,8 +138,8 @@ internal fun ProjectRow(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.padding(top = 6.dp),
             ) {
-                Metric(Icons.Rounded.Download, formatCompact(project.downloads))
-                Metric(Icons.Rounded.Favorite, formatCompact(project.followers))
+                Metric(Lucide.Download, formatCompact(project.downloads))
+                Metric(Lucide.Heart, formatCompact(project.followers))
             }
         }
     }
@@ -172,8 +172,11 @@ internal fun ProjectArtwork(project: Project) {
 
 @Composable
 internal fun StatusLabel(status: String) {
-    val isApproved = status == "approved" || status == "archived"
-    val color = if (isApproved) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+    val color = when (status) {
+        "rejected", "withheld" -> MaterialTheme.colorScheme.error
+        "processing", "scheduled" -> MaterialTheme.colorScheme.tertiary
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
     Surface(
         color = color.copy(alpha = 0.14f),
         shape = RoundedCornerShape(6.dp),
