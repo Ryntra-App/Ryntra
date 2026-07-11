@@ -10,8 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,7 +32,7 @@ fun OrganizationsScreen(organizations: List<Organization>) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp),
     ) {
         item {
             Text(
@@ -52,23 +51,21 @@ fun OrganizationsScreen(organizations: List<Organization>) {
             }
         } else {
             items(organizations, key = Organization::id) { organization ->
-                OrganizationCard(organization)
+                OrganizationRow(organization)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         }
     }
 }
 
 @Composable
-private fun OrganizationCard(organization: Organization) {
-    Card(
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier.fillMaxWidth(),
+private fun OrganizationRow(organization: Organization) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 14.dp),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(14.dp),
-        ) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(organization.iconUrl)
@@ -80,7 +77,7 @@ private fun OrganizationCard(organization: Organization) {
                     .size(52.dp)
                     .clip(RoundedCornerShape(8.dp)),
             )
-            Column(modifier = Modifier.padding(start = 12.dp)) {
+        Column(modifier = Modifier.padding(start = 12.dp)) {
                 Text(organization.name, fontWeight = FontWeight.Bold)
                 Text(
                     text = "@${organization.slug}",
@@ -97,7 +94,6 @@ private fun OrganizationCard(organization: Organization) {
                         modifier = Modifier.padding(top = 5.dp),
                     )
                 }
-            }
         }
     }
 }

@@ -1,20 +1,28 @@
 package com.rinthy.mobile
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.rinthy.mobile.auth.OAuthCallbackResult
+import com.rinthy.mobile.auth.OAuthCoordinator
 import com.rinthy.mobile.security.SecureTokenStore
 import com.rinthy.shared.app.AppController
 import com.rinthy.shared.app.AppState
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class RinthyViewModel(application: Application) : AndroidViewModel(application) {
     private val tokenStore = SecureTokenStore(application)
+    private val oauthCoordinator = OAuthCoordinator(application)
     private val controller = AppController()
+    private val mutableOAuthError = MutableStateFlow<String?>(null)
     private var pendingToken: String? = null
 
     val state: StateFlow<AppState> = controller.state
+    val oauthError: StateFlow<String?> = mutableOAuthError.asStateFlow()
 
     init {
         tokenStore.read()?.let { savedToken ->
@@ -35,14 +43,30 @@ class RinthyViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun signIn(token: String) {
+        mutableOAuthError.value = null
         pendingToken = token.trim()
         controller.signIn(token)
+    }
+
+    fun startOAuth(): Uri {
+        mutableOAuthError.value = null
+        return oauthCoordinator.createAuthorizationUri()
+    }
+
+    fun handleOAuthCallback(uri: Uri) {
+        when (val result = oauthCoordinator.consumeCallback(uri)) {
+            OAuthCallbackResult.Ignored -> Unit
+            is OAuthCallbackResult.Failure -> mutableOAuthError.value = result.message
+            is OAuthCallbackResult.Success -> signIn(result.token)
+        }
     }
 
     fun refresh() = controller.refresh()
 
     fun signOut() {
         pendingToken = null
+        mutableOAuthError.value = null
+        oauthCoordinator.clear()
         tokenStore.clear()
         controller.signOut()
     }

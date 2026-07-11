@@ -8,10 +8,10 @@ struct OrganizationsView: View {
     var body: some View {
         List {
             if organizations.isEmpty {
-                ContentUnavailableView(
-                    "No organizations",
+                EmptyStateView(
+                    title: "No organizations",
                     systemImage: "person.3",
-                    description: Text("Your personal projects are still available in Projects.")
+                    message: "Your personal projects are still available in Projects."
                 )
             } else {
                 ForEach(organizations, id: \.id) { organization in

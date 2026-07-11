@@ -27,10 +27,10 @@ struct ProjectsView: View {
             }
 
             if filteredProjects.isEmpty {
-                ContentUnavailableView(
-                    projects.isEmpty ? "No projects yet" : "No matching projects",
+                EmptyStateView(
+                    title: projects.isEmpty ? "No projects yet" : "No matching projects",
                     systemImage: "shippingbox",
-                    description: Text(projects.isEmpty ? "Managed projects will appear here." : "Try another search term.")
+                    message: projects.isEmpty ? "Managed projects will appear here." : "Try another search term."
                 )
             } else {
                 ForEach(filteredProjects, id: \.id) { project in
@@ -50,20 +50,13 @@ struct ProjectsView: View {
     }
 }
 
-private struct ProjectRow: View {
+struct ProjectRow: View {
     let project: Project
+    var showDescription = true
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            AsyncImage(url: URL(string: project.iconUrl ?? "")) { image in
-                image.resizable().scaledToFill()
-            } placeholder: {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(.quaternary)
-                    .overlay(Text(String(project.title.prefix(1))).fontWeight(.black))
-            }
-            .frame(width: 52, height: 52)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            ProjectArtwork(project: project)
 
             VStack(alignment: .leading, spacing: 5) {
                 HStack {
@@ -76,7 +69,7 @@ private struct ProjectRow: View {
                 Text(project.projectType.capitalized)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.rinthyGreen)
-                if !project.description_.isEmpty {
+                if showDescription, !project.description_.isEmpty {
                     Text(project.description_)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -88,5 +81,43 @@ private struct ProjectRow: View {
             }
         }
         .padding(.vertical, 4)
+    }
+}
+
+struct EmptyStateView: View {
+    let title: String
+    let systemImage: String
+    let message: String
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: systemImage)
+                .font(.title2)
+                .foregroundStyle(.secondary)
+            Text(title).font(.headline)
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 40)
+    }
+}
+
+struct ProjectArtwork: View {
+    let project: Project
+
+    var body: some View {
+        AsyncImage(url: URL(string: project.iconUrl ?? "")) { image in
+            image.resizable().scaledToFill()
+        } placeholder: {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(.quaternary)
+                .overlay(Text(String(project.title.prefix(1))).fontWeight(.black))
+        }
+        .frame(width: 52, height: 52)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .accessibilityHidden(true)
     }
 }

@@ -11,6 +11,13 @@ struct DashboardView: View {
     var body: some View {
         TabView {
             NavigationStack {
+                OverviewView(dashboard: dashboard)
+                    .navigationTitle("Rinthy")
+                    .toolbar { refreshToolbar }
+            }
+            .tabItem { Label("Overview", systemImage: "square.grid.2x2.fill") }
+
+            NavigationStack {
                 ProjectsView(projects: dashboard.projects)
                     .navigationTitle("Projects")
                     .toolbar { refreshToolbar }

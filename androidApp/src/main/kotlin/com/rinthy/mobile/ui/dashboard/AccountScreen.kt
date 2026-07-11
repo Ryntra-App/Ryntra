@@ -1,6 +1,5 @@
 package com.rinthy.mobile.ui.dashboard
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,8 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -76,12 +74,11 @@ fun AccountScreen(
                 modifier = Modifier.padding(top = 18.dp),
             )
         }
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.padding(top = 22.dp),
-        ) {
-            AccountStat("Projects", projectCount.toString(), Modifier.weight(1f))
-            AccountStat("Organizations", organizationCount.toString(), Modifier.weight(1f))
+        Column(modifier = Modifier.padding(top = 28.dp)) {
+            Text("Workspace", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            AccountStat("Projects", projectCount.toString())
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            AccountStat("Organizations", organizationCount.toString())
         }
         OutlinedButton(
             onClick = onSignOut,
@@ -104,19 +101,14 @@ fun AccountScreen(
 }
 
 @Composable
-private fun AccountStat(label: String, value: String, modifier: Modifier = Modifier) {
-    Card(
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = modifier,
+private fun AccountStat(label: String, value: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 14.dp),
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Text(value, fontWeight = FontWeight.ExtraBold)
-            Text(
-                text = label,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.labelMedium,
-            )
-        }
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+        Text(value, fontWeight = FontWeight.Bold)
     }
 }

@@ -19,8 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -88,54 +87,52 @@ fun ProjectsScreen(projects: List<Project>) {
             }
         } else {
             items(visibleProjects, key = Project::id) { project ->
-                ProjectCard(project)
+                ProjectRow(project)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         }
     }
 }
 
 @Composable
-private fun ProjectCard(project: Project) {
-    Card(
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier.fillMaxWidth(),
+internal fun ProjectRow(project: Project, showDescription: Boolean = true) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp),
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        ProjectArtwork(project)
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                ProjectArtwork(project)
-                Spacer(Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = project.title,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f),
-                        )
-                        StatusLabel(project.status)
-                    }
-                    Text(
-                        text = project.projectType.replaceFirstChar(Char::uppercase),
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.labelMedium,
-                    )
-                }
+                Text(
+                    text = project.title,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                StatusLabel(project.status)
             }
-            if (project.description.isNotBlank()) {
+            Text(
+                text = project.projectType.replaceFirstChar(Char::uppercase),
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.labelMedium,
+            )
+            if (showDescription && project.description.isNotBlank()) {
                 Text(
                     text = project.description,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 12.dp),
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
             Row(
-                horizontalArrangement = Arrangement.spacedBy(18.dp),
-                modifier = Modifier.padding(top = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.padding(top = 6.dp),
             ) {
                 Metric(Icons.Rounded.Download, formatCompact(project.downloads))
                 Metric(Icons.Rounded.Favorite, formatCompact(project.followers))
@@ -145,7 +142,7 @@ private fun ProjectCard(project: Project) {
 }
 
 @Composable
-private fun ProjectArtwork(project: Project) {
+internal fun ProjectArtwork(project: Project) {
     val shape = RoundedCornerShape(8.dp)
     Box(
         modifier = Modifier
@@ -170,7 +167,7 @@ private fun ProjectArtwork(project: Project) {
 }
 
 @Composable
-private fun StatusLabel(status: String) {
+internal fun StatusLabel(status: String) {
     val isApproved = status == "approved" || status == "archived"
     val color = if (isApproved) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
     Surface(

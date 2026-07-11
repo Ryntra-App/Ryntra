@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class ModrinthApiTest {
     @Test
@@ -66,6 +67,51 @@ class ModrinthApiTest {
 
         assertEquals(401, error.statusCode)
         assertEquals("The access token is invalid or expired.", error.message)
+        api.close()
+    }
+
+    @Test
+    fun organizationsFallBackFromV3ToV2() = runTest {
+        var requestCount = 0
+        val engine = MockEngine { request ->
+            requestCount += 1
+            when (request.url.encodedPath) {
+                "/v3/user/user-1/organizations" -> respond(
+                    content = """{"error":"not_found","description":"The requested route does not exist."}""",
+                    status = HttpStatusCode.NotFound,
+                    headers = jsonHeaders,
+                )
+                "/v2/user/user-1/organizations" -> respond(
+                    content = """[{"id":"org-1","slug":"rinthy","name":"Rinthy"}]""",
+                    status = HttpStatusCode.OK,
+                    headers = jsonHeaders,
+                )
+                else -> error("Unexpected URL: ${request.url}")
+            }
+        }
+        val api = ModrinthApi(testClient(engine))
+
+        val organizations = api.getOrganizations("user-1", "mrp_test")
+
+        assertEquals(2, requestCount)
+        assertEquals("org-1", organizations.single().id)
+        api.close()
+    }
+
+    @Test
+    fun missingOrganizationRoutesReturnEmptyList() = runTest {
+        val engine = MockEngine {
+            respond(
+                content = """{"error":"not_found","description":"The requested route does not exist."}""",
+                status = HttpStatusCode.NotFound,
+                headers = jsonHeaders,
+            )
+        }
+        val api = ModrinthApi(testClient(engine))
+
+        val organizations = api.getOrganizations("user-1", "mrp_test")
+
+        assertTrue(organizations.isEmpty())
         api.close()
     }
 

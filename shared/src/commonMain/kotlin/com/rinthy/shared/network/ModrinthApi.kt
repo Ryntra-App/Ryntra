@@ -12,6 +12,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
 import io.ktor.http.isSuccess
 import kotlinx.serialization.Serializable
+import kotlinx.coroutines.CancellationException
 
 class ModrinthApi(
     private val httpClient: HttpClient,
@@ -22,8 +23,30 @@ class ModrinthApi(
     suspend fun getProjects(userId: String, token: String): List<Project> =
         httpClient.get("user/$userId/projects") { authorize(token) }.decode()
 
-    suspend fun getOrganizations(userId: String, token: String): List<Organization> =
-        httpClient.get("user/$userId/organizations") { authorize(token) }.decode()
+    suspend fun getOrganizations(userId: String, token: String): List<Organization> {
+        val endpoints = listOf(
+            "https://api.modrinth.com/v3/user/$userId/organizations",
+            "https://api.modrinth.com/v2/user/$userId/organizations",
+        )
+        var authorizationFailure: ApiException? = null
+
+        for (endpoint in endpoints) {
+            try {
+                return httpClient.get(endpoint) { authorize(token) }.decode()
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: ApiException) {
+                if (error.statusCode == 401 || error.statusCode == 403) {
+                    authorizationFailure = error
+                }
+            } catch (_: Exception) {
+                // Organizations are optional dashboard data; try the fallback API version.
+            }
+        }
+
+        authorizationFailure?.let { throw it }
+        return emptyList()
+    }
 
     fun close() = httpClient.close()
 

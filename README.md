@@ -14,7 +14,8 @@ The shared module has no UI dependency. `AppController` owns session-scoped load
 
 ## Implemented
 
-- Personal access token authentication against Modrinth.
+- Modrinth OAuth through the Rinthy auth backend, with validated callback state.
+- Personal access token authentication as a fallback.
 - Encrypted local session storage on Android and iOS.
 - Account, project and organization loading through the shared Ktor client.
 - Project search, status, download and follower summaries.

@@ -11,9 +11,11 @@ final class AppModel: ObservableObject {
     }
 
     @Published private(set) var state: ViewState = .signedOut
+    @Published private(set) var oauthError: String?
 
     private let controller = AppController()
     private let keychain = KeychainTokenStore()
+    private let oauthCoordinator = OAuthCoordinator()
     private var observation: Observation?
     private var pendingToken: String?
 
@@ -30,8 +32,25 @@ final class AppModel: ObservableObject {
     }
 
     func signIn(token: String) {
+        oauthError = nil
         pendingToken = token.trimmingCharacters(in: .whitespacesAndNewlines)
         controller.signIn(token: token)
+    }
+
+    func startOAuth() -> URL? {
+        oauthError = nil
+        return oauthCoordinator.createAuthorizationURL()
+    }
+
+    func handleOAuthCallback(_ url: URL) {
+        switch oauthCoordinator.consumeCallback(url) {
+        case .ignored:
+            break
+        case .success(let token):
+            signIn(token: token)
+        case .failure(let message):
+            oauthError = message
+        }
     }
 
     func refresh() {
@@ -40,6 +59,8 @@ final class AppModel: ObservableObject {
 
     func signOut() {
         pendingToken = nil
+        oauthError = nil
+        oauthCoordinator.clear()
         keychain.clear()
         controller.signOut()
     }
