@@ -2,10 +2,18 @@ package com.rinthy.mobile.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
 
 val RinthyGreen = Color(0xFF63DD7A)
 val RinthyCyan = Color(0xFF48C9F0)
@@ -45,10 +53,75 @@ private val LightColors = lightColorScheme(
     onError = Color(0xFFFFF8F7),
 )
 
+@Immutable
+data class RinthySemanticColors(
+    val chrome: Color,
+    val chromeBorder: Color,
+    val separator: Color,
+    val positive: Color,
+    val info: Color,
+    val warning: Color,
+)
+
+private val LocalRinthyColors = staticCompositionLocalOf {
+    RinthySemanticColors(
+        chrome = Color.Unspecified,
+        chromeBorder = Color.Unspecified,
+        separator = Color.Unspecified,
+        positive = Color.Unspecified,
+        info = Color.Unspecified,
+        warning = Color.Unspecified,
+    )
+}
+
+object RinthyDesign {
+    val colors: RinthySemanticColors
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalRinthyColors.current
+
+    val contentShape = RoundedCornerShape(10.dp)
+    val chromeShape = RoundedCornerShape(22.dp)
+}
+
+private val RinthyShapes = Shapes(
+    extraSmall = RoundedCornerShape(6.dp),
+    small = RoundedCornerShape(8.dp),
+    medium = RoundedCornerShape(10.dp),
+    large = RoundedCornerShape(16.dp),
+    extraLarge = RoundedCornerShape(22.dp),
+)
+
 @Composable
 fun RinthyTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) DarkColors else LightColors,
-        content = content,
-    )
+    val isDark = isSystemInDarkTheme()
+    val colorScheme = if (isDark) DarkColors else LightColors
+    val semanticColors = if (isDark) {
+        RinthySemanticColors(
+            chrome = Color(0xE61B241E),
+            chromeBorder = Color(0xFF46534A),
+            separator = Color(0xFF29352D),
+            positive = RinthyGreen,
+            info = RinthyCyan,
+            warning = Color(0xFFFFC45D),
+        )
+    } else {
+        RinthySemanticColors(
+            chrome = Color(0xEBF7FBF8),
+            chromeBorder = Color(0xFFC0CBC3),
+            separator = Color(0xFFD1D9D3),
+            positive = Color(0xFF14753A),
+            info = Color(0xFF00677D),
+            warning = Color(0xFF765A00),
+        )
+    }
+
+    CompositionLocalProvider(LocalRinthyColors provides semanticColors) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography(),
+            shapes = RinthyShapes,
+            content = content,
+        )
+    }
 }

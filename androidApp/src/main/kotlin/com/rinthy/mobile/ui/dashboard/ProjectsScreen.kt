@@ -22,7 +22,6 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,6 +41,7 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.rinthy.shared.model.Project
+import com.rinthy.mobile.ui.components.RinthySearchField
 
 @Composable
 fun ProjectsScreen(projects: List<Project>) {
@@ -62,13 +62,11 @@ fun ProjectsScreen(projects: List<Project>) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium,
             )
-            OutlinedTextField(
+            RinthySearchField(
                 value = query,
                 onValueChange = { query = it },
-                singleLine = true,
-                placeholder = { Text("Search projects") },
-                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                shape = RoundedCornerShape(8.dp),
+                placeholder = "Search projects",
+                leadingIcon = Icons.Rounded.Search,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp, bottom = 6.dp),
@@ -95,7 +93,11 @@ fun ProjectsScreen(projects: List<Project>) {
 }
 
 @Composable
-internal fun ProjectRow(project: Project, showDescription: Boolean = true) {
+internal fun ProjectRow(
+    project: Project,
+    showDescription: Boolean = true,
+    showStatus: Boolean = true,
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -113,7 +115,9 @@ internal fun ProjectRow(project: Project, showDescription: Boolean = true) {
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
-                StatusLabel(project.status)
+                if (showStatus) {
+                    StatusLabel(project.status)
+                }
             }
             Text(
                 text = project.projectType.replaceFirstChar(Char::uppercase),

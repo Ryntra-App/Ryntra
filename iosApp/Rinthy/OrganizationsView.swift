@@ -41,7 +41,7 @@ struct OrganizationsView: View {
                 }
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.plain)
         .refreshable { model.refresh() }
     }
 }

@@ -19,6 +19,7 @@
 		A011 /* RinthyShared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B012 /* RinthyShared.framework */; };
 		A012 /* OAuthCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B014 /* OAuthCoordinator.swift */; };
 		A013 /* OverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B015 /* OverviewView.swift */; };
+		A014 /* RinthyChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = B016 /* RinthyChrome.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,6 +38,7 @@
 		B013 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B014 /* OAuthCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OAuthCoordinator.swift; sourceTree = "<group>"; };
 		B015 /* OverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewView.swift; sourceTree = "<group>"; };
+		B016 /* RinthyChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RinthyChrome.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -45,7 +47,7 @@
 
 /* Begin PBXGroup section */
 		D001 = {isa = PBXGroup; children = (D002, D003, D004,); sourceTree = "<group>"; };
-		D002 /* Rinthy */ = {isa = PBXGroup; path = Rinthy; sourceTree = "<group>"; children = (B001, B002, B003, B014, B004, B005, B006, B015, B007, B008, B009, B010, B013,); };
+		D002 /* Rinthy */ = {isa = PBXGroup; path = Rinthy; sourceTree = "<group>"; children = (B001, B002, B003, B014, B004, B005, B006, B016, B015, B007, B008, B009, B010, B013,); };
 		D003 /* Frameworks */ = {isa = PBXGroup; children = (B012,); name = Frameworks; sourceTree = "<group>"; };
 		D004 /* Products */ = {isa = PBXGroup; children = (B011,); name = Products; sourceTree = "<group>"; };
 /* End PBXGroup section */
@@ -67,7 +69,7 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		C002 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A001, A002, A003, A012, A004, A005, A006, A013, A007, A008, A009,); runOnlyForDeploymentPostprocessing = 0; };
+		C002 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A001, A002, A003, A012, A004, A005, A006, A014, A013, A007, A008, A009,); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */

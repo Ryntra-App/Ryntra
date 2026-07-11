@@ -7,29 +7,49 @@ struct DashboardView: View {
     let dashboard: Dashboard
     var isRefreshing = false
     var errorMessage: String?
+    @State private var selection = RinthyDestination.overview
+    @State private var presentedError: String?
 
     var body: some View {
-        TabView {
+        TabView(selection: $selection) {
             NavigationStack {
                 OverviewView(dashboard: dashboard)
-                    .navigationTitle("Rinthy")
-                    .toolbar { refreshToolbar }
+                    .rinthyChrome(
+                        title: "Rinthy",
+                        dashboard: dashboard,
+                        isRefreshing: isRefreshing,
+                        canRefresh: true,
+                        onRefresh: model.refresh,
+                        onAvatarTap: { selection = .account }
+                    )
             }
-            .tabItem { Label("Overview", systemImage: "square.grid.2x2.fill") }
+            .tag(RinthyDestination.overview)
 
             NavigationStack {
                 ProjectsView(projects: dashboard.projects)
-                    .navigationTitle("Projects")
-                    .toolbar { refreshToolbar }
+                    .rinthyChrome(
+                        title: "Projects",
+                        dashboard: dashboard,
+                        isRefreshing: isRefreshing,
+                        canRefresh: true,
+                        onRefresh: model.refresh,
+                        onAvatarTap: { selection = .account }
+                    )
             }
-            .tabItem { Label("Projects", systemImage: "shippingbox.fill") }
+            .tag(RinthyDestination.projects)
 
             NavigationStack {
                 OrganizationsView(organizations: dashboard.organizations)
-                    .navigationTitle("Teams")
-                    .toolbar { refreshToolbar }
+                    .rinthyChrome(
+                        title: "Teams",
+                        dashboard: dashboard,
+                        isRefreshing: isRefreshing,
+                        canRefresh: true,
+                        onRefresh: model.refresh,
+                        onAvatarTap: { selection = .account }
+                    )
             }
-            .tabItem { Label("Teams", systemImage: "person.3.fill") }
+            .tag(RinthyDestination.teams)
 
             NavigationStack {
                 AccountView(
@@ -37,28 +57,61 @@ struct DashboardView: View {
                     projectCount: dashboard.projects.count,
                     organizationCount: dashboard.organizations.count
                 )
-                .navigationTitle("Account")
+                .rinthyChrome(
+                    title: "Account",
+                    dashboard: dashboard,
+                    isRefreshing: false,
+                    canRefresh: false,
+                    onRefresh: {},
+                    onAvatarTap: {}
+                )
             }
-            .tabItem { Label("Account", systemImage: "person.crop.circle.fill") }
+            .tag(RinthyDestination.account)
         }
-        .alert("Could not refresh", isPresented: .constant(errorMessage != nil)) {
+        .toolbar(.hidden, for: .tabBar)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            RinthyTabBar(selection: $selection)
+        }
+        .onAppear { presentedError = errorMessage }
+        .onChange(of: errorMessage) { presentedError = $0 }
+        .alert("Could not refresh", isPresented: errorBinding) {
             Button("Retry") { model.refresh() }
         } message: {
             Text(errorMessage ?? "")
         }
     }
 
-    @ToolbarContentBuilder
-    private var refreshToolbar: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            if isRefreshing {
-                ProgressView()
-            } else {
-                Button(action: model.refresh) {
-                    Image(systemName: "arrow.clockwise")
-                }
-                .accessibilityLabel("Refresh")
+    private var errorBinding: Binding<Bool> {
+        Binding(
+            get: { presentedError != nil },
+            set: { isPresented in
+                if !isPresented { presentedError = nil }
             }
-        }
+        )
+    }
+
+}
+
+private extension View {
+    func rinthyChrome(
+        title: String,
+        dashboard: Dashboard,
+        isRefreshing: Bool,
+        canRefresh: Bool,
+        onRefresh: @escaping () -> Void,
+        onAvatarTap: @escaping () -> Void
+    ) -> some View {
+        toolbar(.hidden, for: .navigationBar)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                RinthyTopBar(
+                    title: title,
+                    avatarURL: dashboard.account.avatarUrl,
+                    username: dashboard.account.username,
+                    isRefreshing: isRefreshing,
+                    canRefresh: canRefresh,
+                    onRefresh: onRefresh,
+                    onAvatarTap: onAvatarTap
+                )
+            }
     }
 }

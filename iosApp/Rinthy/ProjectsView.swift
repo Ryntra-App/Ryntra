@@ -38,7 +38,7 @@ struct ProjectsView: View {
                 }
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.plain)
         .searchable(text: $query, prompt: "Search projects")
         .refreshable { model.refresh() }
     }
@@ -53,6 +53,7 @@ struct ProjectsView: View {
 struct ProjectRow: View {
     let project: Project
     var showDescription = true
+    var showStatus = true
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -62,9 +63,11 @@ struct ProjectRow: View {
                 HStack {
                     Text(project.title).fontWeight(.bold).lineLimit(1)
                     Spacer()
-                    Text(project.status.capitalized)
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(project.status == "approved" ? Color.rinthyGreen : .orange)
+                    if showStatus {
+                        Text(project.status.capitalized)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(project.status == "approved" ? Color.rinthyGreen : .orange)
+                    }
                 }
                 Text(project.projectType.capitalized)
                     .font(.caption.weight(.semibold))

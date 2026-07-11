@@ -2,7 +2,7 @@
 
 ## Direction
 
-Rinthy uses the Creator Cockpit direction. The interface is dense enough for routine creator work, but project artwork and clear hierarchy keep it expressive. Discord informs activity density, Spotify informs content identity, and neither product is copied literally.
+Rinthy uses a Human Interface direction based on Apple HIG. Clear hierarchy, direct manipulation, system typography, restrained materials, and content-first layouts are shared across platforms. Project artwork and Rinthy color preserve creator identity, so the result does not become a generic system-app clone.
 
 ## Theme Scene
 
@@ -29,15 +29,15 @@ Use each platform's system font. Headings use bold weight and a compact fixed sc
 
 ## Spatial System
 
-Use a 4-point base: 4, 8, 12, 16, 24, 32, and 48. Primary page gutters are 16 points on phones. Content groups are separated by 24 points; dense rows use 12 points. Corners are 8 points or smaller. Touch targets are at least 44 points on iOS and 48 dp on Android.
+Use a 4-point base: 4, 8, 12, 16, 24, 32, and 48. Primary page gutters are 16 points on phones. Content groups are separated by 24 points; dense rows use 12 points. Content corners are 8 to 12 points. Floating chrome may use a capsule silhouette. Touch targets are at least 44 points on iOS and 48 dp on Android.
 
 ## Layout
 
-The default destination is Overview. It answers three questions in order: what changed, what needs attention, and which projects were recently active. Projects, Teams, and Account remain dedicated destinations. Lists use dividers and spacing instead of repeated floating cards.
+The default destination is Overview. It answers three questions in order: what changed, what needs attention, and which projects were recently active. Projects, Teams, and Account remain dedicated destinations. A compact floating tab bar and inset top bar frame every destination. Lists use dividers and spacing instead of repeated floating cards.
 
 ## Materials
 
-Translucency communicates chrome and layers only. SwiftUI uses system bar materials. Compose uses tonal, slightly translucent navigation surfaces without placing blur behind dense content. Content surfaces remain opaque for predictable contrast and scroll performance.
+Translucency communicates chrome and layers only. On iOS 26 and newer, SwiftUI uses Liquid Glass. iOS 16 through 25 use system materials with the same silhouette. Compose reproduces the material using controlled translucent tonal surfaces, borders, and state layers while preserving Android rendering performance. Content surfaces remain opaque for predictable contrast and scan speed.
 
 ## States
 
@@ -49,4 +49,4 @@ Translucency communicates chrome and layers only. SwiftUI uses system bar materi
 
 ## Platform Expression
 
-Android uses Material 3 interaction behavior, edge-to-edge layout, Compose navigation bars, and Android iconography. iOS uses NavigationStack, TabView, SF Symbols, native materials, and system list/scroll behavior. Information architecture and semantic color roles are shared; component geometry is not forced to match pixel-for-pixel.
+The visible component geometry is intentionally shared across iOS and Android. Android keeps system back behavior, edge-to-edge insets, ripple feedback, accessibility semantics, and Android status/navigation bars. iOS keeps NavigationStack, TabView state, SF Symbols, Dynamic Type, and native materials. Material 3 may provide internal behavior on Android, but no default Material component styling is allowed to leak into the interface.

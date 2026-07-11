@@ -7,14 +7,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Logout
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -28,6 +24,7 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.rinthy.shared.model.Account
+import com.rinthy.mobile.ui.components.RinthySecondaryButton
 
 @Composable
 fun AccountScreen(
@@ -80,17 +77,15 @@ fun AccountScreen(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             AccountStat("Organizations", organizationCount.toString())
         }
-        OutlinedButton(
+        RinthySecondaryButton(
+            text = "Sign out",
+            icon = Icons.AutoMirrored.Rounded.Logout,
             onClick = onSignOut,
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+            isDestructive = true,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 28.dp),
-        ) {
-            Icon(Icons.AutoMirrored.Rounded.Logout, contentDescription = null)
-            Text("Sign out", modifier = Modifier.padding(start = 8.dp))
-        }
+        )
         Text(
             text = "Rinthy 3.0 · Unofficial Modrinth client",
             color = MaterialTheme.colorScheme.onSurfaceVariant,

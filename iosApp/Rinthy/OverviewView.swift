@@ -37,26 +37,15 @@ struct OverviewView: View {
     }
 
     private var creatorHeader: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Today")
-                    .font(.largeTitle.bold())
-                Text("Welcome back, \(dashboard.account.username)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            AsyncImage(url: URL(string: dashboard.account.avatarUrl ?? "")) { image in
-                image.resizable().scaledToFill()
-            } placeholder: {
-                Circle().fill(.quaternary)
-            }
-            .frame(width: 48, height: 48)
-            .clipShape(Circle())
-            .accessibilityLabel("\(dashboard.account.username)'s profile picture")
+        VStack(alignment: .leading, spacing: 2) {
+            Text("Today")
+                .font(.largeTitle.bold())
+            Text("Welcome back, \(dashboard.account.username)")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
         .padding(.top, 8)
-        .padding(.bottom, 20)
+        .padding(.bottom, 16)
     }
 
     private var metricStrip: some View {
@@ -84,16 +73,18 @@ struct OverviewView: View {
     }
 
     private func metric(_ label: String, value: String, symbol: String) -> some View {
-        VStack(spacing: 3) {
+        HStack(spacing: 7) {
             Image(systemName: symbol)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Color.rinthyGreen)
-            Text(value)
-                .font(.headline)
-                .monospacedDigit()
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(label)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Text(value)
+                    .font(.headline)
+                    .monospacedDigit()
+            }
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
@@ -124,7 +115,12 @@ struct OverviewView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .padding(.vertical, 14)
+            .padding(14)
+            .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+            .overlay {
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color(uiColor: .separator), lineWidth: 0.5)
+            }
         } else {
             ForEach(attentionProjects, id: \.id) { project in
                 AttentionRow(project: project)
@@ -143,7 +139,7 @@ struct OverviewView: View {
             )
         } else {
             ForEach(recentProjects, id: \.id) { project in
-                ProjectRow(project: project, showDescription: false)
+                ProjectRow(project: project, showDescription: false, showStatus: false)
                     .padding(.vertical, 8)
                 Divider()
             }

@@ -1,6 +1,5 @@
 package com.rinthy.mobile.ui.dashboard
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Download
@@ -25,15 +23,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
-import coil3.request.crossfade
+import com.rinthy.mobile.ui.theme.RinthyDesign
 import com.rinthy.shared.model.Dashboard
 import com.rinthy.shared.model.Project
 
@@ -46,7 +39,7 @@ fun OverviewScreen(dashboard: Dashboard) {
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 24.dp),
     ) {
-        item { CreatorHeader(dashboard) }
+        item { CreatorHeader(dashboard.account.username) }
         item {
             MetricStrip(
                 downloads = projects.sumOf(Project::downloads),
@@ -86,7 +79,7 @@ fun OverviewScreen(dashboard: Dashboard) {
         } else {
             recentProjects.forEach { project ->
                 item(key = "recent-${project.id}") {
-                    ProjectRow(project = project, showDescription = false)
+                    ProjectRow(project = project, showDescription = false, showStatus = false)
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 }
             }
@@ -95,36 +88,21 @@ fun OverviewScreen(dashboard: Dashboard) {
 }
 
 @Composable
-private fun CreatorHeader(dashboard: Dashboard) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+private fun CreatorHeader(username: String) {
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp, bottom = 20.dp),
+            .padding(top = 14.dp, bottom = 16.dp),
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = "Today",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Black,
-            )
-            Text(
-                text = "Welcome back, ${dashboard.account.username}",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(dashboard.account.avatarUrl)
-                .crossfade(true)
-                .build(),
-            contentDescription = "${dashboard.account.username}'s profile picture",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
+        Text(
+            text = "Today",
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = "Welcome back, $username",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium,
         )
     }
 }
@@ -133,11 +111,11 @@ private fun CreatorHeader(dashboard: Dashboard) {
 private fun MetricStrip(downloads: Long, followers: Long, projectCount: Int) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(8.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        shape = RinthyDesign.contentShape,
+        border = androidx.compose.foundation.BorderStroke(1.dp, RinthyDesign.colors.separator),
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Row(modifier = Modifier.padding(vertical = 16.dp)) {
+        Row(modifier = Modifier.padding(vertical = 13.dp)) {
             OverviewMetric(Icons.Rounded.Download, formatCompact(downloads), "Downloads", Modifier.weight(1f))
             OverviewMetric(Icons.Rounded.Favorite, formatCompact(followers), "Followers", Modifier.weight(1f))
             OverviewMetric(Icons.Rounded.Inventory2, projectCount.toString(), "Projects", Modifier.weight(1f))
@@ -152,10 +130,16 @@ private fun OverviewMetric(
     label: String,
     modifier: Modifier,
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-        Text(value, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+        modifier = modifier,
+    ) {
+        Icon(icon, contentDescription = null, tint = RinthyDesign.colors.positive, modifier = Modifier.size(18.dp))
+        Column(modifier = Modifier.padding(start = 7.dp)) {
+            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+            Text(value, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
+        }
     }
 }
 
@@ -200,19 +184,26 @@ private fun AttentionRow(project: Project) {
 
 @Composable
 private fun AllClearRow() {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.padding(vertical = 16.dp),
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        shape = RinthyDesign.contentShape,
+        border = androidx.compose.foundation.BorderStroke(1.dp, RinthyDesign.colors.separator),
+        modifier = Modifier.fillMaxWidth(),
     ) {
-        Icon(Icons.Rounded.TaskAlt, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-        Column {
-            Text("All clear", fontWeight = FontWeight.Bold)
-            Text(
-                "No projects currently require action.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall,
-            )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(14.dp),
+        ) {
+            Icon(Icons.Rounded.TaskAlt, contentDescription = null, tint = RinthyDesign.colors.positive)
+            Column {
+                Text("All clear", fontWeight = FontWeight.SemiBold)
+                Text(
+                    "No projects currently require action.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
         }
     }
 }
