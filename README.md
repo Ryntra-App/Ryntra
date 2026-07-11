@@ -26,7 +26,7 @@ Project editing, versions, members, notifications and analytics will move from t
 
 ## Requirements
 
-- Android Studio with JBR 21 and Android SDK 37.
+- Android Studio with JBR 21 and Android SDK 36.
 - Xcode 16 or newer for iOS builds.
 - No Node.js, CocoaPods or web runtime is required.
 

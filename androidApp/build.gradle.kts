@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "com.rinthy.mobile"
-    compileSdk = 37
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.rinthy.mobile"
         minSdk = 26
-        targetSdk = 37
+        targetSdk = 36
         versionCode = 30000
         versionName = "3.0.0-alpha01"
     }

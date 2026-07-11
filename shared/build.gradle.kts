@@ -9,7 +9,7 @@ plugins {
 kotlin {
     android {
         namespace = "com.rinthy.shared"
-        compileSdk = 37
+        compileSdk = 36
         minSdk = 26
         withHostTestBuilder {}
     }

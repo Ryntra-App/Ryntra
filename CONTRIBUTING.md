@@ -1,6 +1,6 @@
 # Contributing
 
-Use JDK 21 and Android SDK 37. Keep business rules and transport models in `shared`; add only platform presentation and platform services to `androidApp` or `iosApp`.
+Use JDK 21 and Android SDK 36. Keep business rules and transport models in `shared`; add only platform presentation and platform services to `androidApp` or `iosApp`.
 
 Before opening a pull request, run:
 
