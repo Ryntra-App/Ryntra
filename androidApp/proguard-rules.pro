@@ -1,0 +1,2 @@
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
+-dontwarn kotlinx.atomicfu.**

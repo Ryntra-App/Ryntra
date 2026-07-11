@@ -1,0 +1,82 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A001 /* RinthyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B001 /* RinthyApp.swift */; };
+		A002 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B002 /* AppModel.swift */; };
+		A003 /* KeychainTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B003 /* KeychainTokenStore.swift */; };
+		A004 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B004 /* RootView.swift */; };
+		A005 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B005 /* LoginView.swift */; };
+		A006 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B006 /* DashboardView.swift */; };
+		A007 /* ProjectsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B007 /* ProjectsView.swift */; };
+		A008 /* OrganizationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B008 /* OrganizationsView.swift */; };
+		A009 /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B009 /* AccountView.swift */; };
+		A010 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B010 /* Assets.xcassets */; };
+		A011 /* RinthyShared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B012 /* RinthyShared.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		B001 /* RinthyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RinthyApp.swift; sourceTree = "<group>"; };
+		B002 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		B003 /* KeychainTokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainTokenStore.swift; sourceTree = "<group>"; };
+		B004 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		B005 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		B006 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		B007 /* ProjectsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectsView.swift; sourceTree = "<group>"; };
+		B008 /* OrganizationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizationsView.swift; sourceTree = "<group>"; };
+		B009 /* AccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountView.swift; sourceTree = "<group>"; };
+		B010 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B011 /* Rinthy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = Rinthy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B012 /* RinthyShared.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = RinthyShared.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		B013 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A011,); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D001 = {isa = PBXGroup; children = (D002, D003, D004,); sourceTree = "<group>"; };
+		D002 /* Rinthy */ = {isa = PBXGroup; path = Rinthy; sourceTree = "<group>"; children = (B001, B002, B003, B004, B005, B006, B007, B008, B009, B010, B013,); };
+		D003 /* Frameworks */ = {isa = PBXGroup; children = (B012,); name = Frameworks; sourceTree = "<group>"; };
+		D004 /* Products */ = {isa = PBXGroup; children = (B011,); name = Products; sourceTree = "<group>"; };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E001 /* Rinthy */ = {isa = PBXNativeTarget; buildConfigurationList = F002; buildPhases = (C004, C002, C001, C003,); buildRules = (); dependencies = (); name = Rinthy; productName = Rinthy; productReference = B011; productType = "com.apple.product-type.application"; };
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E002 /* Project object */ = {isa = PBXProject; attributes = {BuildIndependentTargetsInParallel = YES; LastSwiftUpdateCheck = 1600; LastUpgradeCheck = 1600; TargetAttributes = {E001 = {CreatedOnToolsVersion = 16.0;};};}; buildConfigurationList = F001; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base,); mainGroup = D001; productRefGroup = D004; projectDirPath = ""; projectRoot = ""; targets = (E001,); };
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A010,); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		C004 /* Build shared Kotlin framework */ = {isa = PBXShellScriptBuildPhase; alwaysOutOfDate = 1; buildActionMask = 2147483647; files = (); inputFileListPaths = (); inputPaths = (); name = "Build shared Kotlin framework"; outputFileListPaths = (); outputPaths = (); runOnlyForDeploymentPostprocessing = 0; shellPath = /bin/sh; shellScript = "cd \"$SRCROOT/..\"\n./gradlew :shared:embedAndSignAppleFrameworkForXcode\n"; };
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C002 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A001, A002, A003, A004, A005, A006, A007, A008, A009,); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		G001 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 16.0; SDKROOT = iphoneos; SWIFT_VERSION = 5.0;}; name = Debug; };
+		G002 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 16.0; SDKROOT = iphoneos; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_VERSION = 5.0;}; name = Release; };
+		G003 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 30000; DEVELOPMENT_TEAM = ""; ENABLE_PREVIEWS = YES; ENABLE_USER_SCRIPT_SANDBOXING = NO; FRAMEWORK_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",); GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Rinthy/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 16.0; MARKETING_VERSION = 3.0.0; PRODUCT_BUNDLE_IDENTIFIER = com.rinthy.mobile; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2";}; name = Debug; };
+		G004 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 30000; DEVELOPMENT_TEAM = ""; ENABLE_USER_SCRIPT_SANDBOXING = NO; FRAMEWORK_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",); GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Rinthy/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 16.0; MARKETING_VERSION = 3.0.0; PRODUCT_BUNDLE_IDENTIFIER = com.rinthy.mobile; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2";}; name = Release; };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F001 = {isa = XCConfigurationList; buildConfigurations = (G001, G002,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		F002 = {isa = XCConfigurationList; buildConfigurations = (G003, G004,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+	};
+	rootObject = E002;
+}

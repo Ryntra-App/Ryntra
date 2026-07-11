@@ -1,33 +1,37 @@
-name: Quality
+name: Native quality
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize, ready_for_review]
   push:
-    branches: [main]
+    branches: [main, native/kmp-rewrite]
 
 permissions:
   contents: read
 
 jobs:
-  checks:
-    name: Typecheck, quality scan, and build
+  android:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
-          node-version: 22
-          cache: npm
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK 37
+        run: sdkmanager "platforms;android-37" "build-tools;36.0.0"
+      - name: Test shared logic and build Android
+        run: ./gradlew :shared:testAndroidHostTest :androidApp:assembleDebug --stacktrace
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Typecheck and quality scan
-        run: npm run check
-
-      - name: Build
-        run: npm run build
+  ios-framework:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - name: Link shared iOS framework
+        run: ./gradlew :shared:linkDebugFrameworkIosSimulatorArm64 --stacktrace

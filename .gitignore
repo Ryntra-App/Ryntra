@@ -7,11 +7,11 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
 *.local
-android/app/release/
+node_modules/
+dist/
+android/
+ios/
 
 # Env / secrets
 .env
@@ -30,19 +30,10 @@ android/app/release/
 *.sw?
 
 # Android / Gradle
-android/.gradle/
-android/**/build/
-android/local.properties
-android/captures/
-android/.externalNativeBuild/
-android/.cxx/
-
-# Android generated Capacitor assets
-android/app/src/main/assets/public/
-android/app/src/main/assets/capacitor.config.json
-android/app/src/main/assets/capacitor.plugins.json
-android/app/src/main/res/xml/config.xml
-android/capacitor-cordova-android-plugins/
+/.gradle/
+**/build/
+local.properties
+*.hprof
 
 # Android release outputs
 *.apk
@@ -52,7 +43,7 @@ android/capacitor-cordova-android-plugins/
 *.jks
 *.keystore
 
-# iOS (if added later)
-ios/Pods/
-ios/build/
-ios/.symlinks/
+# iOS
+iosApp/**/*.xcuserstate
+iosApp/**/xcuserdata/
+DerivedData/
