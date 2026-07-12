@@ -30,22 +30,18 @@ struct OverviewView: View {
                 recentContent
             }
             .padding(.horizontal, 16)
-            .padding(.bottom, 24)
+            .padding(.bottom, 120)
         }
         .background(Color(uiColor: .systemBackground))
         .refreshable { model.refresh() }
     }
 
     private var creatorHeader: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text("Today")
-                .font(.largeTitle.bold())
-            Text("Welcome back, \(dashboard.account.username)")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.top, 8)
-        .padding(.bottom, 16)
+        Text("Welcome back, \(dashboard.account.username)")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .padding(.top, 8)
+            .padding(.bottom, 18)
     }
 
     private var metricStrip: some View {

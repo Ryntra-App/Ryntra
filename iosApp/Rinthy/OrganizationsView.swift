@@ -40,6 +40,9 @@ struct OrganizationsView: View {
                     .padding(.vertical, 4)
                 }
             }
+            Color.clear
+                .frame(height: 90)
+                .listRowSeparator(.hidden)
         }
         .listStyle(.plain)
         .refreshable { model.refresh() }

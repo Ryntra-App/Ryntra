@@ -37,7 +37,7 @@ fun OverviewScreen(dashboard: Dashboard) {
     val recentProjects = projects.sortedByDescending { it.updated.orEmpty() }.take(4)
 
     LazyColumn(
-        contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 24.dp),
+        contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 120.dp),
     ) {
         item { CreatorHeader(dashboard.account.username) }
         item {
@@ -89,22 +89,14 @@ fun OverviewScreen(dashboard: Dashboard) {
 
 @Composable
 private fun CreatorHeader(username: String) {
-    Column(
+    Text(
+        text = "Welcome back, $username",
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.bodyMedium,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 14.dp, bottom = 16.dp),
-    ) {
-        Text(
-            text = "Today",
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(
-            text = "Welcome back, $username",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium,
-        )
-    }
+            .padding(top = 12.dp, bottom = 18.dp),
+    )
 }
 
 @Composable

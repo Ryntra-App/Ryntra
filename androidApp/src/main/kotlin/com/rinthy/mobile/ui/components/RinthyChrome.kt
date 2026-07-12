@@ -58,48 +58,43 @@ fun RinthyTopBar(
     avatarUrl: String?,
     avatarDescription: String,
     isRefreshing: Boolean,
-    canRefresh: Boolean,
-    refreshIcon: ImageVector,
-    onRefresh: () -> Unit,
     onAvatarClick: () -> Unit,
-    hazeState: HazeState,
+    navigationIcon: ImageVector? = null,
+    navigationDescription: String? = null,
+    onNavigationClick: () -> Unit = {},
+    showAvatar: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
-    GlassSurface(
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .statusBarsPadding()
-            .padding(start = 16.dp, top = 8.dp, end = 16.dp),
-        shape = RinthyDesign.chromeShape,
-        hazeState = hazeState,
+            .fillMaxWidth()
+            .height(76.dp)
+            .padding(start = 20.dp, end = 18.dp),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(54.dp)
-                .padding(start = 16.dp, end = 8.dp),
-        ) {
+        if (navigationIcon != null) {
+            IconButton(onClick = onNavigationClick) {
+                Icon(navigationIcon, contentDescription = navigationDescription)
+            }
+        }
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
-            if (canRefresh) {
-                IconButton(onClick = onRefresh, enabled = !isRefreshing) {
-                    if (isRefreshing) {
-                        CircularProgressIndicator(
-                            strokeWidth = 2.dp,
-                            modifier = Modifier.size(19.dp),
-                        )
-                    } else {
-                        Icon(refreshIcon, contentDescription = "Refresh")
-                    }
-                }
+            if (isRefreshing) {
+                CircularProgressIndicator(
+                    strokeWidth = 2.dp,
+                    modifier = Modifier
+                        .padding(end = 12.dp)
+                        .size(19.dp),
+                )
             }
-            AsyncImage(
+            if (showAvatar) AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(avatarUrl)
                     .crossfade(true)
@@ -113,7 +108,6 @@ fun RinthyTopBar(
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .clickable(role = Role.Button, onClick = onAvatarClick),
             )
-        }
     }
 }
 
@@ -168,10 +162,7 @@ private fun RowScope.RinthyTabItem(
             .weight(1f)
             .height(68.dp)
             .padding(horizontal = 3.dp, vertical = 7.dp)
-            .background(
-                if (isSelected) color.copy(alpha = 0.13f) else androidx.compose.ui.graphics.Color.Transparent,
-                RoundedCornerShape(20.dp),
-            )
+            .background(selectedTabBackground(isSelected), RoundedCornerShape(24.dp))
             .clip(RoundedCornerShape(18.dp))
             .clickable(role = Role.Tab, onClick = onClick)
             .semantics { selected = isSelected },
@@ -191,6 +182,16 @@ private fun RowScope.RinthyTabItem(
             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
             maxLines = 1,
         )
+    }
+}
+
+@Composable
+private fun selectedTabBackground(isSelected: Boolean): androidx.compose.ui.graphics.Color {
+    if (!isSelected) return androidx.compose.ui.graphics.Color.Transparent
+    return if (androidx.compose.foundation.isSystemInDarkTheme()) {
+        androidx.compose.ui.graphics.Color(0xB8000000)
+    } else {
+        androidx.compose.ui.graphics.Color(0xB8FFFFFF)
     }
 }
 

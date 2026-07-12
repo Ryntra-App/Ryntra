@@ -35,11 +35,11 @@ Use a 4-point base: 4, 8, 12, 16, 24, 32, and 48. Primary page gutters are 16 po
 
 ## Layout
 
-The default destination is Overview. It answers three questions in order: what changed, what needs attention, and which projects were recently active. Projects, Teams, and Account remain dedicated destinations. A compact floating tab bar and inset top bar frame every destination. Lists use dividers and spacing instead of repeated floating cards.
+The default destination is Dashboard. It answers three questions in order: what changed, what needs attention, and which projects were recently active. Projects, Teams, and Analytics are the other tab destinations. Profile is intentionally outside the tab model and opens through the avatar with a standard back path. A single large title and avatar frame each tab without a top container. Lists use dividers and spacing instead of repeated floating cards.
 
 ## Materials
 
-Translucency communicates chrome and layers only. On iOS 26 and newer, SwiftUI uses Liquid Glass. iOS 16 through 25 use system materials with the same silhouette. Compose reproduces the material using controlled translucent tonal surfaces, borders, and state layers while preserving Android rendering performance. Content surfaces remain opaque for predictable contrast and scan speed.
+Translucency communicates navigation layering only. The top title and avatar belong directly to the content layer and never sit inside glass. On iOS 26 and newer, the floating bottom tab bar uses Liquid Glass. iOS 16 through 25 use system material with the same silhouette. Compose reproduces the bottom material using live backdrop blur, neutral tint, a subtle border, and a darker neutral selected capsule. Content scrolls beneath the tab bar so the material has something meaningful to refract.
 
 Android 12 and newer use real backdrop blur for floating chrome. Android 8 through 11 use a translucent tonal fallback because platform rendering cannot provide the same live blur reliably. Both variants keep the same geometry, border, tint, and contrast.
 

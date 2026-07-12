@@ -20,15 +20,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
+import androidx.activity.compose.BackHandler
 import com.rinthy.mobile.ui.components.RinthyTab
 import com.rinthy.mobile.ui.components.RinthyTabBar
 import com.rinthy.mobile.ui.components.RinthyTopBar
 import com.rinthy.shared.model.Dashboard
-import com.composables.icons.lucide.CircleUserRound
+import com.composables.icons.lucide.ArrowLeft
+import com.composables.icons.lucide.ChartNoAxesColumnIncreasing
 import com.composables.icons.lucide.LayoutGrid
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Package
-import com.composables.icons.lucide.RefreshCw
 import com.composables.icons.lucide.UsersRound
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -37,10 +38,10 @@ private enum class DashboardDestination(
     val label: String,
     val icon: ImageVector,
 ) {
-    Overview("Overview", Lucide.LayoutGrid),
+    Overview("Dashboard", Lucide.LayoutGrid),
     Projects("Projects", Lucide.Package),
     Organizations("Teams", Lucide.UsersRound),
-    Account("Account", Lucide.CircleUserRound),
+    Analytics("Analytics", Lucide.ChartNoAxesColumnIncreasing),
 }
 
 @Composable
@@ -48,10 +49,10 @@ fun DashboardScreen(
     dashboard: Dashboard,
     isRefreshing: Boolean = false,
     errorMessage: String? = null,
-    onRefresh: () -> Unit,
     onSignOut: () -> Unit,
 ) {
     var destination by rememberSaveable { mutableStateOf(DashboardDestination.Overview) }
+    var isProfileVisible by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val hazeState = rememberHazeState()
 
@@ -61,6 +62,10 @@ fun DashboardScreen(
 
     val destinations = DashboardDestination.entries
     val tabs = destinations.map { RinthyTab(it.label, it.icon) }
+
+    BackHandler(enabled = isProfileVisible) {
+        isProfileVisible = false
+    }
 
     Surface(
         color = MaterialTheme.colorScheme.background,
@@ -75,39 +80,46 @@ fun DashboardScreen(
                     .hazeSource(hazeState)
                     .statusBarsPadding()
                     .navigationBarsPadding()
-                    .padding(top = 78.dp, bottom = 88.dp),
+                    .padding(top = 76.dp),
             ) {
-                when (destination) {
-                    DashboardDestination.Overview -> OverviewScreen(dashboard)
-                    DashboardDestination.Projects -> ProjectsScreen(dashboard.projects)
-                    DashboardDestination.Organizations -> OrganizationsScreen(dashboard.organizations)
-                    DashboardDestination.Account -> AccountScreen(
+                if (isProfileVisible) {
+                    AccountScreen(
                         account = dashboard.account,
                         projectCount = dashboard.projects.size,
                         organizationCount = dashboard.organizations.size,
                         onSignOut = onSignOut,
                     )
+                } else when (destination) {
+                    DashboardDestination.Overview -> OverviewScreen(dashboard)
+                    DashboardDestination.Projects -> ProjectsScreen(dashboard.projects)
+                    DashboardDestination.Organizations -> OrganizationsScreen(dashboard.organizations)
+                    DashboardDestination.Analytics -> AnalyticsScreen(dashboard)
                 }
             }
             RinthyTopBar(
-                title = if (destination == DashboardDestination.Overview) "Rinthy" else destination.label,
+                title = if (isProfileVisible) "Profile" else destination.label,
                 avatarUrl = dashboard.account.avatarUrl,
                 avatarDescription = "Open ${dashboard.account.username}'s account",
                 isRefreshing = isRefreshing,
-                canRefresh = destination != DashboardDestination.Account,
-                refreshIcon = Lucide.RefreshCw,
-                hazeState = hazeState,
-                onRefresh = onRefresh,
-                onAvatarClick = { destination = DashboardDestination.Account },
+                onAvatarClick = { isProfileVisible = true },
+                navigationIcon = if (isProfileVisible) Lucide.ArrowLeft else null,
+                navigationDescription = if (isProfileVisible) "Back" else null,
+                onNavigationClick = { isProfileVisible = false },
+                showAvatar = !isProfileVisible,
                 modifier = Modifier.align(Alignment.TopCenter),
             )
-            RinthyTabBar(
-                tabs = tabs,
-                selectedIndex = destination.ordinal,
-                onSelect = { destination = destinations[it] },
-                hazeState = hazeState,
-                modifier = Modifier.align(Alignment.BottomCenter),
-            )
+            if (!isProfileVisible) {
+                RinthyTabBar(
+                    tabs = tabs,
+                    selectedIndex = destination.ordinal,
+                    onSelect = {
+                        destination = destinations[it]
+                        isProfileVisible = false
+                    },
+                    hazeState = hazeState,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+            }
             SnackbarHost(
                 hostState = snackbarHostState,
                 modifier = Modifier

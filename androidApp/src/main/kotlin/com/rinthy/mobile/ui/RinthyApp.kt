@@ -38,14 +38,12 @@ fun RinthyApp(viewModel: RinthyViewModel) {
                 DashboardScreen(
                     dashboard = dashboard,
                     isRefreshing = true,
-                    onRefresh = viewModel::refresh,
                     onSignOut = viewModel::signOut,
                 )
             }
         }
         is AppState.Ready -> DashboardScreen(
             dashboard = state.dashboard,
-            onRefresh = viewModel::refresh,
             onSignOut = viewModel::signOut,
         )
         is AppState.Failed -> {
@@ -60,7 +58,6 @@ fun RinthyApp(viewModel: RinthyViewModel) {
                 DashboardScreen(
                     dashboard = dashboard,
                     errorMessage = state.message,
-                    onRefresh = viewModel::refresh,
                     onSignOut = viewModel::signOut,
                 )
             }

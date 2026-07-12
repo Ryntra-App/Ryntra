@@ -31,7 +31,12 @@ import com.rinthy.shared.model.Organization
 fun OrganizationsScreen(organizations: List<Organization>) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            start = 16.dp,
+            top = 16.dp,
+            end = 16.dp,
+            bottom = 120.dp,
+        ),
         verticalArrangement = Arrangement.spacedBy(0.dp),
     ) {
         item {

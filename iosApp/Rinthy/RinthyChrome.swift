@@ -1,26 +1,26 @@
 import SwiftUI
 
 enum RinthyDestination: Int, CaseIterable {
-    case overview
+    case dashboard
     case projects
     case teams
-    case account
+    case analytics
 
     var label: String {
         switch self {
-        case .overview: return "Overview"
+        case .dashboard: return "Dashboard"
         case .projects: return "Projects"
         case .teams: return "Teams"
-        case .account: return "Account"
+        case .analytics: return "Analytics"
         }
     }
 
     var symbol: String {
         switch self {
-        case .overview: return "square.grid.2x2.fill"
+        case .dashboard: return "square.grid.2x2.fill"
         case .projects: return "shippingbox.fill"
         case .teams: return "person.3.fill"
-        case .account: return "person.crop.circle.fill"
+        case .analytics: return "chart.bar.fill"
         }
     }
 }
@@ -30,55 +30,50 @@ struct RinthyTopBar: View {
     let avatarURL: String?
     let username: String
     let isRefreshing: Bool
-    let canRefresh: Bool
-    let onRefresh: () -> Void
     let onAvatarTap: () -> Void
+    var showsBackButton = false
+    var onBack: () -> Void = {}
+    var showsAvatar = true
 
     var body: some View {
         HStack(spacing: 8) {
-            Text(title)
-                .font(.title3.bold())
-                .lineLimit(1)
-            Spacer(minLength: 8)
-            if canRefresh {
-                Button(action: onRefresh) {
-                    Group {
-                        if isRefreshing {
-                            ProgressView()
-                        } else {
-                            Image(systemName: "arrow.clockwise")
-                        }
-                    }
-                    .frame(width: 38, height: 38)
+            if showsBackButton {
+                Button(action: onBack) {
+                    Image(systemName: "chevron.left")
+                        .frame(width: 38, height: 38)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Refresh")
-                .disabled(isRefreshing)
+                .accessibilityLabel("Back")
             }
-            Button(action: onAvatarTap) {
-                AsyncImage(url: URL(string: avatarURL ?? "")) { image in
-                    image.resizable().scaledToFill()
-                } placeholder: {
-                    Circle().fill(.quaternary)
+            Text(title)
+                .font(.largeTitle.bold())
+                .lineLimit(1)
+            Spacer(minLength: 8)
+            if isRefreshing {
+                ProgressView().padding(.trailing, 8)
+            }
+            if showsAvatar {
+                Button(action: onAvatarTap) {
+                    AsyncImage(url: URL(string: avatarURL ?? "")) { image in
+                        image.resizable().scaledToFill()
+                    } placeholder: {
+                        Circle().fill(.quaternary)
+                    }
+                    .frame(width: 38, height: 38)
+                    .clipShape(Circle())
                 }
-                .frame(width: 38, height: 38)
-                .clipShape(Circle())
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open \(username)'s account")
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open \(username)'s account")
         }
-        .padding(.leading, 16)
-        .padding(.trailing, 8)
-        .frame(height: 54)
-        .rinthyGlass(cornerRadius: 22)
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
-        .padding(.bottom, 6)
+        .padding(.horizontal, 20)
+        .frame(height: 76)
     }
 }
 
 struct RinthyTabBar: View {
     @Binding var selection: RinthyDestination
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack(spacing: 0) {
@@ -97,10 +92,8 @@ struct RinthyTabBar: View {
                     .foregroundStyle(selection == destination ? Color.rinthyGreen : Color.secondary)
                     .frame(maxWidth: .infinity, minHeight: 60)
                     .background(
-                        selection == destination
-                            ? Color.rinthyGreen.opacity(0.13)
-                            : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 20)
+                        selection == destination ? selectedBackground : Color.clear,
+                        in: RoundedRectangle(cornerRadius: 24)
                     )
                     .contentShape(Rectangle())
                 }
@@ -115,23 +108,13 @@ struct RinthyTabBar: View {
         .padding(.top, 6)
         .padding(.bottom, 8)
     }
+
+    private var selectedBackground: Color {
+        colorScheme == .dark ? Color.black.opacity(0.72) : Color.white.opacity(0.78)
+    }
 }
 
 private extension View {
-    @ViewBuilder
-    func rinthyGlass(cornerRadius: CGFloat) -> some View {
-        if #available(iOS 26.0, *) {
-            glassEffect(in: .rect(cornerRadius: cornerRadius))
-        } else {
-            background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius))
-                .overlay {
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .stroke(Color.primary.opacity(0.16), lineWidth: 0.5)
-                }
-                .shadow(color: .black.opacity(0.12), radius: 12, y: 5)
-        }
-    }
-
     @ViewBuilder
     func rinthyCapsuleGlass() -> some View {
         if #available(iOS 26.0, *) {

@@ -7,23 +7,54 @@ struct DashboardView: View {
     let dashboard: Dashboard
     var isRefreshing = false
     var errorMessage: String?
-    @State private var selection = RinthyDestination.overview
+    @State private var selection = RinthyDestination.dashboard
+    @State private var isProfileVisible = false
     @State private var presentedError: String?
 
     var body: some View {
+        Group {
+            if isProfileVisible {
+                NavigationStack {
+                    AccountView(
+                        account: dashboard.account,
+                        projectCount: dashboard.projects.count,
+                        organizationCount: dashboard.organizations.count
+                    )
+                    .rinthyChrome(
+                        title: "Profile",
+                        dashboard: dashboard,
+                        isRefreshing: false,
+                        onAvatarTap: {},
+                        showsBackButton: true,
+                        onBack: { isProfileVisible = false },
+                        showsAvatar: false
+                    )
+                }
+            } else {
+                dashboardTabs
+            }
+        }
+        .onAppear { presentedError = errorMessage }
+        .onChange(of: errorMessage) { presentedError = $0 }
+        .alert("Could not refresh", isPresented: errorBinding) {
+            Button("Retry") { model.refresh() }
+        } message: {
+            Text(errorMessage ?? "")
+        }
+    }
+
+    private var dashboardTabs: some View {
         TabView(selection: $selection) {
             NavigationStack {
                 OverviewView(dashboard: dashboard)
                     .rinthyChrome(
-                        title: "Rinthy",
+                        title: "Dashboard",
                         dashboard: dashboard,
                         isRefreshing: isRefreshing,
-                        canRefresh: true,
-                        onRefresh: model.refresh,
-                        onAvatarTap: { selection = .account }
+                        onAvatarTap: { isProfileVisible = true }
                     )
             }
-            .tag(RinthyDestination.overview)
+            .tag(RinthyDestination.dashboard)
 
             NavigationStack {
                 ProjectsView(projects: dashboard.projects)
@@ -31,9 +62,7 @@ struct DashboardView: View {
                         title: "Projects",
                         dashboard: dashboard,
                         isRefreshing: isRefreshing,
-                        canRefresh: true,
-                        onRefresh: model.refresh,
-                        onAvatarTap: { selection = .account }
+                        onAvatarTap: { isProfileVisible = true }
                     )
             }
             .tag(RinthyDestination.projects)
@@ -44,40 +73,25 @@ struct DashboardView: View {
                         title: "Teams",
                         dashboard: dashboard,
                         isRefreshing: isRefreshing,
-                        canRefresh: true,
-                        onRefresh: model.refresh,
-                        onAvatarTap: { selection = .account }
+                        onAvatarTap: { isProfileVisible = true }
                     )
             }
             .tag(RinthyDestination.teams)
 
             NavigationStack {
-                AccountView(
-                    account: dashboard.account,
-                    projectCount: dashboard.projects.count,
-                    organizationCount: dashboard.organizations.count
-                )
-                .rinthyChrome(
-                    title: "Account",
-                    dashboard: dashboard,
-                    isRefreshing: false,
-                    canRefresh: false,
-                    onRefresh: {},
-                    onAvatarTap: {}
-                )
+                AnalyticsView(dashboard: dashboard)
+                    .rinthyChrome(
+                        title: "Analytics",
+                        dashboard: dashboard,
+                        isRefreshing: isRefreshing,
+                        onAvatarTap: { isProfileVisible = true }
+                    )
             }
-            .tag(RinthyDestination.account)
+            .tag(RinthyDestination.analytics)
         }
         .toolbar(.hidden, for: .tabBar)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+        .overlay(alignment: .bottom) {
             RinthyTabBar(selection: $selection)
-        }
-        .onAppear { presentedError = errorMessage }
-        .onChange(of: errorMessage) { presentedError = $0 }
-        .alert("Could not refresh", isPresented: errorBinding) {
-            Button("Retry") { model.refresh() }
-        } message: {
-            Text(errorMessage ?? "")
         }
     }
 
@@ -89,7 +103,6 @@ struct DashboardView: View {
             }
         )
     }
-
 }
 
 private extension View {
@@ -97,9 +110,10 @@ private extension View {
         title: String,
         dashboard: Dashboard,
         isRefreshing: Bool,
-        canRefresh: Bool,
-        onRefresh: @escaping () -> Void,
-        onAvatarTap: @escaping () -> Void
+        onAvatarTap: @escaping () -> Void,
+        showsBackButton: Bool = false,
+        onBack: @escaping () -> Void = {},
+        showsAvatar: Bool = true
     ) -> some View {
         toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .top, spacing: 0) {
@@ -108,9 +122,10 @@ private extension View {
                     avatarURL: dashboard.account.avatarUrl,
                     username: dashboard.account.username,
                     isRefreshing: isRefreshing,
-                    canRefresh: canRefresh,
-                    onRefresh: onRefresh,
-                    onAvatarTap: onAvatarTap
+                    onAvatarTap: onAvatarTap,
+                    showsBackButton: showsBackButton,
+                    onBack: onBack,
+                    showsAvatar: showsAvatar
                 )
             }
     }

@@ -37,6 +37,9 @@ struct ProjectsView: View {
                     ProjectRow(project: project)
                 }
             }
+            Color.clear
+                .frame(height: 90)
+                .listRowSeparator(.hidden)
         }
         .listStyle(.plain)
         .searchable(text: $query, prompt: "Search projects")
