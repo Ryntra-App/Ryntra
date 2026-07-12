@@ -3,6 +3,7 @@ package com.rinthy.shared.network
 import com.rinthy.shared.model.Account
 import com.rinthy.shared.model.Organization
 import com.rinthy.shared.model.Project
+import com.rinthy.shared.model.ProjectMember
 import com.rinthy.shared.model.ProjectVersion
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -29,6 +30,20 @@ class ModrinthApi(
 
     suspend fun getProjectVersions(projectIdOrSlug: String, token: String): List<ProjectVersion> =
         httpClient.get("project/$projectIdOrSlug/version") { authorize(token) }.decode()
+
+    suspend fun getProjectMembers(projectIdOrSlug: String, teamId: String?, token: String): List<ProjectMember> {
+        if (teamId != null) {
+            try {
+                val teamMembers = httpClient.get("team/$teamId/members") { authorize(token) }.decode<List<ProjectMember>>()
+                if (teamMembers.isNotEmpty()) return teamMembers
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                // Some projects expose members only through the project endpoint below.
+            }
+        }
+        return httpClient.get("project/$projectIdOrSlug/members") { authorize(token) }.decode()
+    }
 
     suspend fun getOrganizations(userId: String, token: String): List<Organization> {
         val endpoints = listOf(

@@ -48,14 +48,17 @@ import com.composables.icons.lucide.Scale
 import com.composables.icons.lucide.Server
 import com.rinthy.mobile.ui.theme.RinthyDesign
 import com.rinthy.shared.model.Project
+import com.rinthy.shared.model.ProjectMember
 import com.rinthy.shared.model.ProjectVersion
 
 @Composable
 fun ProjectDetailScreen(
     project: Project,
     versions: List<ProjectVersion> = emptyList(),
+    members: List<ProjectMember> = emptyList(),
     isLoading: Boolean = false,
     errorMessage: String? = null,
+    memberErrorMessage: String? = null,
 ) {
     val uriHandler = LocalUriHandler.current
     var selectedTab by rememberSaveable(project.id) { mutableStateOf(ProjectDetailTab.Overview) }
@@ -168,13 +171,36 @@ fun ProjectDetailScreen(
                 )
             }
 
-            ProjectDetailTab.Members -> item {
-                PendingProjectTab(
-                    title = "Members are next",
-                    message = "Team roles, permissions, payout split, invitations, and ownership transfer belong in this tab.",
-                )
+            ProjectDetailTab.Members -> {
+                when {
+                    isLoading -> item { LoadingMembers() }
+                    memberErrorMessage != null && members.isEmpty() -> item {
+                        EmptyState(title = "Members unavailable", message = memberErrorMessage)
+                    }
+                    members.isEmpty() -> item {
+                        EmptyState(
+                            title = "No members found",
+                            message = "Team members for this project will appear here.",
+                        )
+                    }
+                    else -> items(members, key = { it.user.id }) { member ->
+                        ProjectMemberCard(member)
+                    }
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun LoadingMembers() {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 28.dp)) {
+        androidx.compose.material3.CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
+        Text(
+            "Loading members",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 10.dp),
+        )
     }
 }
 

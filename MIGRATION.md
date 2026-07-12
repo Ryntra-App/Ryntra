@@ -22,7 +22,8 @@ This checklist tracks user-visible behavior from the `main` Capacitor branch. Fe
 - [x] Versions: list and inspect
 - [ ] Versions: create, edit, delete, and upload files
 - [ ] Resolve and manage dependencies
-- [ ] Team members, permissions, payout split, invitations, and ownership transfer
+- [x] Team members: list and status
+- [ ] Team members: permissions, payout split, invitations, and ownership transfer
 
 ## Teams and organizations
 

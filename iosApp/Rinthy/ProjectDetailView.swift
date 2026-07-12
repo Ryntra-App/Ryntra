@@ -7,8 +7,11 @@ struct ProjectDetailView: View {
     let project: Project
     @State private var selectedTab = ProjectDetailTab.overview
     @State private var versions: [ProjectVersion] = []
+    @State private var members: [ProjectMember] = []
     @State private var isLoadingVersions = false
+    @State private var isLoadingMembers = false
     @State private var versionError: String?
+    @State private var memberError: String?
 
     private var resources: [(String, URL)] {
         [
@@ -39,10 +42,7 @@ struct ProjectDetailView: View {
                         message: "Metadata, status, links, icon, and gallery editing will move here from the old app."
                     )
                 case .members:
-                    pendingTab(
-                        title: "Members are next",
-                        message: "Team roles, permissions, payout split, invitations, and ownership transfer belong in this tab."
-                    )
+                    membersContent
                 }
             }
             .padding(.horizontal, 16)
@@ -52,6 +52,7 @@ struct ProjectDetailView: View {
         .background(Color(uiColor: .systemBackground))
         .task(id: project.id) {
             await loadVersions()
+            await loadMembers()
         }
     }
 
@@ -87,6 +88,28 @@ struct ProjectDetailView: View {
             LazyVStack(spacing: 10) {
                 ForEach(versions, id: \.id) { version in
                     VersionCard(version: version)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var membersContent: some View {
+        if isLoadingMembers {
+            HStack(spacing: 10) {
+                ProgressView()
+                Text("Loading members")
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 28)
+        } else if let memberError, members.isEmpty {
+            pendingTab(title: "Members unavailable", message: memberError)
+        } else if members.isEmpty {
+            pendingTab(title: "No members found", message: "Team members for this project will appear here.")
+        } else {
+            LazyVStack(spacing: 10) {
+                ForEach(members, id: \.user.id) { member in
+                    MemberCard(member: member)
                 }
             }
         }
@@ -133,6 +156,17 @@ struct ProjectDetailView: View {
             versionError = error.localizedDescription
         }
         isLoadingVersions = false
+    }
+
+    private func loadMembers() async {
+        isLoadingMembers = true
+        memberError = nil
+        do {
+            members = try await model.loadProjectMembers(project: project)
+        } catch {
+            memberError = error.localizedDescription
+        }
+        isLoadingMembers = false
     }
 
     private var identity: some View {
@@ -452,6 +486,57 @@ private struct VersionCard: View {
         if value >= 1_000_000 { return String(format: "%.1fM", Double(value) / 1_000_000) }
         if value >= 1_000 { return String(format: "%.1fK", Double(value) / 1_000) }
         return "\(value)"
+    }
+}
+
+private struct MemberCard: View {
+    let member: ProjectMember
+
+    var body: some View {
+        HStack(spacing: 12) {
+            AsyncImage(url: URL(string: member.user.avatarUrl ?? "")) { image in
+                image.resizable().scaledToFill()
+            } placeholder: {
+                Circle().fill(.quaternary)
+            }
+            .frame(width: 46, height: 46)
+            .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 7) {
+                    Text(member.user.username)
+                        .font(.headline.weight(.bold))
+                        .lineLimit(1)
+                    if member.isOwner {
+                        Image(systemName: "crown.fill")
+                            .font(.caption)
+                            .foregroundStyle(Color.rinthyGreen)
+                    }
+                }
+                Text(member.role.isEmpty ? (member.isOwner ? "Owner" : "Member") : member.role)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 8)
+
+            HStack(spacing: 5) {
+                Image(systemName: member.accepted ? "checkmark" : "envelope")
+                Text(member.accepted ? "Accepted" : "Pending")
+            }
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(member.accepted ? Color.rinthyGreen : Color.orange)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 6)
+            .background((member.accepted ? Color.rinthyGreen : Color.orange).opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+        }
+        .padding(14)
+        .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color(uiColor: .separator), lineWidth: 0.5)
+        }
     }
 }
 

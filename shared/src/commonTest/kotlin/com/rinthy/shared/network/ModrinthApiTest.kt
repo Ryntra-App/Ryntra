@@ -125,6 +125,39 @@ class ModrinthApiTest {
     }
 
     @Test
+    fun projectMembersAreDecodedFromTeamEndpoint() = runTest {
+        val engine = MockEngine { request ->
+            assertEquals("/v2/team/team-1/members", request.url.encodedPath)
+            respond(
+                content = """
+                    [
+                      {
+                        "team_id":"team-1",
+                        "role":"Owner",
+                        "is_owner":true,
+                        "permissions":1023,
+                        "payouts_split":100,
+                        "accepted":true,
+                        "user":{"id":"user-1","username":"alex","avatar_url":"https://cdn.example/avatar.png","role":"developer"}
+                      }
+                    ]
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = jsonHeaders,
+            )
+        }
+        val api = ModrinthApi(testClient(engine))
+
+        val member = api.getProjectMembers("project-1", "team-1", "mrp_test").single()
+
+        assertEquals("alex", member.user.username)
+        assertEquals("Owner", member.role)
+        assertTrue(member.isOwner)
+        assertEquals(1023, member.permissions)
+        api.close()
+    }
+
+    @Test
     fun unauthorizedResponseHasSafeActionableMessage() = runTest {
         val engine = MockEngine {
             respond(

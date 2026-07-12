@@ -10,6 +10,7 @@ import com.rinthy.mobile.security.SecureTokenStore
 import com.rinthy.shared.app.AppController
 import com.rinthy.shared.app.AppState
 import com.rinthy.shared.model.Project
+import com.rinthy.shared.model.ProjectMember
 import com.rinthy.shared.model.ProjectVersion
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -74,16 +75,20 @@ class RinthyViewModel(application: Application) : AndroidViewModel(application) 
             val projectKey = project.slug ?: project.id
             val detailsDeferred = async { runCatching { controller.loadProjectDetails(projectKey) } }
             val versionsDeferred = async { runCatching { controller.loadProjectVersions(projectKey) } }
+            val membersDeferred = async { runCatching { controller.loadProjectMembers(projectKey, project.team) } }
             val details = detailsDeferred.await()
             val versions = versionsDeferred.await()
+            val members = membersDeferred.await()
             val current = mutableProjectDetail.value
             if (current?.project?.id != project.id) return@launch
 
             mutableProjectDetail.value = ProjectDetailState(
                 project = details.getOrElse { project },
                 versions = versions.getOrDefault(emptyList()),
+                members = members.getOrDefault(emptyList()),
                 isLoading = false,
                 errorMessage = details.exceptionOrNull()?.message ?: versions.exceptionOrNull()?.message,
+                memberErrorMessage = members.exceptionOrNull()?.message,
             )
         }
     }
@@ -110,6 +115,8 @@ class RinthyViewModel(application: Application) : AndroidViewModel(application) 
 data class ProjectDetailState(
     val project: Project,
     val versions: List<ProjectVersion> = emptyList(),
+    val members: List<ProjectMember> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
+    val memberErrorMessage: String? = null,
 )

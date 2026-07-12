@@ -95,8 +95,10 @@ fun DashboardScreen(
                     ProjectDetailScreen(
                         project = projectDetail.project,
                         versions = projectDetail.versions,
+                        members = projectDetail.members,
                         isLoading = projectDetail.isLoading,
                         errorMessage = projectDetail.errorMessage,
+                        memberErrorMessage = projectDetail.memberErrorMessage,
                     )
                 } else if (isProfileVisible) {
                     AccountScreen(
