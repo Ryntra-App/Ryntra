@@ -4,6 +4,7 @@ import SwiftUI
 struct ProjectsView: View {
     @EnvironmentObject private var model: AppModel
     let projects: [Project]
+    var onProjectTap: (Project) -> Void = { _ in }
     @State private var query = ""
 
     private var filteredProjects: [Project] {
@@ -34,7 +35,12 @@ struct ProjectsView: View {
                 )
             } else {
                 ForEach(filteredProjects, id: \.id) { project in
-                    ProjectRow(project: project)
+                    Button {
+                        onProjectTap(project)
+                    } label: {
+                        ProjectRow(project: project)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             Color.clear

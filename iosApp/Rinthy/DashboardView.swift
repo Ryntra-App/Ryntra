@@ -9,11 +9,25 @@ struct DashboardView: View {
     var errorMessage: String?
     @State private var selection = RinthyDestination.dashboard
     @State private var isProfileVisible = false
+    @State private var selectedProject: Project?
     @State private var presentedError: String?
 
     var body: some View {
         Group {
-            if isProfileVisible {
+            if let selectedProject {
+                NavigationStack {
+                    ProjectDetailView(project: selectedProject)
+                        .rinthyChrome(
+                            title: selectedProject.title,
+                            dashboard: dashboard,
+                            isRefreshing: false,
+                            onAvatarTap: {},
+                            showsBackButton: true,
+                            onBack: { self.selectedProject = nil },
+                            showsAvatar: false
+                        )
+                }
+            } else if isProfileVisible {
                 NavigationStack {
                     AccountView(
                         account: dashboard.account,
@@ -46,7 +60,10 @@ struct DashboardView: View {
     private var dashboardTabs: some View {
         TabView(selection: $selection) {
             NavigationStack {
-                OverviewView(dashboard: dashboard)
+                OverviewView(
+                    dashboard: dashboard,
+                    onProjectTap: { selectedProject = $0 }
+                )
                     .rinthyChrome(
                         title: "Dashboard",
                         dashboard: dashboard,
@@ -57,7 +74,10 @@ struct DashboardView: View {
             .tag(RinthyDestination.dashboard)
 
             NavigationStack {
-                ProjectsView(projects: dashboard.projects)
+                ProjectsView(
+                    projects: dashboard.projects,
+                    onProjectTap: { selectedProject = $0 }
+                )
                     .rinthyChrome(
                         title: "Projects",
                         dashboard: dashboard,

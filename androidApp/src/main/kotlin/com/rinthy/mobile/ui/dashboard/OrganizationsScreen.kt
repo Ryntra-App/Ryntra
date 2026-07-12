@@ -18,13 +18,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
-import coil3.request.crossfade
 import com.rinthy.shared.model.Organization
 
 @Composable
@@ -72,10 +69,7 @@ private fun OrganizationRow(organization: Organization) {
             .padding(vertical = 14.dp),
     ) {
             AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(organization.iconUrl)
-                    .crossfade(true)
-                    .build(),
+                model = organization.iconUrl,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier

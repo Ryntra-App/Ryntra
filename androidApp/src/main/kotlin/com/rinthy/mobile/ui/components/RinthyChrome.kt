@@ -1,8 +1,13 @@
 package com.rinthy.mobile.ui.components
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,13 +29,17 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -38,8 +47,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
-import coil3.request.crossfade
 import com.rinthy.mobile.ui.theme.RinthyDesign
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
@@ -78,27 +85,25 @@ fun RinthyTopBar(
                 Icon(navigationIcon, contentDescription = navigationDescription)
             }
         }
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
+        Text(
+            text = title,
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        if (isRefreshing) {
+            CircularProgressIndicator(
+                strokeWidth = 2.dp,
+                modifier = Modifier
+                    .padding(end = 12.dp)
+                    .size(19.dp),
             )
-            if (isRefreshing) {
-                CircularProgressIndicator(
-                    strokeWidth = 2.dp,
-                    modifier = Modifier
-                        .padding(end = 12.dp)
-                        .size(19.dp),
-                )
-            }
-            if (showAvatar) AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(avatarUrl)
-                    .crossfade(true)
-                    .build(),
+        }
+        if (showAvatar) {
+            AsyncImage(
+                model = avatarUrl,
                 contentDescription = avatarDescription,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
@@ -108,6 +113,7 @@ fun RinthyTopBar(
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .clickable(role = Role.Button, onClick = onAvatarClick),
             )
+        }
     }
 }
 
@@ -130,7 +136,7 @@ fun RinthyTabBar(
             horizontalArrangement = Arrangement.SpaceEvenly,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(68.dp)
+                .height(60.dp)
                 .padding(horizontal = 4.dp),
         ) {
             tabs.forEachIndexed { index, tab ->
@@ -150,21 +156,51 @@ private fun RowScope.RinthyTabItem(
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val pressedScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.96f else 1f,
+        animationSpec = tween(durationMillis = 120),
+        label = "Tab press",
+    )
     val color = if (isSelected) {
         RinthyDesign.colors.positive
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
+    val itemShape = RoundedCornerShape(22.dp)
+    val selectedFill = if (isSelected) {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.075f)
+    } else {
+        Color.Transparent
+    }
+    val selectedBorder = Brush.verticalGradient(
+        colors = listOf(
+            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.22f),
+            RinthyDesign.colors.positive.copy(alpha = 0.10f),
+            Color.Transparent,
+        ),
+    )
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = Modifier
             .weight(1f)
-            .height(68.dp)
-            .padding(horizontal = 3.dp, vertical = 7.dp)
-            .background(selectedTabBackground(isSelected), RoundedCornerShape(24.dp))
-            .clip(RoundedCornerShape(18.dp))
-            .clickable(role = Role.Tab, onClick = onClick)
+            .height(60.dp)
+            .padding(horizontal = 3.dp, vertical = 5.dp)
+            .graphicsLayer {
+                scaleX = pressedScale
+                scaleY = pressedScale
+            }
+            .clip(itemShape)
+            .background(selectedFill)
+            .then(if (isSelected) Modifier.border(0.75.dp, selectedBorder, itemShape) else Modifier)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.Tab,
+                onClick = onClick,
+            )
             .semantics { selected = isSelected },
     ) {
         Box(
@@ -186,16 +222,6 @@ private fun RowScope.RinthyTabItem(
 }
 
 @Composable
-private fun selectedTabBackground(isSelected: Boolean): androidx.compose.ui.graphics.Color {
-    if (!isSelected) return androidx.compose.ui.graphics.Color.Transparent
-    return if (androidx.compose.foundation.isSystemInDarkTheme()) {
-        androidx.compose.ui.graphics.Color(0xB8000000)
-    } else {
-        androidx.compose.ui.graphics.Color(0xB8FFFFFF)
-    }
-}
-
-@Composable
 private fun GlassSurface(
     modifier: Modifier,
     shape: RoundedCornerShape,
@@ -203,18 +229,29 @@ private fun GlassSurface(
     content: @Composable () -> Unit,
 ) {
     val chrome = RinthyDesign.colors.chrome
-    val hazeStyle = HazeStyle(
-        backgroundColor = MaterialTheme.colorScheme.surface,
-        tint = HazeTint(chrome.copy(alpha = 0.58f)),
-        blurRadius = 26.dp,
-        noiseFactor = 0.035f,
-        fallbackTint = HazeTint(chrome),
+    val background = MaterialTheme.colorScheme.background
+    val glassTint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.07f)
+    val hazeStyle = remember(chrome, background, glassTint) {
+        HazeStyle(
+            backgroundColor = background,
+            tint = HazeTint(glassTint),
+            blurRadius = 18.dp,
+            noiseFactor = 0.01f,
+            fallbackTint = HazeTint(chrome.copy(alpha = 0.88f)),
+        )
+    }
+    val glassBorder = Brush.verticalGradient(
+        colors = listOf(
+            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.32f),
+            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+            RinthyDesign.colors.positive.copy(alpha = 0.08f),
+        ),
     )
     Surface(
-        color = androidx.compose.ui.graphics.Color.Transparent,
+        color = Color.Transparent,
         contentColor = MaterialTheme.colorScheme.onSurface,
         shape = shape,
-        border = BorderStroke(1.dp, RinthyDesign.colors.chromeBorder),
+        border = BorderStroke(0.8.dp, glassBorder),
         modifier = modifier
             .shadow(
                 elevation = 12.dp,

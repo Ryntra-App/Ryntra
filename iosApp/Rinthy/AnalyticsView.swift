@@ -74,7 +74,7 @@ struct AnalyticsView: View {
         VStack(alignment: .leading, spacing: 5) {
             Image(systemName: symbol)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.rinthyGreen)
             Text(value).font(.headline).monospacedDigit()
             Text(label).font(.caption2).foregroundStyle(.secondary)
         }
@@ -97,7 +97,7 @@ struct AnalyticsView: View {
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.secondary.opacity(0.18))
                     Capsule()
-                        .fill(Color.secondary.opacity(0.72))
+                        .fill(Color.rinthyGreen)
                         .frame(
                             width: proxy.size.width * CGFloat(Double(project.downloads) / Double(largestDownloadCount))
                         )

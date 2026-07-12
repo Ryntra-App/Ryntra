@@ -2,6 +2,7 @@ package com.rinthy.shared.app
 
 import com.rinthy.shared.data.DashboardRepository
 import com.rinthy.shared.model.Dashboard
+import com.rinthy.shared.model.Project
 import com.rinthy.shared.network.ModrinthApi
 import com.rinthy.shared.network.createPlatformHttpClient
 import kotlinx.coroutines.CoroutineScope
@@ -42,6 +43,11 @@ class AppController internal constructor(
     fun refresh() {
         val dashboard = currentDashboard() ?: return
         load(previousDashboard = dashboard)
+    }
+
+    suspend fun loadProjectDetails(projectIdOrSlug: String): Project {
+        val token = accessToken ?: error("Sign in before loading project details.")
+        return repository.loadProject(projectIdOrSlug, token)
     }
 
     fun signOut() {

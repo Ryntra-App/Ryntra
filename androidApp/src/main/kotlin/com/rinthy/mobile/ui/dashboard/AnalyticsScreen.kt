@@ -16,6 +16,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -28,13 +29,34 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Package
 import com.rinthy.shared.model.Dashboard
 import com.rinthy.shared.model.Project
+import com.rinthy.mobile.ui.theme.RinthyDesign
+
+private data class AnalyticsSnapshot(
+    val totalDownloads: Long,
+    val totalFollowers: Long,
+    val topProjects: List<Project>,
+    val largestProject: Long,
+    val projectTypes: List<Pair<String, Int>>,
+)
 
 @Composable
 fun AnalyticsScreen(dashboard: Dashboard) {
     val projects = dashboard.projects
-    val totalDownloads = projects.sumOf(Project::downloads)
-    val topProjects = projects.sortedByDescending(Project::downloads).take(5)
-    val largestProject = topProjects.firstOrNull()?.downloads?.coerceAtLeast(1) ?: 1
+    val snapshot = remember(projects) {
+        val topProjects = projects.sortedByDescending(Project::downloads).take(5)
+        AnalyticsSnapshot(
+            totalDownloads = projects.sumOf(Project::downloads),
+            totalFollowers = projects.sumOf(Project::followers),
+            topProjects = topProjects,
+            largestProject = topProjects.firstOrNull()?.downloads?.coerceAtLeast(1) ?: 1,
+            projectTypes = projects
+                .groupingBy { it.projectType.replaceFirstChar(Char::uppercase) }
+                .eachCount()
+                .entries
+                .sortedByDescending { it.value }
+                .map { it.key to it.value },
+        )
+    }
 
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 120.dp),
@@ -52,8 +74,8 @@ fun AnalyticsScreen(dashboard: Dashboard) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                AnalyticsMetric(Lucide.Download, formatCompact(totalDownloads), "Downloads", Modifier.weight(1f))
-                AnalyticsMetric(Lucide.Heart, formatCompact(projects.sumOf(Project::followers)), "Followers", Modifier.weight(1f))
+                AnalyticsMetric(Lucide.Download, formatCompact(snapshot.totalDownloads), "Downloads", Modifier.weight(1f))
+                AnalyticsMetric(Lucide.Heart, formatCompact(snapshot.totalFollowers), "Followers", Modifier.weight(1f))
                 AnalyticsMetric(Lucide.Package, projects.size.toString(), "Projects", Modifier.weight(1f))
             }
         }
@@ -65,27 +87,26 @@ fun AnalyticsScreen(dashboard: Dashboard) {
                 modifier = Modifier.padding(top = 30.dp, bottom = 12.dp),
             )
         }
-        if (topProjects.isEmpty()) {
+        if (snapshot.topProjects.isEmpty()) {
             item { EmptyState("No analytics yet", "Project performance will appear after your projects load.") }
         } else {
-            topProjects.forEach { project ->
+            snapshot.topProjects.forEach { project ->
                 item(key = project.id) {
                     ProjectPerformanceRow(
                         project = project,
-                        progress = project.downloads.toFloat() / largestProject.toFloat(),
+                        progress = project.downloads.toFloat() / snapshot.largestProject.toFloat(),
                     )
                 }
             }
         }
         item {
-            val types = projects.groupingBy { it.projectType.replaceFirstChar(Char::uppercase) }.eachCount()
             Text(
                 text = "Project mix",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(top = 30.dp, bottom = 8.dp),
             )
-            types.entries.sortedByDescending { it.value }.forEach { (type, count) ->
+            snapshot.projectTypes.forEach { (type, count) ->
                 Row(modifier = Modifier.padding(vertical = 8.dp)) {
                     Text(type, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
                     Text(count.toString(), fontWeight = FontWeight.SemiBold)
@@ -105,7 +126,7 @@ private fun AnalyticsMetric(icon: ImageVector, value: String, label: String, mod
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = RinthyDesign.colors.positive,
             modifier = Modifier.size(18.dp),
         )
         Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
@@ -142,7 +163,7 @@ private fun ProjectPerformanceRow(project: Project, progress: Float) {
                 modifier = Modifier
                     .fillMaxWidth(progress.coerceIn(0f, 1f))
                     .height(6.dp)
-                    .background(MaterialTheme.colorScheme.onSurfaceVariant, RoundedCornerShape(3.dp)),
+                    .background(RinthyDesign.colors.positive, RoundedCornerShape(3.dp)),
             )
         }
     }

@@ -1,6 +1,7 @@
 package com.rinthy.mobile.ui.dashboard
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -31,10 +33,15 @@ import com.composables.icons.lucide.Package
 import com.composables.icons.lucide.TriangleAlert
 
 @Composable
-fun OverviewScreen(dashboard: Dashboard) {
+fun OverviewScreen(
+    dashboard: Dashboard,
+    onProjectClick: (Project) -> Unit = {},
+) {
     val projects = dashboard.projects
-    val needsAttention = projects.filterNot { it.isHealthy() }.take(3)
-    val recentProjects = projects.sortedByDescending { it.updated.orEmpty() }.take(4)
+    val needsAttention = remember(projects) { projects.filterNot { it.isHealthy() }.take(3) }
+    val recentProjects = remember(projects) {
+        projects.sortedByDescending { it.updated.orEmpty() }.take(4)
+    }
 
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 120.dp),
@@ -58,7 +65,7 @@ fun OverviewScreen(dashboard: Dashboard) {
         } else {
             needsAttention.forEach { project ->
                 item(key = "attention-${project.id}") {
-                    AttentionRow(project)
+                    AttentionRow(project = project, onClick = { onProjectClick(project) })
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 }
             }
@@ -79,7 +86,12 @@ fun OverviewScreen(dashboard: Dashboard) {
         } else {
             recentProjects.forEach { project ->
                 item(key = "recent-${project.id}") {
-                    ProjectRow(project = project, showDescription = false, showStatus = false)
+                    ProjectRow(
+                        project = project,
+                        showDescription = false,
+                        showStatus = false,
+                        onClick = { onProjectClick(project) },
+                    )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 }
             }
@@ -127,7 +139,7 @@ private fun OverviewMetric(
         horizontalArrangement = Arrangement.Center,
         modifier = modifier,
     ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+        Icon(icon, contentDescription = null, tint = RinthyDesign.colors.positive, modifier = Modifier.size(18.dp))
         Column(modifier = Modifier.padding(start = 7.dp)) {
             Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
             Text(value, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
@@ -150,11 +162,12 @@ private fun SectionHeader(title: String, supportingText: String?) {
 }
 
 @Composable
-private fun AttentionRow(project: Project) {
+private fun AttentionRow(project: Project, onClick: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = onClick)
             .padding(vertical = 12.dp),
     ) {
         ProjectArtwork(project)

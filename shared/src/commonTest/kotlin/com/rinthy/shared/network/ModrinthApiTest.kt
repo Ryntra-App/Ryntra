@@ -51,6 +51,45 @@ class ModrinthApiTest {
     }
 
     @Test
+    fun projectDetailsAreDecoded() = runTest {
+        val engine = MockEngine { request ->
+            assertEquals("/v2/project/project-1", request.url.encodedPath)
+            respond(
+                content = """
+                    {
+                      "id":"project-1",
+                      "slug":"rinthy-test",
+                      "title":"Rinthy Test",
+                      "description":"Short summary",
+                      "body":"Full body",
+                      "project_type":"mod",
+                      "categories":["fabric","utility"],
+                      "client_side":"required",
+                      "server_side":"optional",
+                      "downloads":42,
+                      "followers":7,
+                      "license":{"id":"mit","name":"MIT"},
+                      "gallery":[{"url":"https://cdn.example/image.png","featured":true}]
+                    }
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = jsonHeaders,
+            )
+        }
+        val api = ModrinthApi(testClient(engine))
+
+        val project = api.getProject("project-1", "mrp_test")
+
+        assertEquals("Rinthy Test", project.title)
+        assertEquals("Full body", project.body)
+        assertEquals(listOf("fabric", "utility"), project.categories)
+        assertEquals("required", project.clientSide)
+        assertEquals("MIT", project.license?.name)
+        assertEquals("https://cdn.example/image.png", project.gallery.single().url)
+        api.close()
+    }
+
+    @Test
     fun unauthorizedResponseHasSafeActionableMessage() = runTest {
         val engine = MockEngine {
             respond(

@@ -5,6 +5,7 @@ struct OverviewView: View {
     @EnvironmentObject private var model: AppModel
 
     let dashboard: Dashboard
+    var onProjectTap: (Project) -> Void = { _ in }
 
     private var attentionProjects: [Project] {
         Array(dashboard.projects.filter { !$0.isHealthy }.prefix(3))
@@ -119,7 +120,12 @@ struct OverviewView: View {
             }
         } else {
             ForEach(attentionProjects, id: \.id) { project in
-                AttentionRow(project: project)
+                Button {
+                    onProjectTap(project)
+                } label: {
+                    AttentionRow(project: project)
+                }
+                .buttonStyle(.plain)
                 Divider()
             }
         }
@@ -135,8 +141,13 @@ struct OverviewView: View {
             )
         } else {
             ForEach(recentProjects, id: \.id) { project in
-                ProjectRow(project: project, showDescription: false, showStatus: false)
-                    .padding(.vertical, 8)
+                Button {
+                    onProjectTap(project)
+                } label: {
+                    ProjectRow(project: project, showDescription: false, showStatus: false)
+                        .padding(.vertical, 8)
+                }
+                .buttonStyle(.plain)
                 Divider()
             }
         }

@@ -90,11 +90,17 @@ struct RinthyTabBar: View {
                             .lineLimit(1)
                     }
                     .foregroundStyle(selection == destination ? Color.rinthyGreen : Color.secondary)
-                    .frame(maxWidth: .infinity, minHeight: 60)
+                    .frame(maxWidth: .infinity, minHeight: 54)
                     .background(
                         selection == destination ? selectedBackground : Color.clear,
                         in: RoundedRectangle(cornerRadius: 24)
                     )
+                    .overlay {
+                        if selection == destination {
+                            RoundedRectangle(cornerRadius: 24)
+                                .stroke(Color.primary.opacity(0.16), lineWidth: 0.5)
+                        }
+                    }
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -102,7 +108,7 @@ struct RinthyTabBar: View {
             }
         }
         .padding(.horizontal, 4)
-        .frame(height: 66)
+        .frame(height: 60)
         .rinthyCapsuleGlass()
         .padding(.horizontal, 16)
         .padding(.top, 6)
@@ -110,7 +116,7 @@ struct RinthyTabBar: View {
     }
 
     private var selectedBackground: Color {
-        colorScheme == .dark ? Color.black.opacity(0.72) : Color.white.opacity(0.78)
+        colorScheme == .dark ? Color.white.opacity(0.075) : Color.black.opacity(0.055)
     }
 }
 
@@ -118,7 +124,7 @@ private extension View {
     @ViewBuilder
     func rinthyCapsuleGlass() -> some View {
         if #available(iOS 26.0, *) {
-            glassEffect(in: .capsule)
+            glassEffect(.regular.interactive(), in: .capsule)
         } else {
             background(.ultraThinMaterial, in: Capsule())
                 .overlay {

@@ -1,6 +1,7 @@
 package com.rinthy.mobile.ui.dashboard
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,19 +24,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
-import coil3.request.crossfade
 import com.rinthy.shared.model.Project
 import com.rinthy.mobile.ui.components.RinthySearchField
 import com.composables.icons.lucide.Download
@@ -44,11 +43,16 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Search
 
 @Composable
-fun ProjectsScreen(projects: List<Project>) {
+fun ProjectsScreen(
+    projects: List<Project>,
+    onProjectClick: (Project) -> Unit = {},
+) {
     var query by rememberSaveable { mutableStateOf("") }
-    val visibleProjects = projects.filter { project ->
-        query.isBlank() || project.title.contains(query, ignoreCase = true) ||
-            project.description.contains(query, ignoreCase = true)
+    val visibleProjects = remember(projects, query) {
+        projects.filter { project ->
+            query.isBlank() || project.title.contains(query, ignoreCase = true) ||
+                project.description.contains(query, ignoreCase = true)
+        }
     }
 
     LazyColumn(
@@ -90,7 +94,7 @@ fun ProjectsScreen(projects: List<Project>) {
             }
         } else {
             items(visibleProjects, key = Project::id) { project ->
-                ProjectRow(project)
+                ProjectRow(project = project, onClick = { onProjectClick(project) })
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         }
@@ -102,12 +106,15 @@ internal fun ProjectRow(
     project: Project,
     showDescription: Boolean = true,
     showStatus: Boolean = true,
+    onClick: (() -> Unit)? = null,
 ) {
+    val rowModifier = Modifier
+        .fillMaxWidth()
+        .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+        .padding(vertical = 12.dp)
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 12.dp),
+        modifier = rowModifier,
     ) {
         ProjectArtwork(project)
         Spacer(Modifier.width(12.dp))
@@ -163,10 +170,7 @@ internal fun ProjectArtwork(project: Project) {
         Text(project.title.take(1).uppercase(), fontWeight = FontWeight.Black)
         if (project.iconUrl != null) {
             AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(project.iconUrl)
-                    .crossfade(true)
-                    .build(),
+                model = project.iconUrl,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),

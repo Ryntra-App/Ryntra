@@ -23,6 +23,9 @@ class ModrinthApi(
     suspend fun getProjects(userId: String, token: String): List<Project> =
         httpClient.get("user/$userId/projects") { authorize(token) }.decode()
 
+    suspend fun getProject(projectIdOrSlug: String, token: String): Project =
+        httpClient.get("project/$projectIdOrSlug") { authorize(token) }.decode()
+
     suspend fun getOrganizations(userId: String, token: String): List<Organization> {
         val endpoints = listOf(
             "https://api.modrinth.com/v3/user/$userId/organizations",
