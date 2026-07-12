@@ -9,13 +9,14 @@ This checklist tracks user-visible behavior from the `main` Capacitor branch. Fe
 - [x] Dashboard, projects, teams, analytics, and profile shell
 - [x] Native dark/light theme and floating glass navigation
 - [ ] Localization (English, Russian, German, French, Italian, Polish)
-- [ ] Persisted theme, accent, project sorting, and favorites
+- [ ] Persisted theme and accent
+- [ ] Persisted project sorting and favorites
 - [ ] Release update checks and Android update download flow
 
 ## Projects
 
 - [ ] Project details: overview, links, environment, categories, gallery
-- [ ] Project search, sorting, and favorites
+- [x] Project search, sorting, and favorites
 - [ ] Create and delete projects
 - [ ] Edit metadata, status, license, links, icon, and gallery
 - [ ] Versions: list, inspect, create, edit, delete, and upload files
@@ -48,4 +49,3 @@ This checklist tracks user-visible behavior from the `main` Capacitor branch. Fe
 - [ ] Edit username and bio
 - [ ] Upload and remove avatar
 - [ ] Onboarding and welcome setup
-

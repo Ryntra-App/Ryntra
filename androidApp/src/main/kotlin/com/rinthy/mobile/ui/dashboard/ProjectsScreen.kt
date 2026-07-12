@@ -2,6 +2,7 @@ package com.rinthy.mobile.ui.dashboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,9 +16,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -36,11 +39,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.rinthy.shared.model.Project
+import com.rinthy.shared.model.ProjectSortMode
+import com.rinthy.shared.model.sortedForDisplay
 import com.rinthy.mobile.ui.components.RinthySearchField
+import com.rinthy.mobile.ui.theme.RinthyDesign
 import com.composables.icons.lucide.Download
 import com.composables.icons.lucide.Heart
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Search
+import com.composables.icons.lucide.Star
 
 @Composable
 fun ProjectsScreen(
@@ -48,11 +55,14 @@ fun ProjectsScreen(
     onProjectClick: (Project) -> Unit = {},
 ) {
     var query by rememberSaveable { mutableStateOf("") }
-    val visibleProjects = remember(projects, query) {
+    var sortMode by rememberSaveable { mutableStateOf(ProjectSortMode.Popularity) }
+    var favoriteIds by rememberSaveable { mutableStateOf(emptyList<String>()) }
+    val favoriteSet = remember(favoriteIds) { favoriteIds.toSet() }
+    val visibleProjects = remember(projects, query, sortMode, favoriteIds) {
         projects.filter { project ->
             query.isBlank() || project.title.contains(query, ignoreCase = true) ||
                 project.description.contains(query, ignoreCase = true)
-        }
+        }.sortedForDisplay(sortMode, favoriteSet)
     }
 
     LazyColumn(
@@ -80,6 +90,11 @@ fun ProjectsScreen(
                     .fillMaxWidth()
                     .padding(top = 12.dp, bottom = 6.dp),
             )
+            SortBar(
+                selected = sortMode,
+                onSelect = { sortMode = it },
+                modifier = Modifier.padding(bottom = 2.dp),
+            )
         }
         if (visibleProjects.isEmpty()) {
             item {
@@ -94,7 +109,18 @@ fun ProjectsScreen(
             }
         } else {
             items(visibleProjects, key = Project::id) { project ->
-                ProjectRow(project = project, onClick = { onProjectClick(project) })
+                ProjectRow(
+                    project = project,
+                    isFavorite = project.id in favoriteSet,
+                    onFavoriteClick = {
+                        favoriteIds = if (project.id in favoriteSet) {
+                            favoriteIds - project.id
+                        } else {
+                            favoriteIds + project.id
+                        }
+                    },
+                    onClick = { onProjectClick(project) },
+                )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         }
@@ -106,6 +132,8 @@ internal fun ProjectRow(
     project: Project,
     showDescription: Boolean = true,
     showStatus: Boolean = true,
+    isFavorite: Boolean = false,
+    onFavoriteClick: (() -> Unit)? = null,
     onClick: (() -> Unit)? = null,
 ) {
     val rowModifier = Modifier
@@ -129,6 +157,16 @@ internal fun ProjectRow(
                 )
                 if (showStatus && project.status != "approved") {
                     StatusLabel(project.status)
+                }
+                if (onFavoriteClick != null) {
+                    IconButton(onClick = onFavoriteClick, modifier = Modifier.size(36.dp)) {
+                        Icon(
+                            imageVector = Lucide.Star,
+                            contentDescription = if (isFavorite) "Remove favorite" else "Add favorite",
+                            tint = if (isFavorite) RinthyDesign.colors.positive else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
                 }
             }
             Text(
@@ -154,6 +192,50 @@ internal fun ProjectRow(
                 Metric(Lucide.Heart, formatCompact(project.followers))
             }
         }
+    }
+}
+
+@Composable
+private fun SortBar(
+    selected: ProjectSortMode,
+    onSelect: (ProjectSortMode) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+    ) {
+        ProjectSortMode.entries.forEach { mode ->
+            SortChip(
+                label = mode.label,
+                selected = mode == selected,
+                onClick = { onSelect(mode) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun SortChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val color = if (selected) RinthyDesign.colors.positive else MaterialTheme.colorScheme.onSurfaceVariant
+    Surface(
+        color = if (selected) color.copy(alpha = 0.13f) else MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = color,
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier.clickable(onClick = onClick),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+        )
     }
 }
 

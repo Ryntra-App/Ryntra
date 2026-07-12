@@ -6,25 +6,40 @@ struct ProjectsView: View {
     let projects: [Project]
     var onProjectTap: (Project) -> Void = { _ in }
     @State private var query = ""
+    @State private var sortMode = ProjectSortMode.popular
+    @State private var favoriteIds = Set<String>()
 
     private var filteredProjects: [Project] {
-        guard !query.isEmpty else { return projects }
-        return projects.filter {
-            $0.title.localizedCaseInsensitiveContains(query) ||
-                $0.description_.localizedCaseInsensitiveContains(query)
+        let filtered = query.isEmpty ? projects : projects.filter {
+            $0.title.localizedCaseInsensitiveContains(query) || $0.description_.localizedCaseInsensitiveContains(query)
         }
+        return filtered.sortedForDisplay(mode: sortMode, favoriteIds: favoriteIds)
     }
 
     var body: some View {
         List {
             Section {
-                HStack {
-                    Text("\(projects.count) projects")
-                    Spacer()
-                    Text("\(compact(projects.reduce(0) { $0 + $1.downloads })) downloads")
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Text("\(projects.count) projects")
+                        Spacer()
+                        Text("\(compact(projects.reduce(0) { $0 + $1.downloads })) downloads")
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(ProjectSortMode.allCases, id: \.self) { mode in
+                                SortChip(
+                                    label: mode.label,
+                                    isSelected: mode == sortMode,
+                                    onTap: { sortMode = mode }
+                                )
+                            }
+                        }
+                    }
                 }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
             }
 
             if filteredProjects.isEmpty {
@@ -35,12 +50,13 @@ struct ProjectsView: View {
                 )
             } else {
                 ForEach(filteredProjects, id: \.id) { project in
-                    Button {
-                        onProjectTap(project)
-                    } label: {
-                        ProjectRow(project: project)
-                    }
-                    .buttonStyle(.plain)
+                    ProjectRow(
+                        project: project,
+                        isFavorite: favoriteIds.contains(project.id),
+                        onFavoriteTap: { toggleFavorite(project.id) }
+                    )
+                    .contentShape(Rectangle())
+                    .onTapGesture { onProjectTap(project) }
                 }
             }
             Color.clear
@@ -57,12 +73,22 @@ struct ProjectsView: View {
         if value >= 1_000 { return String(format: "%.1fK", Double(value) / 1_000) }
         return "\(value)"
     }
+
+    private func toggleFavorite(_ projectId: String) {
+        if favoriteIds.contains(projectId) {
+            favoriteIds.remove(projectId)
+        } else {
+            favoriteIds.insert(projectId)
+        }
+    }
 }
 
 struct ProjectRow: View {
     let project: Project
     var showDescription = true
     var showStatus = true
+    var isFavorite = false
+    var onFavoriteTap: (() -> Void)?
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -76,6 +102,16 @@ struct ProjectRow: View {
                         Text(project.status.capitalized)
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(project.status == "rejected" ? Color.red : Color.orange)
+                    }
+                    if let onFavoriteTap {
+                        Button(action: onFavoriteTap) {
+                            Image(systemName: isFavorite ? "star.fill" : "star")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(isFavorite ? Color.rinthyGreen : Color.secondary)
+                                .frame(width: 32, height: 32)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(isFavorite ? "Remove favorite" : "Add favorite")
                     }
                 }
                 Text(project.projectType.capitalized)
@@ -93,6 +129,60 @@ struct ProjectRow: View {
             }
         }
         .padding(.vertical, 4)
+    }
+}
+
+private enum ProjectSortMode: CaseIterable {
+    case popular
+    case updated
+    case title
+    case followers
+
+    var label: String {
+        switch self {
+        case .popular: return "Popular"
+        case .updated: return "Updated"
+        case .title: return "A-Z"
+        case .followers: return "Followers"
+        }
+    }
+}
+
+private struct SortChip: View {
+    let label: String
+    let isSelected: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            Text(label)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(isSelected ? Color.rinthyGreen : Color.secondary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(
+                    isSelected ? Color.rinthyGreen.opacity(0.13) : Color(uiColor: .secondarySystemBackground),
+                    in: RoundedRectangle(cornerRadius: 8)
+                )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private extension Array where Element == Project {
+    func sortedForDisplay(mode: ProjectSortMode, favoriteIds: Set<String>) -> [Project] {
+        let sorted: [Project]
+        switch mode {
+        case .popular:
+            sorted = self.sorted { $0.downloads > $1.downloads }
+        case .updated:
+            sorted = self.sorted { ($0.updated ?? "") > ($1.updated ?? "") }
+        case .title:
+            sorted = self.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+        case .followers:
+            sorted = self.sorted { $0.followers > $1.followers }
+        }
+        return sorted.sorted { favoriteIds.contains($0.id) && !favoriteIds.contains($1.id) }
     }
 }
 
