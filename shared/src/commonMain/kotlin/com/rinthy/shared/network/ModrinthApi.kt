@@ -70,6 +70,25 @@ class ModrinthApi(
         return emptyList()
     }
 
+    suspend fun getOrganizationProjects(organizationIdOrSlug: String, token: String): List<Project> {
+        val endpoints = listOf(
+            "https://api.modrinth.com/v3/organization/$organizationIdOrSlug/projects",
+            "https://api.modrinth.com/v2/organization/$organizationIdOrSlug/projects",
+        )
+
+        for (endpoint in endpoints) {
+            try {
+                return httpClient.get(endpoint) { authorize(token) }.decode()
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                // Try the next API version before returning an empty optional section.
+            }
+        }
+
+        return emptyList()
+    }
+
     fun close() = httpClient.close()
 
     private fun io.ktor.client.request.HttpRequestBuilder.authorize(token: String) {

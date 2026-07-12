@@ -32,5 +32,8 @@ class DashboardRepository(
     suspend fun loadProjectMembers(projectIdOrSlug: String, teamId: String?, token: String): List<ProjectMember> =
         api.getProjectMembers(projectIdOrSlug, teamId, token)
 
+    suspend fun loadOrganizationProjects(organizationIdOrSlug: String, token: String): List<Project> =
+        api.getOrganizationProjects(organizationIdOrSlug, token)
+
     fun close() = api.close()
 }

@@ -21,11 +21,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
 import androidx.activity.compose.BackHandler
+import com.rinthy.mobile.OrganizationDetailState
 import com.rinthy.mobile.ui.components.RinthyTab
 import com.rinthy.mobile.ui.components.RinthyTabBar
 import com.rinthy.mobile.ui.components.RinthyTopBar
 import com.rinthy.mobile.ProjectDetailState
 import com.rinthy.shared.model.Dashboard
+import com.rinthy.shared.model.Organization
 import com.rinthy.shared.model.Project
 import com.composables.icons.lucide.ArrowLeft
 import com.composables.icons.lucide.ChartNoAxesColumnIncreasing
@@ -52,8 +54,11 @@ fun DashboardScreen(
     isRefreshing: Boolean = false,
     errorMessage: String? = null,
     projectDetail: ProjectDetailState? = null,
+    organizationDetail: OrganizationDetailState? = null,
     onProjectClick: (Project) -> Unit = {},
     onCloseProject: () -> Unit = {},
+    onOrganizationClick: (Organization) -> Unit = {},
+    onCloseOrganization: () -> Unit = {},
     onSignOut: () -> Unit,
 ) {
     var destination by rememberSaveable { mutableStateOf(DashboardDestination.Overview) }
@@ -69,9 +74,10 @@ fun DashboardScreen(
     val tabs = remember {
         destinations.map { RinthyTab(it.label, it.icon) }
     }
-    BackHandler(enabled = isProfileVisible || projectDetail != null) {
+    BackHandler(enabled = isProfileVisible || projectDetail != null || organizationDetail != null) {
         when {
             projectDetail != null -> onCloseProject()
+            organizationDetail != null -> onCloseOrganization()
             isProfileVisible -> isProfileVisible = false
         }
     }
@@ -100,6 +106,14 @@ fun DashboardScreen(
                         errorMessage = projectDetail.errorMessage,
                         memberErrorMessage = projectDetail.memberErrorMessage,
                     )
+                } else if (organizationDetail != null) {
+                    OrganizationDetailScreen(
+                        organization = organizationDetail.organization,
+                        projects = organizationDetail.projects,
+                        isLoading = organizationDetail.isLoading,
+                        errorMessage = organizationDetail.errorMessage,
+                        onProjectClick = onProjectClick,
+                    )
                 } else if (isProfileVisible) {
                     AccountScreen(
                         account = dashboard.account,
@@ -117,27 +131,32 @@ fun DashboardScreen(
                             projects = dashboard.projects,
                             onProjectClick = onProjectClick,
                         )
-                        DashboardDestination.Organizations -> OrganizationsScreen(dashboard.organizations)
+                        DashboardDestination.Organizations -> OrganizationsScreen(
+                            organizations = dashboard.organizations,
+                            onOrganizationClick = onOrganizationClick,
+                        )
                         DashboardDestination.Analytics -> AnalyticsScreen(dashboard)
                     }
                 }
             }
+            val detailTitle = projectDetail?.project?.title ?: organizationDetail?.organization?.name
             RinthyTopBar(
-                title = projectDetail?.project?.title ?: if (isProfileVisible) "Profile" else destination.label,
+                title = detailTitle ?: if (isProfileVisible) "Profile" else destination.label,
                 avatarUrl = dashboard.account.avatarUrl,
                 avatarDescription = "Open ${dashboard.account.username}'s account",
                 isRefreshing = isRefreshing,
                 onAvatarClick = { isProfileVisible = true },
-                navigationIcon = if (isProfileVisible || projectDetail != null) Lucide.ArrowLeft else null,
-                navigationDescription = if (isProfileVisible || projectDetail != null) "Back" else null,
+                navigationIcon = if (isProfileVisible || projectDetail != null || organizationDetail != null) Lucide.ArrowLeft else null,
+                navigationDescription = if (isProfileVisible || projectDetail != null || organizationDetail != null) "Back" else null,
                 onNavigationClick = {
                     onCloseProject()
+                    onCloseOrganization()
                     isProfileVisible = false
                 },
-                showAvatar = !isProfileVisible && projectDetail == null,
+                showAvatar = !isProfileVisible && projectDetail == null && organizationDetail == null,
                 modifier = Modifier.align(Alignment.TopCenter),
             )
-            if (!isProfileVisible && projectDetail == null) {
+            if (!isProfileVisible && projectDetail == null && organizationDetail == null) {
                 RinthyTabBar(
                     tabs = tabs,
                     selectedIndex = destination.ordinal,

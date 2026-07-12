@@ -62,6 +62,11 @@ class AppController internal constructor(
         return repository.loadProjectMembers(projectIdOrSlug, teamId, token)
     }
 
+    suspend fun loadOrganizationProjects(organizationIdOrSlug: String): List<Project> {
+        val token = accessToken ?: error("Sign in before loading organization projects.")
+        return repository.loadOrganizationProjects(organizationIdOrSlug, token)
+    }
+
     fun signOut() {
         loadJob?.cancel()
         accessToken = null

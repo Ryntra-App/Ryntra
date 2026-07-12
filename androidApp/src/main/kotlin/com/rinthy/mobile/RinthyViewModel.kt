@@ -9,6 +9,7 @@ import com.rinthy.mobile.auth.OAuthCoordinator
 import com.rinthy.mobile.security.SecureTokenStore
 import com.rinthy.shared.app.AppController
 import com.rinthy.shared.app.AppState
+import com.rinthy.shared.model.Organization
 import com.rinthy.shared.model.Project
 import com.rinthy.shared.model.ProjectMember
 import com.rinthy.shared.model.ProjectVersion
@@ -24,11 +25,13 @@ class RinthyViewModel(application: Application) : AndroidViewModel(application) 
     private val controller = AppController()
     private val mutableOAuthError = MutableStateFlow<String?>(null)
     private val mutableProjectDetail = MutableStateFlow<ProjectDetailState?>(null)
+    private val mutableOrganizationDetail = MutableStateFlow<OrganizationDetailState?>(null)
     private var pendingToken: String? = null
 
     val state: StateFlow<AppState> = controller.state
     val oauthError: StateFlow<String?> = mutableOAuthError.asStateFlow()
     val projectDetail: StateFlow<ProjectDetailState?> = mutableProjectDetail.asStateFlow()
+    val organizationDetail: StateFlow<OrganizationDetailState?> = mutableOrganizationDetail.asStateFlow()
 
     init {
         tokenStore.read()?.let { savedToken ->
@@ -97,6 +100,27 @@ class RinthyViewModel(application: Application) : AndroidViewModel(application) 
         mutableProjectDetail.value = null
     }
 
+    fun openOrganization(organization: Organization) {
+        mutableOrganizationDetail.value = OrganizationDetailState(organization = organization, isLoading = true)
+        viewModelScope.launch {
+            val organizationKey = organization.slug.ifBlank { organization.id }
+            val projects = runCatching { controller.loadOrganizationProjects(organizationKey) }
+            val current = mutableOrganizationDetail.value
+            if (current?.organization?.id != organization.id) return@launch
+
+            mutableOrganizationDetail.value = OrganizationDetailState(
+                organization = organization,
+                projects = projects.getOrDefault(emptyList()),
+                isLoading = false,
+                errorMessage = projects.exceptionOrNull()?.message,
+            )
+        }
+    }
+
+    fun closeOrganization() {
+        mutableOrganizationDetail.value = null
+    }
+
     fun signOut() {
         pendingToken = null
         mutableOAuthError.value = null
@@ -104,6 +128,7 @@ class RinthyViewModel(application: Application) : AndroidViewModel(application) 
         tokenStore.clear()
         controller.signOut()
         mutableProjectDetail.value = null
+        mutableOrganizationDetail.value = null
     }
 
     override fun onCleared() {
@@ -119,4 +144,11 @@ data class ProjectDetailState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val memberErrorMessage: String? = null,
+)
+
+data class OrganizationDetailState(
+    val organization: Organization,
+    val projects: List<Project> = emptyList(),
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
 )

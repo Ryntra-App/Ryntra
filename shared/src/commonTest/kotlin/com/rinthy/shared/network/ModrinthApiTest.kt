@@ -158,6 +158,36 @@ class ModrinthApiTest {
     }
 
     @Test
+    fun organizationProjectsFallBackFromV3ToV2() = runTest {
+        var requestCount = 0
+        val engine = MockEngine { request ->
+            requestCount += 1
+            if (requestCount == 1) {
+                assertEquals("/v3/organization/org-1/projects", request.url.encodedPath)
+                respond(
+                    content = """{"error":"not_found","description":"missing"}""",
+                    status = HttpStatusCode.NotFound,
+                    headers = jsonHeaders,
+                )
+            } else {
+                assertEquals("/v2/organization/org-1/projects", request.url.encodedPath)
+                respond(
+                    content = """[{"id":"project-1","title":"Org Project","project_type":"mod"}]""",
+                    status = HttpStatusCode.OK,
+                    headers = jsonHeaders,
+                )
+            }
+        }
+        val api = ModrinthApi(testClient(engine))
+
+        val project = api.getOrganizationProjects("org-1", "mrp_test").single()
+
+        assertEquals("Org Project", project.title)
+        assertEquals(2, requestCount)
+        api.close()
+    }
+
+    @Test
     fun unauthorizedResponseHasSafeActionableMessage() = runTest {
         val engine = MockEngine {
             respond(

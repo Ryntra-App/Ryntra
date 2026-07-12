@@ -27,7 +27,7 @@ This checklist tracks user-visible behavior from the `main` Capacitor branch. Fe
 
 ## Teams and organizations
 
-- [ ] Organization details and projects
+- [x] Organization details and projects
 - [ ] Create, edit, and delete organizations
 - [ ] Transfer projects into and out of organizations
 - [ ] Organization member management

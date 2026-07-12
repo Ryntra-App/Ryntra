@@ -1,5 +1,6 @@
 package com.rinthy.mobile.ui.dashboard
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,7 +26,10 @@ import coil3.compose.AsyncImage
 import com.rinthy.shared.model.Organization
 
 @Composable
-fun OrganizationsScreen(organizations: List<Organization>) {
+fun OrganizationsScreen(
+    organizations: List<Organization>,
+    onOrganizationClick: (Organization) -> Unit = {},
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
@@ -53,7 +57,10 @@ fun OrganizationsScreen(organizations: List<Organization>) {
             }
         } else {
             items(organizations, key = Organization::id) { organization ->
-                OrganizationRow(organization)
+                OrganizationRow(
+                    organization = organization,
+                    onClick = { onOrganizationClick(organization) },
+                )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         }
@@ -61,11 +68,15 @@ fun OrganizationsScreen(organizations: List<Organization>) {
 }
 
 @Composable
-private fun OrganizationRow(organization: Organization) {
+private fun OrganizationRow(
+    organization: Organization,
+    onClick: () -> Unit,
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = onClick)
             .padding(vertical = 14.dp),
     ) {
             AsyncImage(

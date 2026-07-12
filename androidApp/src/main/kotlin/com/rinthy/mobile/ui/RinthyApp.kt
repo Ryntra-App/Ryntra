@@ -14,6 +14,7 @@ fun RinthyApp(viewModel: RinthyViewModel) {
     val state = viewModel.state.collectAsStateWithLifecycle().value
     val oauthError = viewModel.oauthError.collectAsStateWithLifecycle().value
     val projectDetail = viewModel.projectDetail.collectAsStateWithLifecycle().value
+    val organizationDetail = viewModel.organizationDetail.collectAsStateWithLifecycle().value
     val context = LocalContext.current
     val startOAuth = {
         CustomTabsIntent.Builder()
@@ -40,8 +41,11 @@ fun RinthyApp(viewModel: RinthyViewModel) {
                     dashboard = dashboard,
                     isRefreshing = true,
                     projectDetail = projectDetail,
+                    organizationDetail = organizationDetail,
                     onProjectClick = viewModel::openProject,
                     onCloseProject = viewModel::closeProject,
+                    onOrganizationClick = viewModel::openOrganization,
+                    onCloseOrganization = viewModel::closeOrganization,
                     onSignOut = viewModel::signOut,
                 )
             }
@@ -49,8 +53,11 @@ fun RinthyApp(viewModel: RinthyViewModel) {
         is AppState.Ready -> DashboardScreen(
             dashboard = state.dashboard,
             projectDetail = projectDetail,
+            organizationDetail = organizationDetail,
             onProjectClick = viewModel::openProject,
             onCloseProject = viewModel::closeProject,
+            onOrganizationClick = viewModel::openOrganization,
+            onCloseOrganization = viewModel::closeOrganization,
             onSignOut = viewModel::signOut,
         )
         is AppState.Failed -> {
@@ -66,8 +73,11 @@ fun RinthyApp(viewModel: RinthyViewModel) {
                     dashboard = dashboard,
                     errorMessage = state.message,
                     projectDetail = projectDetail,
+                    organizationDetail = organizationDetail,
                     onProjectClick = viewModel::openProject,
                     onCloseProject = viewModel::closeProject,
+                    onOrganizationClick = viewModel::openOrganization,
+                    onCloseOrganization = viewModel::closeOrganization,
                     onSignOut = viewModel::signOut,
                 )
             }

@@ -69,6 +69,10 @@ final class AppModel: ObservableObject {
         try await controller.loadProjectMembers(projectIdOrSlug: project.slug ?? project.id, teamId: project.team)
     }
 
+    func loadOrganizationProjects(organization: Organization) async throws -> [Project] {
+        try await controller.loadOrganizationProjects(organizationIdOrSlug: organization.slug.isEmpty ? organization.id : organization.slug)
+    }
+
     func signOut() {
         pendingToken = nil
         oauthError = nil
