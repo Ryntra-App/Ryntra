@@ -24,6 +24,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,80 +48,131 @@ import com.composables.icons.lucide.Scale
 import com.composables.icons.lucide.Server
 import com.rinthy.mobile.ui.theme.RinthyDesign
 import com.rinthy.shared.model.Project
+import com.rinthy.shared.model.ProjectVersion
 
 @Composable
-fun ProjectDetailScreen(project: Project) {
+fun ProjectDetailScreen(
+    project: Project,
+    versions: List<ProjectVersion> = emptyList(),
+    isLoading: Boolean = false,
+    errorMessage: String? = null,
+) {
     val uriHandler = LocalUriHandler.current
+    var selectedTab by rememberSaveable(project.id) { mutableStateOf(ProjectDetailTab.Overview) }
     val resources = listOfNotNull(
         project.sourceUrl?.let { ProjectResource("Source", it) },
         project.issuesUrl?.let { ProjectResource("Issues", it) },
         project.wikiUrl?.let { ProjectResource("Wiki", it) },
         project.discordUrl?.let { ProjectResource("Discord", it) },
     )
+    val cleanedBody = project.body.cleanMarkdown()
 
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 36.dp),
     ) {
         item { ProjectIdentity(project) }
-        item { ProjectMetrics(project) }
-        item { DetailSection("Summary", project.description.ifBlank { "No summary provided." }) }
-        val cleanedBody = project.body.cleanMarkdown()
-        if (cleanedBody.isNotBlank() && cleanedBody != project.description.cleanMarkdown()) {
-            item { MarkdownSection("Description", cleanedBody) }
-        }
         item {
-            DetailHeading("Environment")
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                EnvironmentValue("Client", project.clientSide, Lucide.Monitor, Modifier.weight(1f))
-                EnvironmentValue("Server", project.serverSide, Lucide.Server, Modifier.weight(1f))
-            }
+            ProjectDetailTabs(
+                selected = selectedTab,
+                onSelect = { selectedTab = it },
+                modifier = Modifier.padding(bottom = 18.dp),
+            )
         }
-        if (project.categories.isNotEmpty()) {
-            item {
-                DetailHeading("Categories")
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                ) {
-                    project.categories.forEach { category -> CategoryChip(category) }
+
+        when (selectedTab) {
+            ProjectDetailTab.Overview -> {
+                item { ProjectMetrics(project) }
+                item { DetailSection("Summary", project.description.ifBlank { "No summary provided." }) }
+                if (cleanedBody.isNotBlank() && cleanedBody != project.description.cleanMarkdown()) {
+                    item { MarkdownSection("Description", cleanedBody) }
                 }
-            }
-        }
-        if (project.gallery.isNotEmpty()) {
-            item {
-                DetailHeading("Gallery")
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(project.gallery, key = { it.url }) { image ->
-                        AsyncImage(
-                            model = image.url,
-                            contentDescription = image.title,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(width = 172.dp, height = 108.dp)
-                                .clip(RoundedCornerShape(8.dp)),
-                        )
+                item {
+                    DetailHeading("Environment")
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        EnvironmentValue("Client", project.clientSide, Lucide.Monitor, Modifier.weight(1f))
+                        EnvironmentValue("Server", project.serverSide, Lucide.Server, Modifier.weight(1f))
+                    }
+                }
+                if (project.categories.isNotEmpty()) {
+                    item {
+                        DetailHeading("Categories")
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        ) {
+                            project.categories.forEach { category -> CategoryChip(category) }
+                        }
+                    }
+                }
+                if (project.gallery.isNotEmpty()) {
+                    item {
+                        DetailHeading("Gallery")
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            items(project.gallery, key = { it.url }) { image ->
+                                AsyncImage(
+                                    model = image.url,
+                                    contentDescription = image.title,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .size(width = 172.dp, height = 108.dp)
+                                        .clip(RoundedCornerShape(8.dp)),
+                                )
+                            }
+                        }
+                    }
+                }
+                if (project.license != null || project.published != null) {
+                    item {
+                        DetailHeading("Details")
+                        project.license?.let {
+                            DetailValue(Lucide.Scale, "License", it.name ?: it.id)
+                        }
+                        project.published?.let {
+                            DetailValue(Lucide.CalendarDays, "Published", it.take(10))
+                        }
+                    }
+                }
+                if (resources.isNotEmpty()) {
+                    item {
+                        DetailHeading("Resources")
+                        resources.forEach { resource ->
+                            ResourceRow(resource.label) { uriHandler.openUri(resource.url) }
+                            HorizontalDivider(color = RinthyDesign.colors.separator)
+                        }
                     }
                 }
             }
-        }
-        if (project.license != null || project.published != null) {
-            item {
-                DetailHeading("Details")
-                project.license?.let {
-                    DetailValue(Lucide.Scale, "License", it.name ?: it.id)
-                }
-                project.published?.let {
-                    DetailValue(Lucide.CalendarDays, "Published", it.take(10))
+
+            ProjectDetailTab.Versions -> {
+                when {
+                    isLoading -> item { LoadingVersions() }
+                    errorMessage != null && versions.isEmpty() -> item {
+                        EmptyState(title = "Versions unavailable", message = errorMessage)
+                    }
+                    versions.isEmpty() -> item {
+                        EmptyState(
+                            title = "No versions yet",
+                            message = "Published releases for this project will appear here.",
+                        )
+                    }
+                    else -> items(versions, key = ProjectVersion::id) { version ->
+                        VersionCard(version)
+                    }
                 }
             }
-        }
-        if (resources.isNotEmpty()) {
-            item {
-                DetailHeading("Resources")
-                resources.forEach { resource ->
-                    ResourceRow(resource.label) { uriHandler.openUri(resource.url) }
-                    HorizontalDivider(color = RinthyDesign.colors.separator)
-                }
+
+            ProjectDetailTab.Edit -> item {
+                PendingProjectTab(
+                    title = "Edit tools are next",
+                    message = "Metadata, status, links, icon, and gallery editing will move here from the old app.",
+                )
+            }
+
+            ProjectDetailTab.Members -> item {
+                PendingProjectTab(
+                    title = "Members are next",
+                    message = "Team roles, permissions, payout split, invitations, and ownership transfer belong in this tab.",
+                )
             }
         }
     }

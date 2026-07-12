@@ -13,6 +13,7 @@ import com.rinthy.shared.app.AppState
 fun RinthyApp(viewModel: RinthyViewModel) {
     val state = viewModel.state.collectAsStateWithLifecycle().value
     val oauthError = viewModel.oauthError.collectAsStateWithLifecycle().value
+    val projectDetail = viewModel.projectDetail.collectAsStateWithLifecycle().value
     val context = LocalContext.current
     val startOAuth = {
         CustomTabsIntent.Builder()
@@ -38,12 +39,18 @@ fun RinthyApp(viewModel: RinthyViewModel) {
                 DashboardScreen(
                     dashboard = dashboard,
                     isRefreshing = true,
+                    projectDetail = projectDetail,
+                    onProjectClick = viewModel::openProject,
+                    onCloseProject = viewModel::closeProject,
                     onSignOut = viewModel::signOut,
                 )
             }
         }
         is AppState.Ready -> DashboardScreen(
             dashboard = state.dashboard,
+            projectDetail = projectDetail,
+            onProjectClick = viewModel::openProject,
+            onCloseProject = viewModel::closeProject,
             onSignOut = viewModel::signOut,
         )
         is AppState.Failed -> {
@@ -58,6 +65,9 @@ fun RinthyApp(viewModel: RinthyViewModel) {
                 DashboardScreen(
                     dashboard = dashboard,
                     errorMessage = state.message,
+                    projectDetail = projectDetail,
+                    onProjectClick = viewModel::openProject,
+                    onCloseProject = viewModel::closeProject,
                     onSignOut = viewModel::signOut,
                 )
             }

@@ -12,21 +12,19 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.zIndex
 import androidx.activity.compose.BackHandler
 import com.rinthy.mobile.ui.components.RinthyTab
 import com.rinthy.mobile.ui.components.RinthyTabBar
 import com.rinthy.mobile.ui.components.RinthyTopBar
+import com.rinthy.mobile.ProjectDetailState
 import com.rinthy.shared.model.Dashboard
 import com.rinthy.shared.model.Project
 import com.composables.icons.lucide.ArrowLeft
@@ -53,11 +51,13 @@ fun DashboardScreen(
     dashboard: Dashboard,
     isRefreshing: Boolean = false,
     errorMessage: String? = null,
+    projectDetail: ProjectDetailState? = null,
+    onProjectClick: (Project) -> Unit = {},
+    onCloseProject: () -> Unit = {},
     onSignOut: () -> Unit,
 ) {
     var destination by rememberSaveable { mutableStateOf(DashboardDestination.Overview) }
     var isProfileVisible by rememberSaveable { mutableStateOf(false) }
-    var selectedProject by remember { mutableStateOf<Project?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val hazeState = rememberHazeState()
 
@@ -69,9 +69,9 @@ fun DashboardScreen(
     val tabs = remember {
         destinations.map { RinthyTab(it.label, it.icon) }
     }
-    BackHandler(enabled = isProfileVisible || selectedProject != null) {
+    BackHandler(enabled = isProfileVisible || projectDetail != null) {
         when {
-            selectedProject != null -> selectedProject = null
+            projectDetail != null -> onCloseProject()
             isProfileVisible -> isProfileVisible = false
         }
     }
@@ -91,11 +91,13 @@ fun DashboardScreen(
                     .navigationBarsPadding()
                     .padding(top = 76.dp),
             ) {
-                if (selectedProject != null) {
-                    val project = requireNotNull(selectedProject)
-                    key(project.id) {
-                        ProjectDetailScreen(project = project)
-                    }
+                if (projectDetail != null) {
+                    ProjectDetailScreen(
+                        project = projectDetail.project,
+                        versions = projectDetail.versions,
+                        isLoading = projectDetail.isLoading,
+                        errorMessage = projectDetail.errorMessage,
+                    )
                 } else if (isProfileVisible) {
                     AccountScreen(
                         account = dashboard.account,
@@ -104,48 +106,36 @@ fun DashboardScreen(
                         onSignOut = onSignOut,
                     )
                 } else {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        destinations.forEach { page ->
-                            val isSelected = destination == page
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .graphicsLayer { alpha = if (isSelected) 1f else 0f }
-                                    .zIndex(if (isSelected) 1f else 0f),
-                            ) {
-                                when (page) {
-                                    DashboardDestination.Overview -> OverviewScreen(
-                                        dashboard = dashboard,
-                                        onProjectClick = { selectedProject = it },
-                                    )
-                                    DashboardDestination.Projects -> ProjectsScreen(
-                                        projects = dashboard.projects,
-                                        onProjectClick = { selectedProject = it },
-                                    )
-                                    DashboardDestination.Organizations -> OrganizationsScreen(dashboard.organizations)
-                                    DashboardDestination.Analytics -> AnalyticsScreen(dashboard)
-                                }
-                            }
-                        }
+                    when (destination) {
+                        DashboardDestination.Overview -> OverviewScreen(
+                            dashboard = dashboard,
+                            onProjectClick = onProjectClick,
+                        )
+                        DashboardDestination.Projects -> ProjectsScreen(
+                            projects = dashboard.projects,
+                            onProjectClick = onProjectClick,
+                        )
+                        DashboardDestination.Organizations -> OrganizationsScreen(dashboard.organizations)
+                        DashboardDestination.Analytics -> AnalyticsScreen(dashboard)
                     }
                 }
             }
             RinthyTopBar(
-                title = selectedProject?.title ?: if (isProfileVisible) "Profile" else destination.label,
+                title = projectDetail?.project?.title ?: if (isProfileVisible) "Profile" else destination.label,
                 avatarUrl = dashboard.account.avatarUrl,
                 avatarDescription = "Open ${dashboard.account.username}'s account",
                 isRefreshing = isRefreshing,
                 onAvatarClick = { isProfileVisible = true },
-                navigationIcon = if (isProfileVisible || selectedProject != null) Lucide.ArrowLeft else null,
-                navigationDescription = if (isProfileVisible || selectedProject != null) "Back" else null,
+                navigationIcon = if (isProfileVisible || projectDetail != null) Lucide.ArrowLeft else null,
+                navigationDescription = if (isProfileVisible || projectDetail != null) "Back" else null,
                 onNavigationClick = {
-                    selectedProject = null
+                    onCloseProject()
                     isProfileVisible = false
                 },
-                showAvatar = !isProfileVisible && selectedProject == null,
+                showAvatar = !isProfileVisible && projectDetail == null,
                 modifier = Modifier.align(Alignment.TopCenter),
             )
-            if (!isProfileVisible && selectedProject == null) {
+            if (!isProfileVisible && projectDetail == null) {
                 RinthyTabBar(
                     tabs = tabs,
                     selectedIndex = destination.ordinal,

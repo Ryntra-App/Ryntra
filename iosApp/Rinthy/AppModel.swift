@@ -57,6 +57,14 @@ final class AppModel: ObservableObject {
         controller.refresh()
     }
 
+    func loadProjectDetails(project: Project) async throws -> Project {
+        try await controller.loadProjectDetails(projectIdOrSlug: project.slug ?? project.id)
+    }
+
+    func loadProjectVersions(project: Project) async throws -> [ProjectVersion] {
+        try await controller.loadProjectVersions(projectIdOrSlug: project.slug ?? project.id)
+    }
+
     func signOut() {
         pendingToken = nil
         oauthError = nil

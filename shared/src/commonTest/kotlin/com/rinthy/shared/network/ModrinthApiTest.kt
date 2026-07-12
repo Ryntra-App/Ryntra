@@ -90,6 +90,41 @@ class ModrinthApiTest {
     }
 
     @Test
+    fun projectVersionsAreDecoded() = runTest {
+        val engine = MockEngine { request ->
+            assertEquals("/v2/project/project-1/version", request.url.encodedPath)
+            respond(
+                content = """
+                    [
+                      {
+                        "id":"version-1",
+                        "project_id":"project-1",
+                        "name":"Launch",
+                        "version_number":"1.0.0",
+                        "version_type":"release",
+                        "game_versions":["1.21.1"],
+                        "loaders":["fabric"],
+                        "downloads":100,
+                        "files":[{"url":"https://cdn.example/file.jar","filename":"file.jar","primary":true}]
+                      }
+                    ]
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = jsonHeaders,
+            )
+        }
+        val api = ModrinthApi(testClient(engine))
+
+        val version = api.getProjectVersions("project-1", "mrp_test").single()
+
+        assertEquals("Launch", version.name)
+        assertEquals("1.0.0", version.versionNumber)
+        assertEquals(listOf("fabric"), version.loaders)
+        assertEquals("file.jar", version.files.single().filename)
+        api.close()
+    }
+
+    @Test
     fun unauthorizedResponseHasSafeActionableMessage() = runTest {
         val engine = MockEngine {
             respond(

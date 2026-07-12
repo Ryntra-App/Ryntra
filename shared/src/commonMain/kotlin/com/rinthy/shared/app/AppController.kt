@@ -3,6 +3,7 @@ package com.rinthy.shared.app
 import com.rinthy.shared.data.DashboardRepository
 import com.rinthy.shared.model.Dashboard
 import com.rinthy.shared.model.Project
+import com.rinthy.shared.model.ProjectVersion
 import com.rinthy.shared.network.ModrinthApi
 import com.rinthy.shared.network.createPlatformHttpClient
 import kotlinx.coroutines.CoroutineScope
@@ -48,6 +49,11 @@ class AppController internal constructor(
     suspend fun loadProjectDetails(projectIdOrSlug: String): Project {
         val token = accessToken ?: error("Sign in before loading project details.")
         return repository.loadProject(projectIdOrSlug, token)
+    }
+
+    suspend fun loadProjectVersions(projectIdOrSlug: String): List<ProjectVersion> {
+        val token = accessToken ?: error("Sign in before loading project versions.")
+        return repository.loadProjectVersions(projectIdOrSlug, token)
     }
 
     fun signOut() {

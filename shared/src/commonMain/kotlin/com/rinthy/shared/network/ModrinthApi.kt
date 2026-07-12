@@ -3,6 +3,7 @@ package com.rinthy.shared.network
 import com.rinthy.shared.model.Account
 import com.rinthy.shared.model.Organization
 import com.rinthy.shared.model.Project
+import com.rinthy.shared.model.ProjectVersion
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -25,6 +26,9 @@ class ModrinthApi(
 
     suspend fun getProject(projectIdOrSlug: String, token: String): Project =
         httpClient.get("project/$projectIdOrSlug") { authorize(token) }.decode()
+
+    suspend fun getProjectVersions(projectIdOrSlug: String, token: String): List<ProjectVersion> =
+        httpClient.get("project/$projectIdOrSlug/version") { authorize(token) }.decode()
 
     suspend fun getOrganizations(userId: String, token: String): List<Organization> {
         val endpoints = listOf(

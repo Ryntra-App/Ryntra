@@ -15,11 +15,12 @@ This checklist tracks user-visible behavior from the `main` Capacitor branch. Fe
 
 ## Projects
 
-- [ ] Project details: overview, links, environment, categories, gallery
+- [x] Project details: overview, links, environment, categories, gallery
 - [x] Project search, sorting, and favorites
 - [ ] Create and delete projects
 - [ ] Edit metadata, status, license, links, icon, and gallery
-- [ ] Versions: list, inspect, create, edit, delete, and upload files
+- [x] Versions: list and inspect
+- [ ] Versions: create, edit, delete, and upload files
 - [ ] Resolve and manage dependencies
 - [ ] Team members, permissions, payout split, invitations, and ownership transfer
 

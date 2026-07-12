@@ -2,6 +2,7 @@ package com.rinthy.shared.data
 
 import com.rinthy.shared.model.Dashboard
 import com.rinthy.shared.model.Project
+import com.rinthy.shared.model.ProjectVersion
 import com.rinthy.shared.network.ModrinthApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -23,6 +24,9 @@ class DashboardRepository(
 
     suspend fun loadProject(projectIdOrSlug: String, token: String): Project =
         api.getProject(projectIdOrSlug, token)
+
+    suspend fun loadProjectVersions(projectIdOrSlug: String, token: String): List<ProjectVersion> =
+        api.getProjectVersions(projectIdOrSlug, token)
 
     fun close() = api.close()
 }
