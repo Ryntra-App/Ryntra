@@ -81,6 +81,7 @@
 "Sign out" = "Выйти";
 "About" = "О приложении";
 "Unofficial Modrinth client" = "Неофициальный клиент Modrinth";
+"Unofficial Modrinth client · v%@" = "Неофициальный клиент Modrinth · v%@";
 "Ryntra · Author: sawiq" = "Ryntra · Автор: sawiq";
 "Ryntra" = "Ryntra";
 "Author" = "Автор";

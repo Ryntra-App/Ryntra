@@ -189,6 +189,7 @@ internal fun LocalDataSettingsSection(
 internal fun AboutSettingsSection(
     appVersion: String,
     onOpenReleases: () -> Unit,
+    onOpenAuthor: () -> Unit,
     onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -196,20 +197,14 @@ internal fun AboutSettingsSection(
         SettingsRow(
             icon = Lucide.Info,
             title = stringResource(R.string.app_name),
-            subtitle = stringResource(R.string.settings_unofficial),
-            trailing = {
-                Text(
-                    text = appVersion,
-                    color = RinthyDesign.colors.labelSecondary,
-                    style = MaterialTheme.typography.labelMedium,
-                )
-            },
+            subtitle = stringResource(R.string.settings_unofficial_with_version, appVersion),
         )
         SettingsDivider()
         SettingsRow(
             icon = Lucide.User,
             title = stringResource(R.string.settings_author),
             subtitle = stringResource(R.string.settings_author_name),
+            onClick = onOpenAuthor,
         )
         SettingsDivider()
         SettingsRow(

@@ -209,13 +209,28 @@ internal fun DetailValue(icon: ImageVector, label: String, value: String) {
 
 @Composable
 internal fun ResourceRow(label: String, onClick: () -> Unit) {
+    val iconTint = if (RinthyDesign.isPlatformNative) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        RinthyDesign.colors.accent
+    }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 14.dp),
     ) {
-        Icon(Lucide.Globe, contentDescription = null, tint = RinthyDesign.colors.positive, modifier = Modifier.size(19.dp))
-        Text(label, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 12.dp).weight(1f))
-        Icon(Lucide.ExternalLink, contentDescription = "Open $label", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(17.dp))
+        Icon(Lucide.Globe, contentDescription = null, tint = iconTint, modifier = Modifier.size(19.dp))
+        Text(
+            label,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(start = 12.dp).weight(1f),
+        )
+        Icon(
+            Lucide.ExternalLink,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(17.dp),
+        )
     }
 }
 

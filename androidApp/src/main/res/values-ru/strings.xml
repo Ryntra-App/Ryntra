@@ -142,12 +142,14 @@
     <string name="settings_clear_images_hint">Удалить локально сохранённые изображения проектов и значки</string>
     <string name="settings_about">О приложении</string>
     <string name="settings_unofficial">Неофициальный клиент Modrinth</string>
+    <string name="settings_unofficial_with_version">Неофициальный клиент Modrinth · v%1$s</string>
     <string name="settings_author">Автор</string>
     <string name="settings_author_name">sawiq</string>
+    <string name="settings_author_url">https://modrinth.com/user/sawiq_</string>
     <string name="settings_releases">Версии приложения</string>
     <string name="settings_releases_hint">Обновления и список изменений</string>
     <string name="profile_avatar_change">Сменить аватар</string>
-    <string name="profile_avatar_hint">Нажмите на фото, чтобы загрузить аватар (только изображения)</string>
+    <string name="profile_avatar_hint">Нажмите на фото, чтобы сменить аватар</string>
     <string name="profile_avatar_remove">Удалить аватар</string>
     <string name="profile_avatar_too_large">Аватар должен быть не больше 2 МиБ.</string>
     <string name="profile_avatar_not_image">Можно выбрать только изображение.</string>
@@ -265,7 +267,7 @@
     <string name="project_published">Опубликован</string>
     <string name="project_resources">Ссылки</string>
     <string name="project_resource_source">Исходники</string>
-    <string name="project_resource_issues">Issues</string>
+    <string name="project_resource_issues">Задачи</string>
     <string name="project_resource_wiki">Wiki</string>
     <string name="project_resource_discord">Discord</string>
     <string name="project_downloads">Скачивания</string>

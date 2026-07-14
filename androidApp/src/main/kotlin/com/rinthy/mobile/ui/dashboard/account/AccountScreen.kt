@@ -134,6 +134,7 @@ fun AccountScreen(
         item(key = "profile-header", contentType = "profile-header") {
             ProfileHeader(
                 account = account,
+                isEditing = isEditorVisible,
                 isAvatarBusy = profileUpdate.isSaving,
                 onEditClick = { isEditorVisible = !isEditorVisible },
                 onChangeAvatar = { onChangeAvatar(account.id, it) },
@@ -221,6 +222,7 @@ fun AccountScreen(
             AboutSettingsSection(
                 appVersion = BuildConfig.VERSION_NAME,
                 onOpenReleases = { uriHandler.openUri("https://github.com/imsawiq/Rinthy/releases") },
+                onOpenAuthor = { uriHandler.openUri(context.getString(R.string.settings_author_url)) },
                 onSignOut = onSignOut,
                 modifier = Modifier.padding(top = 26.dp),
             )

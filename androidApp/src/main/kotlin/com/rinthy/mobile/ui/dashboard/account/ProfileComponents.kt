@@ -3,6 +3,7 @@ package com.rinthy.mobile.ui.dashboard.account
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
@@ -33,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -67,6 +69,7 @@ import kotlinx.coroutines.withContext
 @Composable
 internal fun ProfileHeader(
     account: Account,
+    isEditing: Boolean,
     isAvatarBusy: Boolean,
     onEditClick: () -> Unit,
     onChangeAvatar: (ProjectFileUpload) -> Unit,
@@ -75,6 +78,13 @@ internal fun ProfileHeader(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val motion = RinthyDesign.motion
+    val showAvatarChrome = isEditing || isAvatarBusy
+    val avatarOverlayAlpha by animateFloatAsState(
+        targetValue = if (showAvatarChrome) 1f else 0f,
+        animationSpec = tween(motion.duration(180)),
+        label = "avatar overlay",
+    )
     val tooLarge = stringResource(R.string.profile_avatar_too_large)
     val notImage = stringResource(R.string.profile_avatar_not_image)
     val unread = stringResource(R.string.profile_avatar_unreadable)
@@ -112,21 +122,29 @@ internal fun ProfileHeader(
                 .clip(CircleShape)
                 .background(RinthyDesign.colors.surface)
                 .border(1.dp, RinthyDesign.colors.accent.copy(alpha = 0.38f), CircleShape)
-                .clickable(enabled = !isAvatarBusy) {
-                    picker.launch(arrayOf("image/png", "image/jpeg", "image/webp", "image/gif"))
-                },
+                .then(
+                    if (isEditing) {
+                        Modifier.clickable(enabled = !isAvatarBusy) {
+                            picker.launch(arrayOf("image/png", "image/jpeg", "image/webp", "image/gif"))
+                        }
+                    } else {
+                        Modifier
+                    },
+                ),
         ) {
             AsyncImage(
                 model = account.avatarUrl,
-                contentDescription = stringResource(R.string.profile_avatar_change),
+                contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
             )
+            // Camera overlay only while profile edit is open (matches name/bio editor).
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(RinthyDesign.colors.surface.copy(alpha = 0.35f)),
+                    .graphicsLayer { alpha = avatarOverlayAlpha }
+                    .background(RinthyDesign.colors.surface.copy(alpha = 0.42f)),
             ) {
                 if (isAvatarBusy) {
                     CircularProgressIndicator(
@@ -134,7 +152,7 @@ internal fun ProfileHeader(
                         color = RinthyDesign.colors.accent,
                         modifier = Modifier.size(22.dp),
                     )
-                } else {
+                } else if (isEditing) {
                     RinthyIcon(
                         Lucide.Camera,
                         contentDescription = stringResource(R.string.profile_avatar_change),
@@ -159,13 +177,27 @@ internal fun ProfileHeader(
                 modifier = Modifier.padding(top = 2.dp),
             )
             Text(
-                text = stringResource(R.string.profile_avatar_hint),
+                text = account.id,
                 color = RinthyDesign.colors.labelSecondary,
                 style = MaterialTheme.typography.labelSmall,
-                maxLines = 2,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 4.dp),
+                modifier = Modifier.padding(top = 3.dp),
             )
+            AnimatedVisibility(
+                visible = isEditing,
+                enter = fadeIn(tween(motion.duration(180))),
+                exit = fadeOut(tween(motion.duration(130))),
+            ) {
+                Text(
+                    text = stringResource(R.string.profile_avatar_hint),
+                    color = RinthyDesign.colors.labelSecondary,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
         }
         Box(
             contentAlignment = Alignment.Center,
@@ -184,7 +216,11 @@ internal fun ProfileHeader(
             )
         }
     }
-    if (!account.avatarUrl.isNullOrBlank()) {
+    AnimatedVisibility(
+        visible = isEditing && !account.avatarUrl.isNullOrBlank(),
+        enter = fadeIn(tween(motion.duration(180))),
+        exit = fadeOut(tween(motion.duration(130))),
+    ) {
         RinthySecondaryButton(
             text = stringResource(R.string.profile_avatar_remove),
             icon = Lucide.Trash2,
@@ -194,13 +230,15 @@ internal fun ProfileHeader(
             modifier = Modifier.padding(top = 12.dp),
         )
     }
-    account.bio?.takeIf(String::isNotBlank)?.let { bio ->
-        Text(
-            text = bio,
-            color = RinthyDesign.colors.labelSecondary,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(top = 17.dp),
-        )
+    if (!isEditing) {
+        account.bio?.takeIf(String::isNotBlank)?.let { bio ->
+            Text(
+                text = bio,
+                color = RinthyDesign.colors.labelSecondary,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(top = 17.dp),
+            )
+        }
     }
 }
 

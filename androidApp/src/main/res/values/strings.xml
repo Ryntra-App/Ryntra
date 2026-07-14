@@ -142,12 +142,14 @@
     <string name="settings_clear_images_hint">Free locally cached project images and badges</string>
     <string name="settings_about">About</string>
     <string name="settings_unofficial">Unofficial Modrinth client</string>
+    <string name="settings_unofficial_with_version">Unofficial Modrinth client · v%1$s</string>
     <string name="settings_author">Author</string>
     <string name="settings_author_name">sawiq</string>
+    <string name="settings_author_url">https://modrinth.com/user/sawiq_</string>
     <string name="settings_releases">Releases</string>
     <string name="settings_releases_hint">View updates and release notes</string>
     <string name="profile_avatar_change">Change avatar</string>
-    <string name="profile_avatar_hint">Tap photo to upload a new avatar (images only)</string>
+    <string name="profile_avatar_hint">Tap photo to change your avatar</string>
     <string name="profile_avatar_remove">Remove avatar</string>
     <string name="profile_avatar_too_large">Avatar images must be 2 MiB or smaller.</string>
     <string name="profile_avatar_not_image">Only image files can be used as an avatar.</string>

@@ -192,10 +192,20 @@ struct AccountView: View {
                     NSLocalizedString("Ryntra", comment: "App name"),
                     value: appVersion
                 )
-                LabeledContent(
-                    NSLocalizedString("Author", comment: "About"),
-                    value: "sawiq"
+                Text(
+                    String(
+                        format: NSLocalizedString("Unofficial Modrinth client · v%@", comment: "About"),
+                        appVersion
+                    )
                 )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                Link(destination: URL(string: "https://modrinth.com/user/sawiq_")!) {
+                    Label(
+                        NSLocalizedString("Author", comment: "About") + " · sawiq",
+                        systemImage: "person.crop.circle"
+                    )
+                }
                 Link(destination: URL(string: "https://github.com/imsawiq/Rinthy/releases")!) {
                     Label("Releases", systemImage: "arrow.up.right.square")
                 }
@@ -204,8 +214,6 @@ struct AccountView: View {
                 }
             } header: {
                 RinthySectionLabel(text: NSLocalizedString("About", comment: "Settings"))
-            } footer: {
-                Text(NSLocalizedString("Unofficial Modrinth client", comment: "About"))
             }
             .themedListRowBackground(isPlatformNative: isPlatformNative)
         }

@@ -48,7 +48,8 @@ import com.rinthy.mobile.ui.dashboard.project.InviteMemberDialog
 import com.rinthy.mobile.ui.dashboard.project.MemberEditorDialog
 import com.rinthy.mobile.ui.dashboard.project.MembersHeader
 import com.rinthy.mobile.ui.dashboard.project.ProjectMemberCard
-import com.rinthy.mobile.ui.dashboard.projects.ProjectRow
+import com.rinthy.mobile.ui.dashboard.projects.ProjectBannerCard
+import com.rinthy.mobile.ui.dashboard.projects.toProjectRowModel
 import com.rinthy.mobile.ui.theme.RinthyDesign
 import com.rinthy.shared.model.Organization
 import com.rinthy.shared.model.OrganizationPermissionBits
@@ -285,13 +286,17 @@ fun OrganizationDetailScreen(
             }
             else -> {
                 items(projects, key = Project::id, contentType = { "project" }) { project ->
-                    Column(modifier = Modifier.animateItem()) {
-                        ProjectRow(
-                            project = project,
-                            showStatus = true,
+                    Box(
+                        modifier = Modifier
+                            .animateItem()
+                            .padding(bottom = 10.dp),
+                    ) {
+                        ProjectBannerCard(
+                            model = project.toProjectRowModel(),
+                            isFavorite = false,
+                            onFavoriteClick = null,
                             onClick = { onProjectClick(project) },
                         )
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
                 }
             }
