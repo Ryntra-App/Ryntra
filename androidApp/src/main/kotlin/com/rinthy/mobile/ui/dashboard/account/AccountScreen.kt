@@ -83,6 +83,7 @@ fun AccountScreen(
     val accountIdCopied = stringResource(R.string.settings_account_id_copied)
     val appearanceReset = stringResource(R.string.settings_appearance_reset)
     val imageCacheCleared = stringResource(R.string.settings_image_cache_cleared)
+    val authorUrl = stringResource(R.string.settings_author_url)
 
     fun showNotice(message: String) {
         notice = message
@@ -222,7 +223,7 @@ fun AccountScreen(
             AboutSettingsSection(
                 appVersion = BuildConfig.VERSION_NAME,
                 onOpenReleases = { uriHandler.openUri("https://github.com/imsawiq/Rinthy/releases") },
-                onOpenAuthor = { uriHandler.openUri(context.getString(R.string.settings_author_url)) },
+                onOpenAuthor = { uriHandler.openUri(authorUrl) },
                 onSignOut = onSignOut,
                 modifier = Modifier.padding(top = 26.dp),
             )

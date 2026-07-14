@@ -1,4 +1,4 @@
-package com.rinthy.mobile.ui.dashboard.project
+package com.rinthy.mobile.ui.dashboard.project.versions
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.rinthy.mobile.ui.theme.RinthyDesign
+import com.rinthy.mobile.ui.dashboard.project.markdown.MarkdownEditor
+import com.rinthy.mobile.ui.dashboard.project.markdown.MarkdownEditorMode
 import com.rinthy.shared.model.CreateVersionRequest
 import com.rinthy.shared.model.ProjectDependency
 import com.rinthy.shared.model.ProjectFileUpload

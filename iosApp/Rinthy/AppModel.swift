@@ -208,6 +208,14 @@ final class AppModel: ObservableObject {
         )
     }
 
+    func changeAvatar(userID: String, file: ProjectFileUpload) async throws {
+        try await controller.changeUserAvatar(userId: userID, file: file)
+    }
+
+    func deleteAvatar(userID: String) async throws {
+        try await controller.deleteUserAvatar(userId: userID)
+    }
+
     func updateProject(projectId: String, update: ProjectUpdate) async {
         projectUpdateError = nil
         isProjectSaving = true
@@ -227,49 +235,81 @@ final class AppModel: ObservableObject {
     }
 
     func changeProjectIcon(project: Project, file: ProjectFileUpload) async throws {
-        try await performProjectAction(success: "Icon updated") {
+        try await performProjectAction(success: NSLocalizedString("Icon updated", comment: "Project action result")) {
             try await controller.changeProjectIcon(projectIdOrSlug: project.id, file: file)
         }
     }
 
     func deleteProjectIcon(project: Project) async throws {
-        try await performProjectAction(success: "Icon removed") {
+        try await performProjectAction(success: NSLocalizedString("Icon removed", comment: "Project action result")) {
             try await controller.deleteProjectIcon(projectIdOrSlug: project.id)
         }
     }
 
-    func addGalleryImage(project: Project, file: ProjectFileUpload) async throws {
-        try await performProjectAction(success: "Gallery image added") {
+    func addGalleryImage(
+        project: Project,
+        file: ProjectFileUpload,
+        featured: Bool,
+        title: String,
+        description: String
+    ) async throws {
+        try await performProjectAction(success: NSLocalizedString("Gallery image added", comment: "Project action result")) {
             try await controller.addGalleryImage(
                 projectIdOrSlug: project.id,
                 file: file,
-                featured: false,
-                title: "Gallery image",
-                description: ""
+                featured: featured,
+                title: title,
+                description: description
             )
         }
     }
 
     func deleteGalleryImage(project: Project, imageURL: String) async throws {
-        try await performProjectAction(success: "Gallery image removed") {
+        try await performProjectAction(success: NSLocalizedString("Gallery image removed", comment: "Project action result")) {
             try await controller.deleteGalleryImage(projectIdOrSlug: project.id, imageUrl: imageURL)
         }
     }
 
+    func modifyGalleryImage(
+        project: Project,
+        imageURL: String,
+        featured: Bool?,
+        title: String?,
+        description: String?,
+        ordering: Int32?
+    ) async throws {
+        try await performProjectAction(success: NSLocalizedString("Gallery image updated", comment: "Project action result")) {
+            try await controller.modifyGalleryImage(
+                projectIdOrSlug: project.id,
+                imageUrl: imageURL,
+                featured: featured.map { KotlinBoolean(bool: $0) },
+                title: title,
+                description: description,
+                ordering: ordering.map { KotlinInt(int: $0) }
+            )
+        }
+    }
+
+    func setGalleryImageAsBanner(project: Project, imageURL: String) async throws {
+        try await performProjectAction(success: NSLocalizedString("Banner updated", comment: "Project action result")) {
+            try await controller.setGalleryImageAsBanner(projectIdOrSlug: project.id, imageUrl: imageURL)
+        }
+    }
+
     func createVersion(project: Project, request: CreateVersionRequest) async throws {
-        try await performProjectAction(success: "Version created") {
+        try await performProjectAction(success: NSLocalizedString("Version created", comment: "Project action result")) {
             _ = try await controller.createVersion(projectId: project.id, request: request)
         }
     }
 
     func updateVersion(versionID: String, update: VersionUpdate) async throws {
-        try await performProjectAction(success: "Version updated") {
+        try await performProjectAction(success: NSLocalizedString("Version updated", comment: "Project action result")) {
             try await controller.updateVersion(versionId: versionID, update: update)
         }
     }
 
     func deleteVersion(versionID: String) async throws {
-        try await performProjectAction(success: "Version deleted") {
+        try await performProjectAction(success: NSLocalizedString("Version deleted", comment: "Project action result")) {
             try await controller.deleteVersion(versionId: versionID)
         }
     }
@@ -279,31 +319,31 @@ final class AppModel: ObservableObject {
     }
 
     func inviteMember(teamID: String, userID: String) async throws {
-        try await performProjectAction(success: "Invitation sent") {
+        try await performProjectAction(success: NSLocalizedString("Invitation sent", comment: "Project action result")) {
             try await controller.addTeamMember(teamId: teamID, userId: userID)
         }
     }
 
     func updateMember(teamID: String, userID: String, update: ProjectMemberUpdate) async throws {
-        try await performProjectAction(success: "Member updated") {
+        try await performProjectAction(success: NSLocalizedString("Member updated", comment: "Project action result")) {
             try await controller.updateTeamMember(teamId: teamID, userId: userID, update: update)
         }
     }
 
     func removeMember(teamID: String, userID: String) async throws {
-        try await performProjectAction(success: "Member removed") {
+        try await performProjectAction(success: NSLocalizedString("Member removed", comment: "Project action result")) {
             try await controller.deleteTeamMember(teamId: teamID, userId: userID)
         }
     }
 
     func joinTeam(teamID: String) async throws {
-        try await performProjectAction(success: "Invitation accepted") {
+        try await performProjectAction(success: NSLocalizedString("Invitation accepted", comment: "Project action result")) {
             try await controller.joinTeam(teamId: teamID)
         }
     }
 
     func transferOwnership(teamID: String, userID: String) async throws {
-        try await performProjectAction(success: "Ownership transferred") {
+        try await performProjectAction(success: NSLocalizedString("Ownership transferred", comment: "Project action result")) {
             try await controller.transferTeamOwnership(teamId: teamID, userId: userID)
         }
     }

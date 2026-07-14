@@ -46,7 +46,10 @@ struct MarkdownBlockView: View {
 
     @ViewBuilder
     private var markdownImages: some View {
-        if block.images.count == 1,
+        if !block.images.isEmpty, block.images.allSatisfy(\.isBadge) {
+            MarkdownBadgeRowView(images: block.images)
+                .frame(maxWidth: .infinity, minHeight: 42, maxHeight: 42)
+        } else if block.images.count == 1,
            !block.images[0].isBadge,
            let url = URL(string: block.images[0].url) {
             imageLink(block.images[0]) {

@@ -1,9 +1,10 @@
-package com.rinthy.mobile.ui.dashboard.project
+package com.rinthy.mobile.ui.dashboard.project.versions
 
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import com.rinthy.shared.model.ProjectFileUpload
+import com.rinthy.shared.model.ProjectUploadLimits
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -18,7 +19,7 @@ internal suspend fun readVersionUploads(
     try {
         val uploads = uris.map(context::readVersionUpload)
         val merged = (existingFiles + uploads).distinctBy(ProjectFileUpload::fileName)
-        require(merged.sumOf { it.bytes.size.toLong() } <= MAX_VERSION_BYTES) {
+        require(merged.sumOf { it.bytes.size.toLong() } <= ProjectUploadLimits.VERSION_FILES_BYTES) {
             "Version files must be 128 MiB or smaller in total."
         }
         Result.success(merged)
@@ -53,4 +54,4 @@ private fun InputStream.readBytesLimited(maxBytes: Int): ByteArray {
     return output.toByteArray()
 }
 
-private const val MAX_VERSION_BYTES = 128 * 1024 * 1024
+private val MAX_VERSION_BYTES = ProjectUploadLimits.VERSION_FILES_BYTES.toInt()

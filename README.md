@@ -1,6 +1,6 @@
-# Rinthy Native
+# Ryntra Native
 
-Rinthy is an unofficial native mobile workspace for Modrinth creators. Version 3 is a clean Kotlin Multiplatform rewrite: business logic is shared in Kotlin, while each platform keeps its own first-class UI.
+Ryntra is an unofficial native mobile workspace for Modrinth creators. Business logic is shared with Kotlin Multiplatform, while Android and iOS keep first-class native interfaces.
 
 ## Architecture
 
@@ -18,12 +18,12 @@ The shared module has no UI dependency. `AppController` owns session-scoped load
 - Personal access token authentication as a fallback.
 - Encrypted local session storage on Android and iOS.
 - Account, project and organization loading through the shared Ktor client.
-- Project search, status, download and follower summaries.
+- Project editing, gallery management, versions and member management.
+- Project search, status, exact download and follower summaries.
+- Creator analytics, project trends and wallet reporting.
 - Native loading, retry, empty and refresh states.
 - Dark and light Android themes; system-native iOS appearance.
-- Android unit tests using Ktor `MockEngine`.
-
-Project editing, versions, members, notifications and analytics will move from the legacy app as independent feature slices.
+- Shared tests using Ktor `MockEngine` plus Android lint and build checks.
 
 ## Requirements
 
@@ -52,8 +52,14 @@ To validate the shared Apple framework from a terminal:
 
 Set an Apple Development Team in Xcode before installing on a physical device.
 
+### Codemagic and Sideloadly
+
+The `Ryntra Unsigned Device IPA` workflow in `codemagic.yaml` builds an unsigned ARM64 device archive and publishes `Ryntra-unsigned.ipa`. Download that artifact and open it in Sideloadly; Sideloadly signs it with the Apple ID selected there before installing it on the phone.
+
+The unsigned workflow does not need App Store Connect credentials. A free Apple ID normally requires reinstalling after its development provisioning expires; a paid developer account follows Apple's longer provisioning rules.
+
 ## Security
 
 Android encrypts the token with an AES/GCM key held by Android Keystore. iOS stores it as a `ThisDeviceOnly` Keychain item. Tokens are held in shared memory only for the active session and are never included in logs or error messages.
 
-Rinthy is not affiliated with, endorsed by, or maintained by Modrinth.
+Ryntra is not affiliated with, endorsed by, or maintained by Modrinth.

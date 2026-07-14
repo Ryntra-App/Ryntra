@@ -60,6 +60,7 @@ import com.rinthy.mobile.ui.components.RinthyPrimaryButton
 import com.rinthy.mobile.ui.components.RinthySecondaryButton
 import com.rinthy.mobile.ui.components.RinthyTextField
 import com.rinthy.mobile.ui.theme.RinthyDesign
+import com.rinthy.shared.model.ProjectUploadLimits
 import com.rinthy.shared.model.Account
 import com.rinthy.shared.model.ProjectFileUpload
 import kotlinx.coroutines.Dispatchers
@@ -99,13 +100,13 @@ internal fun ProfileHeader(
                     context = context,
                     uri = uri,
                     fallbackName = "avatar.png",
-                    maxBytes = MAX_AVATAR_BYTES,
+                    maxBytes = ProjectUploadLimits.USER_AVATAR_BYTES,
                 )
             }
             when {
                 upload == null -> onAvatarError(unread)
                 !upload.contentType.startsWith("image/") -> onAvatarError(notImage)
-                upload.bytes.size > MAX_AVATAR_BYTES -> onAvatarError(tooLarge)
+                upload.bytes.size > ProjectUploadLimits.USER_AVATAR_BYTES -> onAvatarError(tooLarge)
                 else -> onChangeAvatar(upload)
             }
         }
@@ -341,5 +342,3 @@ private fun AccountMetric(icon: ImageVector, label: String, value: String, modif
         }
     }
 }
-
-private const val MAX_AVATAR_BYTES = 2 * 1024 * 1024

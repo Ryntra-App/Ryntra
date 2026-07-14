@@ -379,16 +379,12 @@ object MarkdownParser {
         val normalizedUrl = url.lowercase()
         if ("shields.io" in normalizedUrl || "/badge" in normalizedUrl) return true
         val normalizedAlt = alt.lowercase()
-        val hasBadgeAlt = BADGE_ALT_HINTS.any { hint ->
-            normalizedAlt == hint ||
-                normalizedAlt.startsWith("$hint ") ||
-                normalizedAlt.startsWith("$hint-") ||
-                normalizedAlt.contains(hint)
+        val hasExactBadgeAlt = BADGE_ALT_HINTS.any { hint ->
+            normalizedAlt == hint || normalizedAlt.startsWith("$hint-")
         }
-        return hasBadgeAlt || (
-            normalizedUrl.substringBefore('?').endsWith(".svg") &&
-                BADGE_ALT_HINTS.any(normalizedAlt::contains)
-            )
+        val isVectorBadge = normalizedUrl.substringBefore('?').endsWith(".svg") &&
+            BADGE_ALT_HINTS.any { hint -> normalizedAlt.contains(hint) }
+        return hasExactBadgeAlt || isVectorBadge
     }
 
     private const val MAX_HEADING_LEVEL = 6

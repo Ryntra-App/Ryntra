@@ -1,4 +1,4 @@
-package com.rinthy.mobile.ui.dashboard.project
+package com.rinthy.mobile.ui.dashboard.project.markdown
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

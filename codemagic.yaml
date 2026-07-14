@@ -1,6 +1,6 @@
 workflows:
   android-native:
-    name: Rinthy Android Native
+    name: Ryntra Android Native
     max_build_duration: 60
     environment:
       java: 21
@@ -13,7 +13,7 @@ workflows:
       - androidApp/build/outputs/apk/debug/*.apk
 
   ios-native:
-    name: Rinthy iOS Native
+    name: Ryntra iOS Simulator
     instance_type: mac_mini_m2
     max_build_duration: 60
     environment:
@@ -21,9 +21,46 @@ workflows:
       java: 21
     scripts:
       - name: Build iOS simulator app
-        script: >-
-          xcodebuild -project iosApp/Rinthy.xcodeproj -scheme Rinthy
-          -sdk iphonesimulator -configuration Debug
-          CODE_SIGNING_ALLOWED=NO build
+        script: |
+          xcodebuild \
+            -project iosApp/Rinthy.xcodeproj \
+            -scheme Rinthy \
+            -configuration Debug \
+            -destination "generic/platform=iOS Simulator" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
     artifacts:
       - ~/Library/Developer/Xcode/DerivedData/**/Build/Products/Debug-iphonesimulator/*.app
+
+  ios-unsigned-ipa:
+    name: Ryntra Unsigned Device IPA
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      xcode: latest
+      java: 21
+    scripts:
+      - name: Build unsigned iPhone app
+        script: |
+          xcodebuild \
+            -project iosApp/Rinthy.xcodeproj \
+            -scheme Rinthy \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath "$CM_BUILD_DIR/build/ios/DerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+      - name: Package unsigned IPA
+        script: |
+          APP_PATH="$CM_BUILD_DIR/build/ios/DerivedData/Build/Products/Release-iphoneos/Rinthy.app"
+          IPA_ROOT="$CM_BUILD_DIR/build/ipa"
+          test -d "$APP_PATH"
+          rm -rf "$IPA_ROOT/Payload"
+          mkdir -p "$IPA_ROOT/Payload"
+          ditto "$APP_PATH" "$IPA_ROOT/Payload/Rinthy.app"
+          cd "$IPA_ROOT"
+          /usr/bin/zip -qry Ryntra-unsigned.ipa Payload
+    artifacts:
+      - build/ipa/*.ipa
+      - build/ios/DerivedData/Build/Products/Release-iphoneos/*.app

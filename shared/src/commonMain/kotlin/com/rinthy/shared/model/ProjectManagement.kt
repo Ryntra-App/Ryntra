@@ -10,6 +10,13 @@ data class ProjectFileUpload(
     val bytes: ByteArray,
 )
 
+object ProjectUploadLimits {
+    const val PROJECT_ICON_BYTES = 256 * 1024
+    const val USER_AVATAR_BYTES = 2 * 1024 * 1024
+    const val GALLERY_IMAGE_BYTES = 5 * 1024 * 1024
+    const val VERSION_FILES_BYTES = 128L * 1024 * 1024
+}
+
 object ProjectUploadFactory {
     fun fromBase64(fileName: String, contentType: String, base64: String): ProjectFileUpload {
         require(base64.length <= MAX_BASE64_LENGTH) { "The selected file is too large to import." }

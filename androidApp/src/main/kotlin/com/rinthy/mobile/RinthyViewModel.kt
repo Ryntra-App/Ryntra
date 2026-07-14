@@ -26,6 +26,7 @@ import com.rinthy.shared.model.ProjectDependency
 import com.rinthy.shared.model.ProjectFileUpload
 import com.rinthy.shared.model.ProjectMember
 import com.rinthy.shared.model.ProjectMemberUpdate
+import com.rinthy.shared.model.ProjectUploadLimits
 import com.rinthy.shared.model.ProjectSortMode
 import com.rinthy.shared.model.ProjectVersion
 import com.rinthy.shared.model.VersionUpdate
@@ -312,7 +313,7 @@ class RinthyViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun changeAvatar(userId: String, file: ProjectFileUpload) {
-        if (file.bytes.size > MAX_USER_AVATAR_BYTES) {
+        if (file.bytes.size > ProjectUploadLimits.USER_AVATAR_BYTES) {
             mutableProfileUpdate.value = ProfileUpdateState(
                 errorMessage = "Avatar images must be 2 MiB or smaller.",
             )
@@ -635,7 +636,6 @@ class RinthyViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private companion object {
-        const val MAX_USER_AVATAR_BYTES = 2 * 1024 * 1024
     }
 }
 

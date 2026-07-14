@@ -12,6 +12,7 @@ import com.rinthy.shared.model.Organization
 import com.rinthy.shared.model.Project
 import com.rinthy.shared.model.ProjectDependency
 import com.rinthy.shared.model.ProjectFileUpload
+import com.rinthy.shared.model.ProjectUploadLimits
 import com.rinthy.shared.model.ProjectMember
 import com.rinthy.shared.model.ProjectMemberUpdate
 import com.rinthy.shared.model.ProjectTeamRoster
@@ -150,7 +151,7 @@ class AppController internal constructor(
     }
 
     suspend fun changeUserAvatar(userId: String, file: ProjectFileUpload) {
-        require(file.bytes.size <= MAX_USER_AVATAR_BYTES) {
+        require(file.bytes.size <= ProjectUploadLimits.USER_AVATAR_BYTES) {
             "Avatar images must be 2 MiB or smaller."
         }
         val token = requireToken("updating your avatar")
@@ -217,7 +218,9 @@ class AppController internal constructor(
 
     suspend fun changeProjectIcon(projectIdOrSlug: String, file: ProjectFileUpload) {
         require(file.bytes.isNotEmpty()) { "Select an image to upload." }
-        require(file.bytes.size <= MAX_PROJECT_ICON_BYTES) { "Project icons must be 256 KiB or smaller." }
+        require(file.bytes.size <= ProjectUploadLimits.PROJECT_ICON_BYTES) {
+            "Project icons must be 256 KiB or smaller."
+        }
         repository.changeProjectIcon(projectIdOrSlug, file, requireToken("changing a project icon"))
     }
 
@@ -233,6 +236,10 @@ class AppController internal constructor(
         description: String = "",
     ) {
         require(file.bytes.isNotEmpty()) { "Select an image to upload." }
+        require(file.contentType.startsWith("image/")) { "Gallery uploads must be images." }
+        require(file.bytes.size <= ProjectUploadLimits.GALLERY_IMAGE_BYTES) {
+            "Gallery images must be 5 MiB or smaller."
+        }
         repository.addGalleryImage(
             projectIdOrSlug,
             file,
@@ -271,7 +278,7 @@ class AppController internal constructor(
     }
 
     suspend fun createVersion(projectId: String, request: CreateVersionRequest): ProjectVersion {
-        require(request.files.sumOf { it.bytes.size.toLong() } <= MAX_VERSION_UPLOAD_BYTES) {
+        require(request.files.sumOf { it.bytes.size.toLong() } <= ProjectUploadLimits.VERSION_FILES_BYTES) {
             "Version files must be 128 MiB or smaller in total."
         }
         return repository.createVersion(projectId, request, requireToken("creating a version"))
@@ -376,11 +383,6 @@ class AppController internal constructor(
             }
         })
 
-    private companion object {
-        const val MAX_PROJECT_ICON_BYTES = 256 * 1024
-        const val MAX_USER_AVATAR_BYTES = 2 * 1024 * 1024
-        const val MAX_VERSION_UPLOAD_BYTES = 128L * 1024 * 1024
-    }
 }
 
 class Observation internal constructor(

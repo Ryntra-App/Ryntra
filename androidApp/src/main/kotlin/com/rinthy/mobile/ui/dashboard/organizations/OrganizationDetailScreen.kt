@@ -44,10 +44,10 @@ import com.rinthy.mobile.R
 import com.rinthy.mobile.ui.components.RinthyEmptyState
 import com.rinthy.mobile.ui.components.RinthyIcon
 import com.rinthy.mobile.ui.components.RinthySectionLabel
-import com.rinthy.mobile.ui.dashboard.project.InviteMemberDialog
-import com.rinthy.mobile.ui.dashboard.project.MemberEditorDialog
-import com.rinthy.mobile.ui.dashboard.project.MembersHeader
-import com.rinthy.mobile.ui.dashboard.project.ProjectMemberCard
+import com.rinthy.mobile.ui.dashboard.project.members.InviteMemberDialog
+import com.rinthy.mobile.ui.dashboard.project.members.MemberEditorDialog
+import com.rinthy.mobile.ui.dashboard.project.members.MembersHeader
+import com.rinthy.mobile.ui.dashboard.project.members.ProjectMemberCard
 import com.rinthy.mobile.ui.dashboard.projects.ProjectBannerCard
 import com.rinthy.mobile.ui.dashboard.projects.toProjectRowModel
 import com.rinthy.mobile.ui.theme.RinthyDesign

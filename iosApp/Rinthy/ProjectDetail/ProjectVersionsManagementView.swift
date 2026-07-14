@@ -71,8 +71,8 @@ struct ProjectVersionsManagementView: View {
 
     private func managementEmpty(title: String, message: String) -> some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text(title).font(.headline)
-            Text(message).foregroundStyle(.secondary)
+            Text(LocalizedStringKey(title)).font(.headline)
+            Text(LocalizedStringKey(message)).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)

@@ -19,7 +19,9 @@ struct AccountView: View {
     @State private var syncedUsername = ""
     @State private var syncedBio = ""
     @State private var isSaving = false
+    @State private var isAvatarSaving = false
     @State private var errorMessage: String?
+    @State private var avatarError: String?
 
     private var normalizedUsername: String {
         username.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -41,14 +43,13 @@ struct AccountView: View {
         List {
             Section {
                 HStack(spacing: 14) {
-                    AsyncImage(url: URL(string: account.avatarUrl ?? "")) { image in
-                        image.resizable().scaledToFill()
-                    } placeholder: {
-                        Circle().fill(.quaternary)
-                    }
-                    .frame(width: 68, height: 68)
-                    .clipShape(Circle())
-                    .overlay(Circle().stroke(Color.rinthyGreen.opacity(0.45), lineWidth: 1.5))
+                    AccountAvatarEditor(
+                        account: account,
+                        isBusy: isAvatarSaving,
+                        onChange: updateAvatar,
+                        onDelete: deleteAvatar,
+                        onError: { avatarError = $0 }
+                    )
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(account.username).font(.title2.bold())
@@ -59,6 +60,11 @@ struct AccountView: View {
                 }
                 if let bio = account.bio, !bio.isEmpty {
                     Text(bio).foregroundStyle(.secondary)
+                }
+                if let avatarError {
+                    Text(avatarError)
+                        .font(.caption)
+                        .foregroundStyle(.red)
                 }
             }
             .themedListRowBackground(isPlatformNative: isPlatformNative)
@@ -261,6 +267,22 @@ struct AccountView: View {
             errorMessage = error.localizedDescription
         }
         isSaving = false
+    }
+
+    @MainActor
+    private func updateAvatar(_ upload: ProjectFileUpload) async throws {
+        isAvatarSaving = true
+        avatarError = nil
+        defer { isAvatarSaving = false }
+        try await model.changeAvatar(userID: account.id, file: upload)
+    }
+
+    @MainActor
+    private func deleteAvatar() async throws {
+        isAvatarSaving = true
+        avatarError = nil
+        defer { isAvatarSaving = false }
+        try await model.deleteAvatar(userID: account.id)
     }
 }
 

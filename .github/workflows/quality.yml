@@ -24,7 +24,7 @@ jobs:
       - name: Test shared logic and build Android
         run: ./gradlew :shared:testAndroidHostTest :androidApp:assembleDebug --stacktrace
 
-  ios-framework:
+  ios-app:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -33,5 +33,12 @@ jobs:
           distribution: temurin
           java-version: 21
           cache: gradle
-      - name: Link shared iOS framework
-        run: ./gradlew :shared:linkDebugFrameworkIosSimulatorArm64 --stacktrace
+      - name: Build iOS app
+        run: >-
+          xcodebuild
+          -project iosApp/Rinthy.xcodeproj
+          -scheme Rinthy
+          -configuration Debug
+          -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO
+          build

@@ -23,6 +23,15 @@ class MarkdownParserTest {
     }
 
     @Test
+    fun descriptiveRasterAltDoesNotTurnScreenshotIntoBadge() {
+        val image = MarkdownParser.parse(
+            "![GitHub project screenshot](https://example.com/project.png)",
+        ).single().images.single()
+
+        assertEquals(false, image.isBadge)
+    }
+
+    @Test
     fun linkedBadgeRowPreservesImagesAndDestinations() {
         val markdown = "[![github](https://img.example/github.svg)](https://github.com/rinthy) " +
             "![downloads](https://img.example/downloads.svg)"

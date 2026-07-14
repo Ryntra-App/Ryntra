@@ -24,10 +24,10 @@ struct ProjectDetailView: View {
 
     private var resources: [(String, URL)] {
         [
-            ("Source", project.sourceUrl),
-            ("Issues", project.issuesUrl),
-            ("Wiki", project.wikiUrl),
-            ("Discord", project.discordUrl),
+            (NSLocalizedString("Source", comment: "Project resource"), project.sourceUrl),
+            (NSLocalizedString("Issues", comment: "Project resource"), project.issuesUrl),
+            (NSLocalizedString("Wiki", comment: "Project resource"), project.wikiUrl),
+            (NSLocalizedString("Discord", comment: "Project resource"), project.discordUrl),
         ].compactMap { label, url in
             guard let url, let parsed = URL(string: url), !url.isEmpty else { return nil }
             return (label, parsed)
@@ -190,11 +190,11 @@ struct ProjectDetailView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(project.title)
                     .font(.title2.bold())
-                Text(project.projectType.capitalized)
+                Text(project.displayTypeLabel)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 if project.status != "approved" {
-                    Text(project.status.capitalized)
+                    Text(project.localizedStatusLabel)
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(project.status == "rejected" ? Color.red : Color.orange)
                         .padding(.top, 3)
@@ -224,7 +224,7 @@ struct ProjectDetailView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Color.rinthyGreen)
             VStack(alignment: .leading, spacing: 1) {
-                Text(label).font(.caption2).foregroundStyle(.secondary)
+                Text(LocalizedStringKey(label)).font(.caption2).foregroundStyle(.secondary)
                 Text(value).font(.headline).monospacedDigit()
             }
         }
@@ -265,9 +265,15 @@ struct ProjectDetailView: View {
                         .frame(width: 40, height: 40)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(dependency.title ?? dependency.projectId ?? dependency.fileName ?? "External dependency")
+                            Text(
+                                dependency.title ?? dependency.projectId ?? dependency.fileName ??
+                                    NSLocalizedString("External dependency", comment: "Project dependency")
+                            )
                                 .fontWeight(.semibold)
-                            Text(dependency.dependencyType.capitalized)
+                            Text(NSLocalizedString(
+                                dependency.dependencyType.capitalized,
+                                comment: "Project dependency type"
+                            ))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -285,8 +291,9 @@ struct ProjectDetailView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Color.rinthyGreen)
             VStack(alignment: .leading, spacing: 2) {
-                Text(label).font(.caption2).foregroundStyle(.secondary)
-                Text(value.capitalized).fontWeight(.semibold)
+                Text(LocalizedStringKey(label)).font(.caption2).foregroundStyle(.secondary)
+                Text(NSLocalizedString(value.capitalized, comment: "Project environment value"))
+                    .fontWeight(.semibold)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -368,7 +375,7 @@ struct ProjectDetailView: View {
         HStack(spacing: 10) {
             Image(systemName: systemImage)
                 .foregroundStyle(Color.rinthyGreen)
-            Text(label).foregroundStyle(.secondary)
+            Text(LocalizedStringKey(label)).foregroundStyle(.secondary)
             Spacer()
             Text(value).fontWeight(.semibold).lineLimit(1)
         }
@@ -380,7 +387,7 @@ struct ProjectDetailView: View {
 private struct DetailHeading: View {
     let title: String
     var body: some View {
-        Text(title.uppercased())
+        Text(NSLocalizedString(title, comment: "Project section").uppercased())
             .font(.caption.weight(.bold))
             .foregroundStyle(Color.rinthyGreen)
             .padding(.top, 30)
@@ -396,10 +403,10 @@ private enum ProjectDetailTab: CaseIterable {
 
     var label: String {
         switch self {
-        case .overview: return "Overview"
-        case .versions: return "Versions"
-        case .edit: return "Edit"
-        case .members: return "Members"
+        case .overview: return NSLocalizedString("Overview", comment: "Project tab")
+        case .versions: return NSLocalizedString("Versions", comment: "Project tab")
+        case .edit: return NSLocalizedString("Edit", comment: "Project tab")
+        case .members: return NSLocalizedString("Members", comment: "Project tab")
         }
     }
 

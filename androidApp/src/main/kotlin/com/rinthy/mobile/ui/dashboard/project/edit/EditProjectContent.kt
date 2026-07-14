@@ -1,4 +1,4 @@
-package com.rinthy.mobile.ui.dashboard.project
+package com.rinthy.mobile.ui.dashboard.project.edit
 
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -58,8 +58,12 @@ import com.rinthy.mobile.ui.components.RinthyPrimaryButton
 import com.rinthy.mobile.ui.components.RinthySecondaryButton
 import com.rinthy.mobile.ui.components.RinthyTextField
 import com.rinthy.mobile.ui.components.RinthySectionLabel
+import com.rinthy.mobile.ui.dashboard.project.gallery.ProjectGalleryManageSection
+import com.rinthy.mobile.ui.dashboard.project.markdown.MarkdownEditor
+import com.rinthy.mobile.ui.dashboard.project.markdown.MarkdownEditorMode
 import com.rinthy.shared.model.Project
 import com.rinthy.shared.model.ProjectFileUpload
+import com.rinthy.shared.model.ProjectUploadLimits
 import com.rinthy.shared.model.ProjectUpdate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -95,14 +99,16 @@ internal fun EditProjectContent(
     var bodyEditorMode by remember(project.id) { mutableStateOf(MarkdownEditorMode.Write) }
     var localUploadError by remember { mutableStateOf<String?>(null) }
     var isReadingImage by remember { mutableStateOf(false) }
+    val imageUnreadable = stringResource(R.string.project_edit_image_unreadable)
+    val iconTooLarge = stringResource(R.string.project_edit_icon_too_large)
     val iconLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri ?: return@rememberLauncherForActivityResult
         isReadingImage = true
         scope.launch {
             val upload = withContext(Dispatchers.IO) { context.readUpload(uri, "project-icon.png") }
             isReadingImage = false
-            if (upload == null) localUploadError = context.getString(R.string.project_edit_image_unreadable)
-            else if (upload.bytes.size > 256 * 1024) localUploadError = context.getString(R.string.project_edit_icon_too_large)
+            if (upload == null) localUploadError = imageUnreadable
+            else if (upload.bytes.size > ProjectUploadLimits.PROJECT_ICON_BYTES) localUploadError = iconTooLarge
             else {
                 localUploadError = null
                 onChangeIcon(upload)

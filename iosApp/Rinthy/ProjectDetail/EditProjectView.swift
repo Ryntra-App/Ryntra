@@ -1,7 +1,6 @@
 import PhotosUI
 import RinthyShared
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct EditProjectView: View {
     @EnvironmentObject private var model: AppModel
@@ -20,7 +19,6 @@ struct EditProjectView: View {
     @State private var descriptionMode = 0
     @State private var descriptionPreview: [MarkdownBlock] = []
     @State private var iconItem: PhotosPickerItem?
-    @State private var galleryItem: PhotosPickerItem?
     @State private var localError: String?
 
     init(project: Project, onSaved: @escaping () async -> Void) {
@@ -110,34 +108,12 @@ struct EditProjectView: View {
             }
 
             heading("Gallery")
-            if !project.gallery.isEmpty {
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                    ForEach(project.gallery, id: \.url) { image in
-                        ZStack(alignment: .topTrailing) {
-                            AsyncImage(url: URL(string: image.url)) { loaded in
-                                loaded.resizable().scaledToFill()
-                            } placeholder: { Color.secondary.opacity(0.12) }
-                            .aspectRatio(1.45, contentMode: .fit)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                            Button(role: .destructive) {
-                                Task { await deleteGallery(image.url) }
-                            } label: {
-                                Image(systemName: "trash").padding(8)
-                                    .background(Color.rinthySurface.opacity(0.94), in: RoundedRectangle(cornerRadius: 8))
-                            }
-                        }
-                    }
-                }
-            }
-            PhotosPicker(selection: $galleryItem, matching: .images) {
-                Label("Add gallery image", systemImage: "photo.badge.plus").frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
+            ProjectGalleryEditor(project: project, onSaved: onSaved)
 
             heading("Status and license")
             Picker("Status", selection: $status) {
                 ForEach(Array(Set([project.status, "draft", "unlisted", "archived"])).sorted(), id: \.self) {
-                    Text($0.capitalized).tag($0)
+                    Text(ProjectStatusSupport.statusLabel($0)).tag($0)
                 }
             }
             .pickerStyle(.segmented)
@@ -157,7 +133,7 @@ struct EditProjectView: View {
                 HStack {
                     if model.isProjectSaving { ProgressView().tint(.white) }
                     else { Image(systemName: model.projectUpdateSuccess ? "checkmark" : "square.and.arrow.down") }
-                    Text(model.projectUpdateSuccess ? "Saved" : "Save changes")
+                    Text(LocalizedStringKey(model.projectUpdateSuccess ? "Saved" : "Save changes"))
                 }
                 .font(.headline)
                 .frame(maxWidth: .infinity)
@@ -170,11 +146,7 @@ struct EditProjectView: View {
         .padding(.bottom, 24)
         .onChange(of: iconItem) { item in
             guard let item else { return }
-            Task { await upload(item, isIcon: true) }
-        }
-        .onChange(of: galleryItem) { item in
-            guard let item else { return }
-            Task { await upload(item, isIcon: false) }
+            Task { await uploadIcon(item) }
         }
     }
 
@@ -197,18 +169,15 @@ struct EditProjectView: View {
     }
 
     @MainActor
-    private func upload(_ item: PhotosPickerItem, isIcon: Bool) async {
+    private func uploadIcon(_ item: PhotosPickerItem) async {
+        defer { iconItem = nil }
         do {
-            guard let data = try await item.loadTransferable(type: Data.self) else { return }
-            let contentType = item.supportedContentTypes.first
-            let fileName = isIcon ? "project-icon.\(contentType?.preferredFilenameExtension ?? "png")" : "gallery.\(contentType?.preferredFilenameExtension ?? "png")"
-            let upload = ProjectUploadFactory.shared.fromBase64(
-                fileName: fileName,
-                contentType: contentType?.preferredMIMEType ?? "image/png",
-                base64: data.base64EncodedString()
+            let upload = try await ProjectImageUploadReader.load(
+                item,
+                baseName: "project-icon",
+                maxBytes: 256 * 1024
             )
-            if isIcon { try await model.changeProjectIcon(project: project, file: upload) }
-            else { try await model.addGalleryImage(project: project, file: upload) }
+            try await model.changeProjectIcon(project: project, file: upload)
             await onSaved()
         } catch { localError = error.localizedDescription }
     }
@@ -221,20 +190,12 @@ struct EditProjectView: View {
         } catch { localError = error.localizedDescription }
     }
 
-    @MainActor
-    private func deleteGallery(_ url: String) async {
-        do {
-            try await model.deleteGalleryImage(project: project, imageURL: url)
-            await onSaved()
-        } catch { localError = error.localizedDescription }
-    }
-
     private func heading(_ title: String) -> some View {
-        Text(title).font(.headline.bold()).padding(.top, 8)
+        Text(LocalizedStringKey(title)).font(.headline.bold()).padding(.top, 8)
     }
 
     private func label(_ text: String) -> some View {
-        Text(text).font(.caption.weight(.medium)).foregroundStyle(.secondary)
+        Text(LocalizedStringKey(text)).font(.caption.weight(.medium)).foregroundStyle(.secondary)
     }
 
     private func field(_ title: String, text: Binding<String>, systemImage: String) -> some View {
@@ -242,7 +203,7 @@ struct EditProjectView: View {
             label(title)
             HStack(spacing: 12) {
                 Image(systemName: systemImage).foregroundStyle(.secondary).frame(width: 20)
-                TextField(title, text: text)
+                TextField(NSLocalizedString(title, comment: "Project field"), text: text)
             }
             .padding(.horizontal, 12)
             .frame(height: 46)
