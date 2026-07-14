@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -31,6 +32,7 @@ import com.composables.icons.lucide.ExternalLink
 import com.composables.icons.lucide.Globe
 import com.composables.icons.lucide.Heart
 import com.composables.icons.lucide.Lucide
+import com.rinthy.mobile.R
 import com.rinthy.mobile.ui.dashboard.projects.StatusLabel
 import com.rinthy.mobile.ui.components.displayTypeLabel
 import com.rinthy.mobile.ui.components.formatExactCount
@@ -52,7 +54,11 @@ internal fun ProjectDependencyRow(dependency: ProjectDependency) {
             modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceVariant),
         )
         Column(modifier = Modifier.padding(start = 10.dp).weight(1f)) {
-            Text(dependency.title ?: dependency.projectId ?: dependency.fileName ?: "External dependency", fontWeight = FontWeight.SemiBold)
+            Text(
+                dependency.title ?: dependency.projectId ?: dependency.fileName
+                    ?: stringResource(R.string.project_external_dependency),
+                fontWeight = FontWeight.SemiBold,
+            )
             Text(
                 dependency.dependencyType.replaceFirstChar(Char::uppercase),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -67,7 +73,7 @@ internal fun LoadingMembers() {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 28.dp)) {
         CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
         Text(
-            "Loading members",
+            stringResource(R.string.project_members_loading),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 10.dp),
         )
@@ -102,7 +108,12 @@ internal fun ProjectIdentity(project: Project) {
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 3.dp),
             )
-            if (project.status != "approved") StatusLabel(project.status)
+            if (project.status != "approved") {
+                StatusLabel(
+                    project.status,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            }
         }
     }
 }
@@ -112,8 +123,18 @@ internal fun ProjectMetrics(project: Project) {
     Column {
         HorizontalDivider(color = RinthyDesign.colors.separator)
         Row(modifier = Modifier.padding(vertical = 14.dp)) {
-            DetailMetric(Lucide.Download, "Downloads", formatExactCount(project.downloads), Modifier.weight(1f))
-            DetailMetric(Lucide.Heart, "Followers", formatExactCount(project.followers), Modifier.weight(1f))
+            DetailMetric(
+                Lucide.Download,
+                stringResource(R.string.project_downloads),
+                formatExactCount(project.downloads),
+                Modifier.weight(1f),
+            )
+            DetailMetric(
+                Lucide.Heart,
+                stringResource(R.string.project_followers),
+                formatExactCount(project.followers),
+                Modifier.weight(1f),
+            )
         }
         HorizontalDivider(color = RinthyDesign.colors.separator)
     }

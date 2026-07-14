@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
@@ -106,16 +107,22 @@ internal fun ProjectRow(
         ProjectArtwork(project)
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
                 Text(
                     text = project.title,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f, fill = true),
                 )
                 if (showStatus && project.status != "approved") {
-                    StatusLabel(project.status)
+                    StatusLabel(
+                        status = project.status,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
                 }
             }
             Text(
@@ -260,7 +267,10 @@ internal fun ProjectArtwork(project: Project, modifier: Modifier = Modifier) {
 }
 
 @Composable
-internal fun StatusLabel(status: String) {
+internal fun StatusLabel(
+    status: String,
+    modifier: Modifier = Modifier,
+) {
     val color = when (status.lowercase()) {
         "rejected", "withheld" -> MaterialTheme.colorScheme.error
         "processing", "scheduled", "draft" -> RinthyDesign.colors.warning
@@ -282,13 +292,16 @@ internal fun StatusLabel(status: String) {
     Surface(
         color = color.copy(alpha = 0.12f),
         shape = RoundedCornerShape(6.dp),
-        modifier = Modifier.padding(start = 8.dp),
+        modifier = modifier.wrapContentWidth(unbounded = false),
     ) {
         Text(
             text = label,
             color = color,
             style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
         )
     }
 }

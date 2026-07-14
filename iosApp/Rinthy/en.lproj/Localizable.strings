@@ -3,8 +3,10 @@
 "Projects" = "Projects";
 "Teams" = "Teams";
 "Analytics" = "Analytics";
-"Refreshing Modrinth data" = "Refreshing Modrinth data";
-"Live Modrinth analytics" = "Live Modrinth analytics";
+"Refreshing Modrinth data" = "Refreshing data";
+"Refreshing data" = "Refreshing data";
+"Live Modrinth analytics" = "Live analytics";
+"Live analytics" = "Live analytics";
 "Limited analytics" = "Limited analytics";
 "Wallet" = "Wallet";
 "Modrinth wallet" = "Modrinth wallet";

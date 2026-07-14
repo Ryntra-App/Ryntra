@@ -35,9 +35,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.composables.icons.lucide.Check
+import com.rinthy.mobile.R
 import com.composables.icons.lucide.FileText
 import com.composables.icons.lucide.Github
 import com.composables.icons.lucide.Globe
@@ -97,8 +99,8 @@ internal fun EditProjectContent(
         scope.launch {
             val upload = withContext(Dispatchers.IO) { context.readUpload(uri, "project-icon.png") }
             isReadingImage = false
-            if (upload == null) localUploadError = "Unable to read that image."
-            else if (upload.bytes.size > 256 * 1024) localUploadError = "Project icons must be 256 KiB or smaller."
+            if (upload == null) localUploadError = context.getString(R.string.project_edit_image_unreadable)
+            else if (upload.bytes.size > 256 * 1024) localUploadError = context.getString(R.string.project_edit_icon_too_large)
             else {
                 localUploadError = null
                 onChangeIcon(upload)
@@ -111,7 +113,7 @@ internal fun EditProjectContent(
         scope.launch {
             val upload = withContext(Dispatchers.IO) { context.readUpload(uri, "gallery-image.png") }
             isReadingImage = false
-            if (upload == null) localUploadError = "Unable to read that image."
+            if (upload == null) localUploadError = context.getString(R.string.project_edit_image_unreadable)
             else {
                 localUploadError = null
                 onAddGalleryImage(upload)
@@ -124,7 +126,7 @@ internal fun EditProjectContent(
     }
 
     Column(modifier = Modifier.padding(bottom = 24.dp)) {
-        EditHeading("Icon")
+        EditHeading(stringResource(R.string.project_edit_icon))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Surface(
                 color = MaterialTheme.colorScheme.surfaceVariant,
@@ -139,22 +141,31 @@ internal fun EditProjectContent(
             }
             Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
                 RinthySecondaryButton(
-                    text = if (isReadingImage) "Reading image" else "Upload icon",
+                    text = if (isReadingImage) {
+                        stringResource(R.string.project_edit_reading_image)
+                    } else {
+                        stringResource(R.string.project_edit_upload_icon)
+                    },
                     icon = Lucide.Upload,
                     enabled = !isReadingImage && !actionState.isRunning,
                     onClick = { iconLauncher.launch(arrayOf("image/png", "image/jpeg", "image/webp", "image/gif")) },
                 )
                 if (project.iconUrl != null) {
                     Spacer(Modifier.height(8.dp))
-                    RinthySecondaryButton("Remove icon", Lucide.Trash2, onDeleteIcon, isDestructive = true)
+                    RinthySecondaryButton(
+                        stringResource(R.string.project_edit_remove_icon),
+                        Lucide.Trash2,
+                        onDeleteIcon,
+                        isDestructive = true,
+                    )
                 }
             }
         }
 
-        EditHeading("Main information")
-        EditField("Title", title, { title = it }, "Project title", Lucide.Hash)
-        EditField("Summary", description, { description = it }, "Brief project summary", Lucide.Info)
-        EditLabel("Description (Markdown)")
+        EditHeading(stringResource(R.string.project_edit_main))
+        EditField(stringResource(R.string.project_edit_title), title, { title = it }, stringResource(R.string.project_edit_title_hint), Lucide.Hash)
+        EditField(stringResource(R.string.project_edit_summary), description, { description = it }, stringResource(R.string.project_edit_summary_hint), Lucide.Info)
+        EditLabel(stringResource(R.string.project_edit_description_md))
         MarkdownEditor(
             markdown = body,
             mode = bodyEditorMode,
@@ -163,7 +174,7 @@ internal fun EditProjectContent(
             onModeChange = { bodyEditorMode = it },
         )
 
-        EditHeading("Gallery")
+        EditHeading(stringResource(R.string.project_edit_gallery))
         if (project.gallery.isNotEmpty()) {
             FlowRow(
                 maxItemsInEachRow = 2,
@@ -183,7 +194,7 @@ internal fun EditProjectContent(
                             onClick = { onDeleteGalleryImage(image.url) },
                             modifier = Modifier.align(Alignment.TopEnd).background(MaterialTheme.colorScheme.surface.copy(alpha = 0.82f), RoundedCornerShape(8.dp)),
                         ) {
-                            Icon(Lucide.Trash2, contentDescription = "Delete gallery image", tint = MaterialTheme.colorScheme.error)
+                            Icon(Lucide.Trash2, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
@@ -191,33 +202,41 @@ internal fun EditProjectContent(
         }
         Spacer(Modifier.height(10.dp))
         RinthySecondaryButton(
-            text = "Add gallery image",
+            text = stringResource(R.string.project_edit_add_gallery),
             icon = Lucide.Upload,
             enabled = !isReadingImage && !actionState.isRunning,
             onClick = { galleryLauncher.launch(arrayOf("image/*")) },
         )
 
-        EditHeading("Status and license")
-        EditLabel("Status")
+        EditHeading(stringResource(R.string.project_edit_status_license))
+        EditLabel(stringResource(R.string.project_edit_status))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
             listOf(project.status, "draft", "unlisted", "archived").distinct().forEach { value ->
+                val statusLabel = when (value.lowercase()) {
+                    "draft" -> stringResource(R.string.project_status_draft)
+                    "unlisted" -> stringResource(R.string.project_status_unlisted)
+                    "archived" -> stringResource(R.string.project_status_archived)
+                    "approved" -> stringResource(R.string.project_status_approved)
+                    "processing" -> stringResource(R.string.project_status_processing)
+                    else -> value.replaceFirstChar(Char::uppercase)
+                }
                 Surface(
                     color = if (status == value) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(7.dp),
                     modifier = Modifier.clickable { status = value },
                 ) {
-                    Text(value.replaceFirstChar(Char::uppercase), modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp))
+                    Text(statusLabel, modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp), maxLines = 1)
                 }
             }
         }
         Spacer(Modifier.height(18.dp))
-        EditField("License ID", licenseId, { licenseId = it }, "MIT", Lucide.FileText)
+        EditField(stringResource(R.string.project_edit_license_id), licenseId, { licenseId = it }, "MIT", Lucide.FileText)
 
-        EditHeading("Links")
-        EditField("Source code", sourceUrl, { sourceUrl = it }, "https://github.com/...", Lucide.Github)
-        EditField("Issue tracker", issuesUrl, { issuesUrl = it }, "https://github.com/.../issues", Lucide.Link)
-        EditField("Wiki", wikiUrl, { wikiUrl = it }, "https://...", Lucide.Globe)
-        EditField("Discord", discordUrl, { discordUrl = it }, "https://discord.gg/...", Lucide.MessageSquareText)
+        EditHeading(stringResource(R.string.project_edit_links))
+        EditField(stringResource(R.string.project_edit_source), sourceUrl, { sourceUrl = it }, "https://github.com/...", Lucide.Github)
+        EditField(stringResource(R.string.project_edit_issues), issuesUrl, { issuesUrl = it }, "https://github.com/.../issues", Lucide.Link)
+        EditField(stringResource(R.string.project_edit_wiki), wikiUrl, { wikiUrl = it }, "https://...", Lucide.Globe)
+        EditField(stringResource(R.string.project_edit_discord), discordUrl, { discordUrl = it }, "https://discord.gg/...", Lucide.MessageSquareText)
 
         (localUploadError ?: projectUpdate.errorMessage ?: actionState.errorMessage)?.let {
             Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 12.dp))
@@ -225,7 +244,7 @@ internal fun EditProjectContent(
         if (actionState.isRunning) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
                 CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
-                Text("Updating project assets", modifier = Modifier.padding(start = 8.dp))
+                Text(stringResource(R.string.project_edit_updating_assets), modifier = Modifier.padding(start = 8.dp))
             }
         }
 
@@ -235,7 +254,11 @@ internal fun EditProjectContent(
             status != project.status || licenseId != project.license?.id.orEmpty()
 
         RinthyPrimaryButton(
-            text = if (projectUpdate.isSuccess) "Saved" else "Save changes",
+            text = if (projectUpdate.isSuccess) {
+                stringResource(R.string.project_edit_saved)
+            } else {
+                stringResource(R.string.project_edit_save)
+            },
             icon = if (projectUpdate.isSuccess) Lucide.Check else Lucide.Save,
             enabled = hasChanges && !projectUpdate.isSaving && title.isNotBlank() && description.isNotBlank(),
             isLoading = projectUpdate.isSaving,

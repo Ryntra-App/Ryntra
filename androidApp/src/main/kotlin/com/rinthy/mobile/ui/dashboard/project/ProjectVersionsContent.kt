@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -29,6 +30,7 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Pencil
 import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.Trash2
+import com.rinthy.mobile.R
 import com.rinthy.mobile.ui.components.RinthyIcon
 import com.rinthy.mobile.ui.components.RinthyProgressIndicator
 import com.rinthy.mobile.ui.components.RinthySectionLabel
@@ -41,7 +43,7 @@ internal fun LoadingVersions() {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 28.dp)) {
         RinthyProgressIndicator(RinthyDesign.colors.accent, Modifier.size(18.dp))
         Text(
-            "Loading releases",
+            stringResource(R.string.project_versions_loading),
             color = RinthyDesign.colors.labelSecondary,
             modifier = Modifier.padding(start = 10.dp),
         )
@@ -55,9 +57,9 @@ internal fun VersionsHeader(canCreate: Boolean, onCreate: () -> Unit) {
         modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            RinthySectionLabel("Releases")
+            RinthySectionLabel(stringResource(R.string.project_versions_title))
             Text(
-                "Published builds and compatibility",
+                stringResource(R.string.project_versions_hint),
                 color = RinthyDesign.colors.labelSecondary,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 4.dp),
@@ -74,7 +76,7 @@ internal fun VersionsHeader(canCreate: Boolean, onCreate: () -> Unit) {
             ) {
                 RinthyIcon(Lucide.Plus, null, RinthyDesign.colors.accent, Modifier.size(18.dp))
                 Text(
-                    "New version",
+                    stringResource(R.string.project_versions_new),
                     color = RinthyDesign.colors.accent,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,

@@ -152,7 +152,10 @@ struct AccountView: View {
                 }
                 .tint(Color.rinthyGreen)
                 Toggle(isOn: $reduceMotion) {
-                    Label("Reduce motion", systemImage: "figure.roll")
+                    Label(
+                        NSLocalizedString("Reduce motion", comment: "Settings"),
+                        systemImage: "bolt.slash"
+                    )
                 }
                 .tint(Color.rinthyGreen)
                 Button {

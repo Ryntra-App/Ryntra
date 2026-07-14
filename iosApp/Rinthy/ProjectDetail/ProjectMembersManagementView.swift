@@ -27,12 +27,24 @@ struct ProjectMembersManagementView: View {
         return currentMember.isOwner || permissions & (Int32(1) << 6) != 0
     }
 
+    private var isOrganizationProject: Bool {
+        !(project.organization?.isEmpty ?? true) || !organizationMembers.isEmpty
+    }
+
+    private var rosterMembers: [ProjectMember] {
+        if isOrganizationProject {
+            organizationMembers.isEmpty ? members : organizationMembers
+        } else {
+            members
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Members").font(.title3.bold())
+                Text(NSLocalizedString("Members", comment: "Project tab")).font(.title3.bold())
                 Spacer()
-                if canManageMembers, project.team != nil {
+                if !isOrganizationProject, canManageMembers, project.team != nil {
                     Button { isInviting = true } label: {
                         Image(systemName: "person.badge.plus").frame(width: 34, height: 34)
                     }
@@ -41,61 +53,40 @@ struct ProjectMembersManagementView: View {
                 }
             }
 
+            if isOrganizationProject {
+                Text(NSLocalizedString(
+                    "Managed through the organization. Edit members under Teams.",
+                    comment: "Org project members hint"
+                ))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+
             if isLoading {
                 HStack(spacing: 10) {
                     ProgressView()
-                    Text("Loading members").foregroundStyle(.secondary)
+                    Text(NSLocalizedString("Loading members", comment: "Members loading"))
+                        .foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 28)
-            } else if let errorMessage, members.isEmpty, organizationMembers.isEmpty {
-                emptyState("Members unavailable", errorMessage)
-            } else if members.isEmpty && organizationMembers.isEmpty {
-                emptyState("No members found", "Team members for this project will appear here.")
+            } else if let errorMessage, rosterMembers.isEmpty {
+                emptyState(NSLocalizedString("Members unavailable", comment: ""), errorMessage)
+            } else if rosterMembers.isEmpty {
+                emptyState(
+                    NSLocalizedString("No members found", comment: ""),
+                    NSLocalizedString("Team members for this project will appear here.", comment: "")
+                )
             } else {
-                if !organizationMembers.isEmpty {
-                    Text(organizationName.map { "Organization · \($0)" } ?? "Organization members")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 4)
-                    Text("These people manage the project through the organization.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    LazyVStack(spacing: 0) {
-                        ForEach(organizationMembers, id: \.user.id) { member in
-                            ManagedMemberCard(
-                                member: member,
-                                canManage: false,
-                                isCurrentUser: member.user.id == model.currentAccountID,
-                                onEdit: {},
-                                onRemove: {},
-                                onJoin: {}
-                            )
-                        }
-                    }
-                }
-
-                Text("Project team")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 10)
-
-                if members.isEmpty {
-                    Text("No direct project collaborators yet. Invite people here, or manage organization members under Teams.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .padding(.vertical, 8)
-                } else {
-                    LazyVStack(spacing: 0) {
-                        ForEach(members, id: \.user.id) { member in
-                            ManagedMemberCard(
-                                member: member,
-                                canManage: canManageMembers,
-                                isCurrentUser: member.user.id == model.currentAccountID,
-                                onEdit: { editingMember = member },
-                                onRemove: { Task { await remove(member) } },
-                                onJoin: { Task { await join() } }
-                            )
-                        }
+                LazyVStack(spacing: 0) {
+                    ForEach(rosterMembers, id: \.user.id) { member in
+                        ManagedMemberCard(
+                            member: member,
+                            canManage: !isOrganizationProject && canManageMembers,
+                            isCurrentUser: member.user.id == model.currentAccountID,
+                            onEdit: { editingMember = member },
+                            onRemove: { Task { await remove(member) } },
+                            onJoin: { Task { await join() } }
+                        )
                     }
                 }
             }
@@ -286,6 +277,7 @@ struct MemberEditorSheet: View {
     @State private var payout: String
     @State private var ordering: String
     @State private var localError: String?
+    @State private var confirmTransfer = false
 
     init(
         teamID: String?,
@@ -300,19 +292,36 @@ struct MemberEditorSheet: View {
         _role = State(initialValue: member.role)
         _permissions = State(initialValue: (member.permissions as? NSNumber)?.int32Value ?? 0)
         _organizationPermissions = State(initialValue: (member.organizationPermissions as? NSNumber)?.int32Value ?? 0)
-        _payout = State(initialValue: member.payoutsSplit.map { String($0.doubleValue) } ?? "")
+        _payout = State(initialValue: Self.formatPayout(member.payoutsSplit?.doubleValue))
         _ordering = State(initialValue: String(member.ordering))
     }
 
     var body: some View {
         NavigationStack {
             Form {
-                Section("Member") {
-                    TextField("Role", text: $role)
-                    TextField("Payout split", text: $payout).keyboardType(.decimalPad)
-                    TextField("Ordering", text: $ordering).keyboardType(.numberPad)
+                Section {
+                    TextField(NSLocalizedString("Role", comment: "Member field"), text: $role)
+                    TextField(
+                        NSLocalizedString("Payout share (%)", comment: "Member field"),
+                        text: $payout
+                    )
+                    .keyboardType(.decimalPad)
+                    Text(NSLocalizedString(
+                        "Percent of team revenue for this member (0–100). Shares of all accepted members should add up to 100.",
+                        comment: "Payout hint"
+                    ))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    TextField(NSLocalizedString("Ordering", comment: "Member field"), text: $ordering)
+                        .keyboardType(.numberPad)
+                } header: {
+                    Text(NSLocalizedString("Member", comment: "Member section"))
                 }
-                Section(showOrganizationPermissions ? "Default project permissions" : "Permissions") {
+                Section(
+                    showOrganizationPermissions
+                        ? NSLocalizedString("Default project permissions", comment: "Permissions")
+                        : NSLocalizedString("Permissions", comment: "Permissions")
+                ) {
                     ForEach(Array(permissionNames.enumerated()), id: \.offset) { bit, label in
                         Toggle(
                             label,
@@ -327,7 +336,7 @@ struct MemberEditorSheet: View {
                     }
                 }
                 if showOrganizationPermissions {
-                    Section("Organization permissions") {
+                    Section(NSLocalizedString("Organization permissions", comment: "Permissions")) {
                         ForEach(Array(orgPermissionNames.enumerated()), id: \.offset) { bit, label in
                             Toggle(
                                 label,
@@ -345,15 +354,41 @@ struct MemberEditorSheet: View {
                     }
                 }
                 Section {
-                    Button("Transfer ownership") { Task { await transfer() } }
+                    Button(NSLocalizedString("Transfer ownership", comment: "Member action"), role: .destructive) {
+                        confirmTransfer = true
+                    }
                 }
                 if let localError { Section { Text(localError).foregroundStyle(.red) } }
             }
-            .navigationTitle("Edit member")
+            .navigationTitle(NSLocalizedString("Edit member", comment: "Member editor"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) { Button("Save") { Task { await save() } } }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(NSLocalizedString("Cancel", comment: "")) { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(NSLocalizedString("Save", comment: "")) { Task { await save() } }
+                }
+            }
+            .confirmationDialog(
+                NSLocalizedString("Transfer ownership?", comment: "Confirm title"),
+                isPresented: $confirmTransfer,
+                titleVisibility: .visible
+            ) {
+                Button(NSLocalizedString("Transfer", comment: "Confirm"), role: .destructive) {
+                    Task { await transfer() }
+                }
+                Button(NSLocalizedString("Cancel", comment: ""), role: .cancel) {}
+            } message: {
+                Text(
+                    String(
+                        format: NSLocalizedString(
+                            "Make %@ the new owner? You will lose owner rights if you are the current owner.",
+                            comment: "Confirm message"
+                        ),
+                        member.user.username
+                    )
+                )
             }
         }
     }
@@ -364,13 +399,15 @@ struct MemberEditorSheet: View {
             localError = "Team id is missing."
             return
         }
+        let payoutValue = Double(payout.replacingOccurrences(of: ",", with: "."))
+            .map { min(100, max(0, $0)) }
         let update = ProjectMemberUpdate(
             role: role,
             permissions: KotlinInt(int: permissions),
             organizationPermissions: showOrganizationPermissions
                 ? KotlinInt(int: organizationPermissions)
                 : nil,
-            payoutsSplit: Double(payout).map { KotlinDouble(double: $0) },
+            payoutsSplit: payoutValue.map { KotlinDouble(double: $0) },
             ordering: Int32(ordering).map { KotlinInt(int: $0) }
         )
         do {
@@ -393,13 +430,39 @@ struct MemberEditorSheet: View {
         } catch { localError = error.localizedDescription }
     }
 
-    private let permissionNames = [
-        "Upload versions", "Delete versions", "Edit details", "Edit description", "Manage invites",
-        "Remove members", "Edit members", "Delete project", "View analytics", "View payouts"
-    ]
+    private static func formatPayout(_ value: Double?) -> String {
+        guard let value else { return "" }
+        if abs(value - value.rounded()) < 0.0001 {
+            return String(Int(value.rounded()))
+        }
+        return String(value)
+    }
 
-    private let orgPermissionNames = [
-        "Edit organization", "Manage invites", "Remove members", "Edit members",
-        "Add projects", "Remove projects", "Delete organization", "Edit default project permissions"
-    ]
+    private var permissionNames: [String] {
+        [
+            NSLocalizedString("Upload versions", comment: "Perm"),
+            NSLocalizedString("Delete versions", comment: "Perm"),
+            NSLocalizedString("Edit details", comment: "Perm"),
+            NSLocalizedString("Edit description", comment: "Perm"),
+            NSLocalizedString("Manage invites", comment: "Perm"),
+            NSLocalizedString("Remove members", comment: "Perm"),
+            NSLocalizedString("Edit members", comment: "Perm"),
+            NSLocalizedString("Delete project", comment: "Perm"),
+            NSLocalizedString("View analytics", comment: "Perm"),
+            NSLocalizedString("View payouts", comment: "Perm"),
+        ]
+    }
+
+    private var orgPermissionNames: [String] {
+        [
+            NSLocalizedString("Edit organization", comment: "Perm"),
+            NSLocalizedString("Manage invites", comment: "Perm"),
+            NSLocalizedString("Remove members", comment: "Perm"),
+            NSLocalizedString("Edit members", comment: "Perm"),
+            NSLocalizedString("Add projects", comment: "Perm"),
+            NSLocalizedString("Remove projects", comment: "Perm"),
+            NSLocalizedString("Delete organization", comment: "Perm"),
+            NSLocalizedString("Edit default project permissions", comment: "Perm"),
+        ]
+    }
 }

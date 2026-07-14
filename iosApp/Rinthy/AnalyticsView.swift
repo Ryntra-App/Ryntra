@@ -201,7 +201,13 @@ struct AnalyticsView: View {
                                 .fill(report?.isCoreAvailable == true ? Color.rinthyGreen : Color.orange)
                                 .frame(width: 7, height: 7)
                         }
-                        Text(model.isAnalyticsLoading ? "Refreshing Modrinth data" : report?.isCoreAvailable == true ? "Live Modrinth analytics" : "Limited analytics")
+                        Text(
+                            model.isAnalyticsLoading
+                                ? NSLocalizedString("Refreshing data", comment: "Analytics")
+                                : report?.isCoreAvailable == true
+                                    ? NSLocalizedString("Live analytics", comment: "Analytics")
+                                    : NSLocalizedString("Limited analytics", comment: "Analytics")
+                        )
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

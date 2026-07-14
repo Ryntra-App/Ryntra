@@ -5,7 +5,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import com.composables.icons.lucide.Accessibility
+import com.composables.icons.lucide.ZapOff
 import com.composables.icons.lucide.Copy
 import com.composables.icons.lucide.Download
 import com.composables.icons.lucide.ExternalLink
@@ -123,7 +123,7 @@ internal fun AppearanceSettingsSection(
         )
         SettingsDivider()
         SettingsRow(
-            icon = Lucide.Accessibility,
+            icon = Lucide.ZapOff,
             title = stringResource(R.string.settings_reduce_motion),
             subtitle = stringResource(R.string.settings_reduce_motion_hint),
             trailing = {

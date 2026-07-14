@@ -1,5 +1,6 @@
 package com.rinthy.mobile.ui.dashboard.project
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -26,19 +28,20 @@ import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Download
 import com.composables.icons.lucide.LayoutGrid
 import com.composables.icons.lucide.Lucide
-import com.composables.icons.lucide.Scale
+import com.composables.icons.lucide.Pencil
 import com.composables.icons.lucide.UsersRound
+import com.rinthy.mobile.R
 import com.rinthy.mobile.ui.components.RinthyIcon
 import com.rinthy.mobile.ui.theme.RinthyDesign
 
 internal enum class ProjectDetailTab(
-    val label: String,
+    @StringRes val labelRes: Int,
     val icon: ImageVector,
 ) {
-    Overview("Overview", Lucide.LayoutGrid),
-    Versions("Versions", Lucide.Download),
-    Edit("Edit", Lucide.Scale),
-    Members("Members", Lucide.UsersRound),
+    Overview(R.string.project_tab_overview, Lucide.LayoutGrid),
+    Versions(R.string.project_tab_versions, Lucide.Download),
+    Edit(R.string.project_tab_edit, Lucide.Pencil),
+    Members(R.string.project_tab_members, Lucide.UsersRound),
 }
 
 @Composable
@@ -81,7 +84,7 @@ internal fun ProjectDetailTabs(
                     modifier = Modifier.size(16.dp),
                 )
                 BasicText(
-                    text = tab.label,
+                    text = stringResource(tab.labelRes),
                     style = RinthyDesign.caption.copy(
                         color = contentColor,
                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,

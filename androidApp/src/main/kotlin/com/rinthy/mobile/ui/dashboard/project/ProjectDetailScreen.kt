@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
@@ -38,6 +39,7 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Monitor
 import com.composables.icons.lucide.Scale
 import com.composables.icons.lucide.Server
+import com.rinthy.mobile.R
 import com.rinthy.mobile.ui.theme.RinthyDesign
 import com.rinthy.mobile.ui.components.RinthyEmptyState
 import com.rinthy.shared.model.MarkdownParser
@@ -89,13 +91,23 @@ fun ProjectDetailScreen(
 ) {
     val uriHandler = LocalUriHandler.current
     var selectedTab by rememberSaveable(project.id) { mutableStateOf(ProjectDetailTab.Overview) }
-    val resources = remember(project.sourceUrl, project.issuesUrl, project.wikiUrl, project.discordUrl) {
+    val sourceLabel = stringResource(R.string.project_resource_source)
+    val issuesLabel = stringResource(R.string.project_resource_issues)
+    val wikiLabel = stringResource(R.string.project_resource_wiki)
+    val discordLabel = stringResource(R.string.project_resource_discord)
+    val resources = remember(project.sourceUrl, project.issuesUrl, project.wikiUrl, project.discordUrl, sourceLabel, issuesLabel, wikiLabel, discordLabel) {
         listOfNotNull(
-            project.sourceUrl?.let { ProjectResource("Source", it) },
-            project.issuesUrl?.let { ProjectResource("Issues", it) },
-            project.wikiUrl?.let { ProjectResource("Wiki", it) },
-            project.discordUrl?.let { ProjectResource("Discord", it) },
+            project.sourceUrl?.let { ProjectResource(sourceLabel, it) },
+            project.issuesUrl?.let { ProjectResource(issuesLabel, it) },
+            project.wikiUrl?.let { ProjectResource(wikiLabel, it) },
+            project.discordUrl?.let { ProjectResource(discordLabel, it) },
         )
+    }
+    val isOrganizationProject = !project.organization.isNullOrBlank() || organizationMembers.isNotEmpty()
+    val rosterMembers = if (isOrganizationProject) {
+        organizationMembers.ifEmpty { members }
+    } else {
+        members
     }
     val markdownBlocks by produceState<List<MarkdownBlock>>(
         initialValue = emptyList(),
@@ -143,10 +155,15 @@ fun ProjectDetailScreen(
             ProjectDetailTab.Overview -> {
                 item(key = "metrics", contentType = "metrics") { ProjectMetrics(project) }
                 item(key = "summary", contentType = "text-section") {
-                    DetailSection("Summary", project.description.ifBlank { "No summary provided." })
+                    DetailSection(
+                        stringResource(R.string.project_summary),
+                        project.description.ifBlank { stringResource(R.string.project_summary_empty) },
+                    )
                 }
                 if (markdownBlocks.isNotEmpty()) {
-                    item(key = "description-heading", contentType = "heading") { DetailHeading("Description") }
+                    item(key = "description-heading", contentType = "heading") {
+                        DetailHeading(stringResource(R.string.project_description))
+                    }
                     itemsIndexed(
                         items = markdownBlocks,
                         key = { index, _ -> "markdown-$index" },
@@ -156,15 +173,15 @@ fun ProjectDetailScreen(
                     }
                 }
                 item {
-                    DetailHeading("Environment")
+                    DetailHeading(stringResource(R.string.project_environment))
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        EnvironmentValue("Client", project.clientSide, Lucide.Monitor, Modifier.weight(1f))
-                        EnvironmentValue("Server", project.serverSide, Lucide.Server, Modifier.weight(1f))
+                        EnvironmentValue(stringResource(R.string.project_client), project.clientSide, Lucide.Monitor, Modifier.weight(1f))
+                        EnvironmentValue(stringResource(R.string.project_server), project.serverSide, Lucide.Server, Modifier.weight(1f))
                     }
                 }
                 if (project.categories.isNotEmpty()) {
                     item {
-                        DetailHeading("Categories")
+                        DetailHeading(stringResource(R.string.project_categories))
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.horizontalScroll(rememberScrollState()),
@@ -175,7 +192,7 @@ fun ProjectDetailScreen(
                 }
                 if (project.gallery.isNotEmpty()) {
                     item {
-                        DetailHeading("Gallery")
+                        DetailHeading(stringResource(R.string.project_gallery))
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             items(project.gallery, key = { it.url }) { image ->
                                 AsyncImage(
@@ -191,25 +208,27 @@ fun ProjectDetailScreen(
                     }
                 }
                 if (dependencies.isNotEmpty()) {
-                    item(key = "dependencies-heading", contentType = "heading") { DetailHeading("Dependencies") }
+                    item(key = "dependencies-heading", contentType = "heading") {
+                        DetailHeading(stringResource(R.string.project_dependencies))
+                    }
                     items(dependencies, key = { it.projectId ?: it.versionId ?: it.fileName.orEmpty() }, contentType = { "dependency" }) {
                         ProjectDependencyRow(it)
                     }
                 }
                 if (project.license != null || project.published != null) {
                     item {
-                        DetailHeading("Details")
+                        DetailHeading(stringResource(R.string.project_details))
                         project.license?.let {
-                            DetailValue(Lucide.Scale, "License", it.name ?: it.id)
+                            DetailValue(Lucide.Scale, stringResource(R.string.project_license), it.name ?: it.id)
                         }
                         project.published?.let {
-                            DetailValue(Lucide.CalendarDays, "Published", it.take(10))
+                            DetailValue(Lucide.CalendarDays, stringResource(R.string.project_published), it.take(10))
                         }
                     }
                 }
                 if (resources.isNotEmpty()) {
                     item {
-                        DetailHeading("Resources")
+                        DetailHeading(stringResource(R.string.project_resources))
                         resources.forEach { resource ->
                             ResourceRow(resource.label) { uriHandler.openUri(resource.url) }
                             HorizontalDivider(color = RinthyDesign.colors.separator)
@@ -228,12 +247,15 @@ fun ProjectDetailScreen(
                 when {
                     isLoading -> item { LoadingVersions() }
                     errorMessage != null && versions.isEmpty() -> item {
-                        RinthyEmptyState(title = "Versions unavailable", message = errorMessage)
+                        RinthyEmptyState(
+                            title = stringResource(R.string.project_versions_unavailable),
+                            message = errorMessage,
+                        )
                     }
                     versions.isEmpty() -> item {
                         RinthyEmptyState(
-                            title = "No versions yet",
-                            message = "Published releases for this project will appear here.",
+                            title = stringResource(R.string.project_versions_empty),
+                            message = stringResource(R.string.project_versions_empty_hint),
                         )
                     }
                     else -> items(versions, key = ProjectVersion::id, contentType = { "version" }) { version ->
@@ -267,99 +289,51 @@ fun ProjectDetailScreen(
             }
 
             ProjectDetailTab.Members -> {
+                // Org-owned projects share the org roster (read-only here). Personal projects use the project team.
+                val canInviteHere = !isOrganizationProject && canManageMembers && teamId != null
                 item(key = "members-actions", contentType = "actions") {
                     MembersHeader(
-                        title = "Members",
-                        canInvite = canManageMembers && teamId != null,
+                        title = stringResource(R.string.project_members_title),
+                        canInvite = canInviteHere,
                         onInvite = { isInvitingMember = true },
                     )
+                    if (isOrganizationProject) {
+                        Text(
+                            text = stringResource(R.string.project_members_org_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 8.dp),
+                        )
+                    }
                 }
                 projectAction.errorMessage?.let { message ->
                     item(key = "members-error", contentType = "error") { ProjectActionError(message) }
                 }
                 when {
                     isLoading -> item { LoadingMembers() }
-                    memberErrorMessage != null && members.isEmpty() && organizationMembers.isEmpty() -> item {
-                        RinthyEmptyState(title = "Members unavailable", message = memberErrorMessage)
-                    }
-                    members.isEmpty() && organizationMembers.isEmpty() -> item {
+                    memberErrorMessage != null && rosterMembers.isEmpty() -> item {
                         RinthyEmptyState(
-                            title = "No members found",
-                            message = "Team members for this project will appear here.",
+                            title = stringResource(R.string.project_members_unavailable),
+                            message = memberErrorMessage,
                         )
                     }
-                    else -> {
-                        if (organizationMembers.isNotEmpty()) {
-                            item(key = "org-members-heading", contentType = "heading") {
-                                Text(
-                                    text = organizationName?.let { "Organization · $it" } ?: "Organization members",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
-                                )
-                                Text(
-                                    text = "These people manage the project through the organization.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(bottom = 8.dp),
-                                )
-                            }
-                            items(
-                                organizationMembers,
-                                key = { "org-${it.user.id}" },
-                                contentType = { "org-member" },
-                            ) { member ->
-                                Box(modifier = Modifier.animateItem()) {
-                                    // Org membership is managed on the Teams tab — show read-only here.
-                                    ProjectMemberCard(
-                                        member = member,
-                                        canManage = false,
-                                        isCurrentUser = member.user.id == currentUserId,
-                                        isBusy = false,
-                                        onEdit = {},
-                                        onRemove = {},
-                                        onJoin = {},
-                                    )
-                                }
-                            }
-                        }
-                        item(key = "project-members-heading", contentType = "heading") {
-                            Text(
-                                text = "Project team",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 12.dp, bottom = 8.dp),
+                    rosterMembers.isEmpty() -> item {
+                        RinthyEmptyState(
+                            title = stringResource(R.string.project_members_empty),
+                            message = stringResource(R.string.project_members_empty_hint),
+                        )
+                    }
+                    else -> items(rosterMembers, key = { it.user.id }, contentType = { "member" }) { member ->
+                        Box(modifier = Modifier.animateItem()) {
+                            ProjectMemberCard(
+                                member = member,
+                                canManage = !isOrganizationProject && canManageMembers,
+                                isCurrentUser = member.user.id == currentUserId,
+                                isBusy = projectAction.isRunning && projectAction.targetId == member.user.id,
+                                onEdit = { editingMember = member },
+                                onRemove = { project.team?.let { onRemoveMember(it, member.user.id) } },
+                                onJoin = { project.team?.let(onJoinTeam) },
                             )
-                        }
-                        if (members.isEmpty()) {
-                            item(key = "project-members-empty", contentType = "empty") {
-                                Text(
-                                    text = if (teamId == null) {
-                                        "No project team id yet — invite becomes available once Modrinth returns the team."
-                                    } else {
-                                        "No direct project collaborators. Invite people to this project team, or manage organization members under Teams."
-                                    },
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    modifier = Modifier.padding(vertical = 8.dp),
-                                )
-                            }
-                        } else {
-                            items(members, key = { "team-${it.user.id}" }, contentType = { "member" }) { member ->
-                                Box(modifier = Modifier.animateItem()) {
-                                    ProjectMemberCard(
-                                        member = member,
-                                        canManage = canManageMembers,
-                                        isCurrentUser = member.user.id == currentUserId,
-                                        isBusy = projectAction.isRunning && projectAction.targetId == member.user.id,
-                                        onEdit = { editingMember = member },
-                                        onRemove = { project.team?.let { onRemoveMember(it, member.user.id) } },
-                                        onJoin = { project.team?.let(onJoinTeam) },
-                                    )
-                                }
-                            }
                         }
                     }
                 }

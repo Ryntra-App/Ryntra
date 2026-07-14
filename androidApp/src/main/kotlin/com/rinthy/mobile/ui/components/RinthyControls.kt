@@ -211,7 +211,7 @@ fun RinthyPrimaryButton(
             } else {
                 Icon(icon, contentDescription = null, modifier = Modifier.size(19.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(text)
+                Text(text, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
             }
         }
         return
@@ -286,7 +286,7 @@ fun RinthySecondaryButton(
         ) {
             Icon(icon, contentDescription = null, modifier = Modifier.size(19.dp))
             Spacer(Modifier.width(8.dp))
-            Text(text)
+            Text(text, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
         }
         return
     }
@@ -340,6 +340,9 @@ private fun ButtonLabel(text: String, icon: ImageVector, color: Color) {
         BasicText(
             text = text,
             style = RinthyDesign.body.copy(color = color),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            softWrap = false,
             modifier = Modifier.padding(start = 8.dp),
         )
     }
