@@ -23,6 +23,7 @@ The shared module has no UI dependency. `AppController` owns session-scoped load
 - Creator analytics, project trends and wallet reporting.
 - Native loading, retry, empty and refresh states.
 - Dark and light Android themes; system-native iOS appearance.
+- Adaptive/themed Android launcher icons and light, dark and tinted iOS app icons.
 - Shared tests using Ktor `MockEngine` plus Android lint and build checks.
 
 ## Requirements
