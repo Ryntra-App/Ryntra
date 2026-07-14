@@ -66,6 +66,24 @@ class ModrinthApi(
     suspend fun deleteGalleryImage(projectIdOrSlug: String, imageUrl: String, token: String) =
         projects.deleteGalleryImage(projectIdOrSlug, imageUrl, token)
 
+    suspend fun modifyGalleryImage(
+        projectIdOrSlug: String,
+        imageUrl: String,
+        featured: Boolean? = null,
+        title: String? = null,
+        description: String? = null,
+        ordering: Int? = null,
+        token: String,
+    ) = projects.modifyGalleryImage(
+        projectIdOrSlug = projectIdOrSlug,
+        imageUrl = imageUrl,
+        featured = featured,
+        title = title,
+        description = description,
+        ordering = ordering,
+        token = token,
+    )
+
     suspend fun getProjectVersions(projectIdOrSlug: String, token: String): List<ProjectVersion> =
         versions.getForProject(projectIdOrSlug, token)
 

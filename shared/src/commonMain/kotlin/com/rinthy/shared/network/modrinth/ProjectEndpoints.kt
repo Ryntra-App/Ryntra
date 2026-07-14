@@ -68,4 +68,27 @@ internal class ProjectEndpoints(
             parameter("url", imageUrl)
         }.ensureSuccess()
     }
+
+    /**
+     * PATCH gallery metadata: featured (banner), title, description, ordering.
+     * See Modrinth OpenAPI `modifyGalleryImage`.
+     */
+    suspend fun modifyGalleryImage(
+        projectIdOrSlug: String,
+        imageUrl: String,
+        featured: Boolean? = null,
+        title: String? = null,
+        description: String? = null,
+        ordering: Int? = null,
+        token: String,
+    ) {
+        client.patch("project/$projectIdOrSlug/gallery") {
+            authorize(token)
+            parameter("url", imageUrl)
+            featured?.let { parameter("featured", it) }
+            title?.let { parameter("title", it) }
+            description?.let { parameter("description", it) }
+            ordering?.let { parameter("ordering", it) }
+        }.ensureSuccess()
+    }
 }

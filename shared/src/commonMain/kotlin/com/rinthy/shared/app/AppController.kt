@@ -247,6 +247,29 @@ class AppController internal constructor(
         repository.deleteGalleryImage(projectIdOrSlug, imageUrl, requireToken("deleting a gallery image"))
     }
 
+    suspend fun modifyGalleryImage(
+        projectIdOrSlug: String,
+        imageUrl: String,
+        featured: Boolean? = null,
+        title: String? = null,
+        description: String? = null,
+        ordering: Int? = null,
+    ) {
+        repository.modifyGalleryImage(
+            projectIdOrSlug = projectIdOrSlug,
+            imageUrl = imageUrl,
+            featured = featured,
+            title = title,
+            description = description,
+            ordering = ordering,
+            token = requireToken("updating a gallery image"),
+        )
+    }
+
+    suspend fun setGalleryImageAsBanner(projectIdOrSlug: String, imageUrl: String) {
+        modifyGalleryImage(projectIdOrSlug = projectIdOrSlug, imageUrl = imageUrl, featured = true)
+    }
+
     suspend fun createVersion(projectId: String, request: CreateVersionRequest): ProjectVersion {
         require(request.files.sumOf { it.bytes.size.toLong() } <= MAX_VERSION_UPLOAD_BYTES) {
             "Version files must be 128 MiB or smaller in total."

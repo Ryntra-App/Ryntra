@@ -34,6 +34,7 @@ import coil3.compose.AsyncImage
 import com.composables.icons.lucide.Download
 import com.composables.icons.lucide.Heart
 import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.RefreshCw
 import com.composables.icons.lucide.Star
 import com.rinthy.mobile.R
 import com.rinthy.mobile.ui.theme.RinthyDesign
@@ -113,11 +114,11 @@ internal fun ProjectBannerCard(
                     ) {
                         ProjectBannerMetric(Lucide.Download, model.downloads, MaterialTheme.colorScheme.primary)
                         ProjectBannerMetric(Lucide.Heart, model.followers, MaterialTheme.colorScheme.tertiary)
-                        model.updated?.let {
-                            Text(
-                                it,
-                                color = RinthyDesign.colors.labelSecondary,
-                                style = MaterialTheme.typography.labelSmall,
+                        model.updated?.let { date ->
+                            ProjectBannerMetric(
+                                Lucide.RefreshCw,
+                                stringResource(R.string.project_updated_label) + " " + date,
+                                RinthyDesign.colors.labelSecondary,
                             )
                         }
                     }

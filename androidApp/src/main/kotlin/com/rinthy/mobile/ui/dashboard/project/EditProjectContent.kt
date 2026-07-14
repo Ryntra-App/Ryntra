@@ -76,8 +76,10 @@ internal fun EditProjectContent(
     onClearStatus: () -> Unit,
     onChangeIcon: (ProjectFileUpload) -> Unit,
     onDeleteIcon: () -> Unit,
-    onAddGalleryImage: (ProjectFileUpload) -> Unit,
+    onAddGalleryImage: (ProjectFileUpload, Boolean, String, String) -> Unit,
     onDeleteGalleryImage: (String) -> Unit,
+    onSetGalleryBanner: (String) -> Unit,
+    onModifyGalleryImage: (url: String, title: String, description: String, ordering: Int?) -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -107,20 +109,6 @@ internal fun EditProjectContent(
             }
         }
     }
-    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        uri ?: return@rememberLauncherForActivityResult
-        isReadingImage = true
-        scope.launch {
-            val upload = withContext(Dispatchers.IO) { context.readUpload(uri, "gallery-image.png") }
-            isReadingImage = false
-            if (upload == null) localUploadError = context.getString(R.string.project_edit_image_unreadable)
-            else {
-                localUploadError = null
-                onAddGalleryImage(upload)
-            }
-        }
-    }
-
     LaunchedEffect(projectUpdate.isSuccess) {
         if (projectUpdate.isSuccess) onClearStatus()
     }
@@ -175,37 +163,14 @@ internal fun EditProjectContent(
         )
 
         EditHeading(stringResource(R.string.project_edit_gallery))
-        if (project.gallery.isNotEmpty()) {
-            FlowRow(
-                maxItemsInEachRow = 2,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                project.gallery.forEach { image ->
-                    Box(modifier = Modifier.weight(1f).aspectRatio(1.45f).clip(RoundedCornerShape(8.dp))) {
-                        AsyncImage(
-                            model = image.url,
-                            contentDescription = image.title,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.matchParentSize(),
-                        )
-                        IconButton(
-                            onClick = { onDeleteGalleryImage(image.url) },
-                            modifier = Modifier.align(Alignment.TopEnd).background(MaterialTheme.colorScheme.surface.copy(alpha = 0.82f), RoundedCornerShape(8.dp)),
-                        ) {
-                            Icon(Lucide.Trash2, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                        }
-                    }
-                }
-            }
-        }
-        Spacer(Modifier.height(10.dp))
-        RinthySecondaryButton(
-            text = stringResource(R.string.project_edit_add_gallery),
-            icon = Lucide.Upload,
-            enabled = !isReadingImage && !actionState.isRunning,
-            onClick = { galleryLauncher.launch(arrayOf("image/*")) },
+        ProjectGalleryManageSection(
+            gallery = project.gallery,
+            isBusy = actionState.isRunning,
+            actionState = actionState,
+            onAdd = onAddGalleryImage,
+            onDelete = onDeleteGalleryImage,
+            onSetBanner = onSetGalleryBanner,
+            onSaveMeta = onModifyGalleryImage,
         )
 
         EditHeading(stringResource(R.string.project_edit_status_license))

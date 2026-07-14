@@ -409,13 +409,50 @@ class RinthyViewModel(application: Application) : AndroidViewModel(application) 
         refreshProjectAfterMutation(projectId, refreshVersions = false, refreshMembers = false)
     }
 
-    fun addGalleryImage(projectId: String, file: ProjectFileUpload) = runProjectAction(projectId, "Gallery image added") {
-        controller.addGalleryImage(projectId, file)
+    fun addGalleryImage(
+        projectId: String,
+        file: ProjectFileUpload,
+        featured: Boolean = false,
+        title: String = "",
+        description: String = "",
+    ) = runProjectAction(projectId, "Gallery image added") {
+        controller.addGalleryImage(
+            projectIdOrSlug = projectId,
+            file = file,
+            featured = featured,
+            title = title.ifBlank { "Gallery image" },
+            description = description,
+        )
         refreshProjectAfterMutation(projectId, refreshVersions = false, refreshMembers = false)
     }
 
     fun deleteGalleryImage(projectId: String, imageUrl: String) = runProjectAction(imageUrl, "Gallery image removed") {
         controller.deleteGalleryImage(projectId, imageUrl)
+        refreshProjectAfterMutation(projectId, refreshVersions = false, refreshMembers = false)
+    }
+
+    fun setGalleryImageAsBanner(projectId: String, imageUrl: String) =
+        runProjectAction(imageUrl, "Banner updated") {
+            controller.setGalleryImageAsBanner(projectId, imageUrl)
+            refreshProjectAfterMutation(projectId, refreshVersions = false, refreshMembers = false)
+        }
+
+    fun modifyGalleryImage(
+        projectId: String,
+        imageUrl: String,
+        featured: Boolean? = null,
+        title: String? = null,
+        description: String? = null,
+        ordering: Int? = null,
+    ) = runProjectAction(imageUrl, "Gallery image updated") {
+        controller.modifyGalleryImage(
+            projectIdOrSlug = projectId,
+            imageUrl = imageUrl,
+            featured = featured,
+            title = title,
+            description = description,
+            ordering = ordering,
+        )
         refreshProjectAfterMutation(projectId, refreshVersions = false, refreshMembers = false)
     }
 

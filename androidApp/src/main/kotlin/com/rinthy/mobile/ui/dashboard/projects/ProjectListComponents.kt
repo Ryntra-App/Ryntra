@@ -39,6 +39,7 @@ import com.composables.icons.lucide.ChevronRight
 import com.composables.icons.lucide.Download
 import com.composables.icons.lucide.Heart
 import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.RefreshCw
 import com.composables.icons.lucide.Star
 import com.rinthy.mobile.R
 import com.rinthy.mobile.ui.components.displayTypeLabel
@@ -173,11 +174,11 @@ private fun ProjectMetadata(model: ProjectRowModel, modifier: Modifier = Modifie
     ) {
         ProjectMetric(Lucide.Download, model.downloads, RinthyDesign.colors.accent)
         ProjectMetric(Lucide.Heart, model.followers, RinthyDesign.colors.labelSecondary)
-        model.updated?.let {
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.labelSmall,
+        model.updated?.let { date ->
+            ProjectMetric(
+                icon = Lucide.RefreshCw,
+                value = stringResource(R.string.project_updated_label) + " " + date,
+                color = RinthyDesign.colors.labelSecondary,
             )
         }
     }

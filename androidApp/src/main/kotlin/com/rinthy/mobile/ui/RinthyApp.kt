@@ -77,8 +77,20 @@ fun RinthyApp(viewModel: RinthyViewModel) {
                         onLoadAnalytics = viewModel::loadAnalytics,
                         onChangeProjectIcon = viewModel::changeProjectIcon,
                         onDeleteProjectIcon = viewModel::deleteProjectIcon,
-                        onAddGalleryImage = viewModel::addGalleryImage,
+                        onAddGalleryImage = { projectId, file, featured, title, description ->
+                            viewModel.addGalleryImage(projectId, file, featured, title, description)
+                        },
                         onDeleteGalleryImage = viewModel::deleteGalleryImage,
+                        onSetGalleryBanner = viewModel::setGalleryImageAsBanner,
+                        onModifyGalleryImage = { projectId, url, title, description, ordering ->
+                            viewModel.modifyGalleryImage(
+                                projectId = projectId,
+                                imageUrl = url,
+                                title = title,
+                                description = description,
+                                ordering = ordering,
+                            )
+                        },
                         onCreateVersion = viewModel::createVersion,
                         onUpdateVersion = viewModel::updateVersion,
                         onDeleteVersion = viewModel::deleteVersion,

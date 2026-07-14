@@ -76,8 +76,10 @@ fun ProjectDetailScreen(
     memberSearch: MemberSearchState = MemberSearchState(),
     onChangeProjectIcon: (String, ProjectFileUpload) -> Unit = { _, _ -> },
     onDeleteProjectIcon: (String) -> Unit = {},
-    onAddGalleryImage: (String, ProjectFileUpload) -> Unit = { _, _ -> },
+    onAddGalleryImage: (String, ProjectFileUpload, Boolean, String, String) -> Unit = { _, _, _, _, _ -> },
     onDeleteGalleryImage: (String, String) -> Unit = { _, _ -> },
+    onSetGalleryBanner: (String, String) -> Unit = { _, _ -> },
+    onModifyGalleryImage: (String, String, String, String, Int?) -> Unit = { _, _, _, _, _ -> },
     onCreateVersion: (String, CreateVersionRequest) -> Unit = { _, _ -> },
     onUpdateVersion: (String, VersionUpdate) -> Unit = { _, _ -> },
     onDeleteVersion: (String) -> Unit = {},
@@ -119,6 +121,7 @@ fun ProjectDetailScreen(
     var editingVersion by remember(project.id) { mutableStateOf<ProjectVersion?>(null) }
     var isInvitingMember by remember(project.id) { mutableStateOf(false) }
     var editingMember by remember(project.id) { mutableStateOf<ProjectMember?>(null) }
+    var viewingGalleryImage by remember(project.id) { mutableStateOf<com.rinthy.shared.model.GalleryImage?>(null) }
     // Prefer project-team membership; fall back to org membership for permission checks.
     val currentMember = remember(members, organizationMembers, currentUserId) {
         members.firstOrNull { it.user.id == currentUserId }
@@ -193,18 +196,10 @@ fun ProjectDetailScreen(
                 if (project.gallery.isNotEmpty()) {
                     item {
                         DetailHeading(stringResource(R.string.project_gallery))
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            items(project.gallery, key = { it.url }) { image ->
-                                AsyncImage(
-                                    model = image.url,
-                                    contentDescription = image.title,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .size(width = 172.dp, height = 108.dp)
-                                        .clip(RoundedCornerShape(8.dp)),
-                                )
-                            }
-                        }
+                        ProjectGalleryOverviewStrip(
+                            gallery = project.gallery,
+                            onOpen = { viewingGalleryImage = it },
+                        )
                     }
                 }
                 if (dependencies.isNotEmpty()) {
@@ -283,8 +278,14 @@ fun ProjectDetailScreen(
                     actionState = projectAction,
                     onChangeIcon = { onChangeProjectIcon(project.id, it) },
                     onDeleteIcon = { onDeleteProjectIcon(project.id) },
-                    onAddGalleryImage = { onAddGalleryImage(project.id, it) },
+                    onAddGalleryImage = { file, featured, title, description ->
+                        onAddGalleryImage(project.id, file, featured, title, description)
+                    },
                     onDeleteGalleryImage = { onDeleteGalleryImage(project.id, it) },
+                    onSetGalleryBanner = { onSetGalleryBanner(project.id, it) },
+                    onModifyGalleryImage = { url, title, description, ordering ->
+                        onModifyGalleryImage(project.id, url, title, description, ordering)
+                    },
                 )
             }
 
@@ -398,6 +399,13 @@ fun ProjectDetailScreen(
                 },
             )
         }
+    }
+    viewingGalleryImage?.let { image ->
+        ProjectGalleryViewerDialog(
+            image = image,
+            canManage = false,
+            onDismiss = { viewingGalleryImage = null },
+        )
     }
 }
 
