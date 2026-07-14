@@ -1,124 +1,115 @@
 package com.rinthy.shared.network
 
 import com.rinthy.shared.model.Account
+import com.rinthy.shared.model.AccountProfileUpdate
+import com.rinthy.shared.model.AnalyticsQuery
+import com.rinthy.shared.model.CreateVersionRequest
 import com.rinthy.shared.model.Organization
 import com.rinthy.shared.model.Project
+import com.rinthy.shared.model.ProjectFileUpload
 import com.rinthy.shared.model.ProjectMember
+import com.rinthy.shared.model.ProjectMemberUpdate
+import com.rinthy.shared.model.ProjectUpdate
 import com.rinthy.shared.model.ProjectVersion
+import com.rinthy.shared.model.VersionUpdate
+import com.rinthy.shared.network.modrinth.AccountEndpoints
+import com.rinthy.shared.network.modrinth.InsightEndpoints
+import com.rinthy.shared.network.modrinth.ProjectEndpoints
+import com.rinthy.shared.network.modrinth.TeamOrganizationEndpoints
+import com.rinthy.shared.network.modrinth.VersionEndpoints
 import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.request.get
-import io.ktor.client.request.header
-import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsText
-import io.ktor.http.HttpHeaders
-import io.ktor.http.isSuccess
-import kotlinx.serialization.Serializable
-import kotlinx.coroutines.CancellationException
 
 class ModrinthApi(
     private val httpClient: HttpClient,
 ) {
-    suspend fun getCurrentAccount(token: String): Account =
-        httpClient.get("user") { authorize(token) }.decode()
+    private val accounts = AccountEndpoints(httpClient)
+    private val projects = ProjectEndpoints(httpClient)
+    private val versions = VersionEndpoints(httpClient)
+    private val teams = TeamOrganizationEndpoints(httpClient)
+    private val insights = InsightEndpoints(httpClient)
 
-    suspend fun getProjects(userId: String, token: String): List<Project> =
-        httpClient.get("user/$userId/projects") { authorize(token) }.decode()
+    suspend fun getCurrentAccount(token: String): Account = accounts.getCurrent(token)
 
-    suspend fun getProject(projectIdOrSlug: String, token: String): Project =
-        httpClient.get("project/$projectIdOrSlug") { authorize(token) }.decode()
+    suspend fun updateAccountProfile(userId: String, update: AccountProfileUpdate, token: String) =
+        accounts.updateProfile(userId, update, token)
+
+    suspend fun findUser(username: String, token: String): Account? = accounts.findUser(username, token)
+
+    suspend fun getProjects(userId: String, token: String): List<Project> = projects.getForUser(userId, token)
+
+    suspend fun getProject(projectIdOrSlug: String, token: String): Project = projects.get(projectIdOrSlug, token)
+
+    suspend fun updateProject(projectIdOrSlug: String, update: ProjectUpdate, token: String) =
+        projects.update(projectIdOrSlug, update, token)
+
+    suspend fun changeProjectIcon(projectIdOrSlug: String, file: ProjectFileUpload, token: String) =
+        projects.changeIcon(projectIdOrSlug, file, token)
+
+    suspend fun deleteProjectIcon(projectIdOrSlug: String, token: String) =
+        projects.deleteIcon(projectIdOrSlug, token)
+
+    suspend fun addGalleryImage(
+        projectIdOrSlug: String,
+        file: ProjectFileUpload,
+        featured: Boolean,
+        title: String,
+        description: String,
+        token: String,
+    ) = projects.addGalleryImage(projectIdOrSlug, file, featured, title, description, token)
+
+    suspend fun deleteGalleryImage(projectIdOrSlug: String, imageUrl: String, token: String) =
+        projects.deleteGalleryImage(projectIdOrSlug, imageUrl, token)
 
     suspend fun getProjectVersions(projectIdOrSlug: String, token: String): List<ProjectVersion> =
-        httpClient.get("project/$projectIdOrSlug/version") { authorize(token) }.decode()
+        versions.getForProject(projectIdOrSlug, token)
 
-    suspend fun getProjectMembers(projectIdOrSlug: String, teamId: String?, token: String): List<ProjectMember> {
-        if (teamId != null) {
-            try {
-                val teamMembers = httpClient.get("team/$teamId/members") { authorize(token) }.decode<List<ProjectMember>>()
-                if (teamMembers.isNotEmpty()) return teamMembers
-            } catch (error: CancellationException) {
-                throw error
-            } catch (_: Exception) {
-                // Some projects expose members only through the project endpoint below.
-            }
-        }
-        return httpClient.get("project/$projectIdOrSlug/members") { authorize(token) }.decode()
-    }
+    suspend fun createVersion(projectId: String, request: CreateVersionRequest, token: String): ProjectVersion =
+        versions.create(projectId, request, token)
 
-    suspend fun getOrganizations(userId: String, token: String): List<Organization> {
-        val endpoints = listOf(
-            "https://api.modrinth.com/v3/user/$userId/organizations",
-            "https://api.modrinth.com/v2/user/$userId/organizations",
-        )
-        var authorizationFailure: ApiException? = null
+    suspend fun updateVersion(versionId: String, update: VersionUpdate, token: String) =
+        versions.update(versionId, update, token)
 
-        for (endpoint in endpoints) {
-            try {
-                return httpClient.get(endpoint) { authorize(token) }.decode()
-            } catch (error: CancellationException) {
-                throw error
-            } catch (error: ApiException) {
-                if (error.statusCode == 401 || error.statusCode == 403) {
-                    authorizationFailure = error
-                }
-            } catch (_: Exception) {
-                // Organizations are optional dashboard data; try the fallback API version.
-            }
-        }
+    suspend fun deleteVersion(versionId: String, token: String) = versions.delete(versionId, token)
 
-        authorizationFailure?.let { throw it }
-        return emptyList()
-    }
+    suspend fun getProjectMembers(projectIdOrSlug: String, teamId: String?, token: String): List<ProjectMember> =
+        teams.getProjectMembers(projectIdOrSlug, teamId, token)
 
-    suspend fun getOrganizationProjects(organizationIdOrSlug: String, token: String): List<Project> {
-        val endpoints = listOf(
-            "https://api.modrinth.com/v3/organization/$organizationIdOrSlug/projects",
-            "https://api.modrinth.com/v2/organization/$organizationIdOrSlug/projects",
-        )
+    suspend fun addTeamMember(teamId: String, userId: String, token: String) =
+        teams.addMember(teamId, userId, token)
 
-        for (endpoint in endpoints) {
-            try {
-                return httpClient.get(endpoint) { authorize(token) }.decode()
-            } catch (error: CancellationException) {
-                throw error
-            } catch (_: Exception) {
-                // Try the next API version before returning an empty optional section.
-            }
-        }
+    suspend fun updateTeamMember(teamId: String, userId: String, update: ProjectMemberUpdate, token: String) =
+        teams.updateMember(teamId, userId, update, token)
 
-        return emptyList()
-    }
+    suspend fun deleteTeamMember(teamId: String, userId: String, token: String) =
+        teams.deleteMember(teamId, userId, token)
+
+    suspend fun joinTeam(teamId: String, token: String) = teams.join(teamId, token)
+
+    suspend fun transferTeamOwnership(teamId: String, userId: String, token: String) =
+        teams.transferOwnership(teamId, userId, token)
+
+    suspend fun getOrganizations(userId: String, token: String): List<Organization> =
+        teams.getOrganizations(userId, token)
+
+    suspend fun getOrganization(organizationIdOrSlug: String, token: String): Organization =
+        teams.getOrganization(organizationIdOrSlug, token)
+
+    suspend fun getOrganizationMembers(
+        organizationIdOrSlug: String,
+        teamId: String?,
+        token: String,
+    ): List<ProjectMember> = teams.getOrganizationMembers(organizationIdOrSlug, teamId, token)
+
+    suspend fun getOrganizationProjects(organizationIdOrSlug: String, token: String): List<Project> =
+        teams.getOrganizationProjects(organizationIdOrSlug, token)
+
+    suspend fun getAnalytics(query: AnalyticsQuery, includeRevenue: Boolean, token: String): AnalyticsResponse =
+        insights.getAnalytics(query, includeRevenue, token)
+
+    suspend fun getPayoutHistory(userId: String, token: String): PayoutHistoryResponse =
+        insights.getPayoutHistory(userId, token)
+
+    suspend fun getPayoutBalance(token: String): PayoutBalanceResponse = insights.getPayoutBalance(token)
 
     fun close() = httpClient.close()
-
-    private fun io.ktor.client.request.HttpRequestBuilder.authorize(token: String) {
-        val authorization = if (token.count { it == '.' } == 2 && ' ' !in token) {
-            "Bearer $token"
-        } else {
-            token
-        }
-        header(HttpHeaders.Authorization, authorization)
-    }
-
-    private suspend inline fun <reified T> HttpResponse.decode(): T {
-        if (status.isSuccess()) return body()
-
-        val responseText = bodyAsText()
-        val apiError = runCatching {
-            apiJson.decodeFromString<ErrorResponse>(responseText)
-        }.getOrNull()
-        val safeMessage = when (status.value) {
-            401 -> "The access token is invalid or expired."
-            403 -> "This token does not have the required permission."
-            429 -> "Modrinth is receiving too many requests. Try again shortly."
-            else -> apiError?.description ?: "Modrinth request failed (${status.value})."
-        }
-        throw ApiException(status.value, safeMessage)
-    }
-
-    @Serializable
-    private data class ErrorResponse(
-        val error: String? = null,
-        val description: String? = null,
-    )
 }

@@ -1,51 +1,93 @@
 package com.rinthy.mobile.ui.dashboard
 
+import androidx.annotation.StringRes
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.Alignment
-import androidx.activity.compose.BackHandler
-import com.rinthy.mobile.OrganizationDetailState
-import com.rinthy.mobile.ui.components.RinthyTab
-import com.rinthy.mobile.ui.components.RinthyTabBar
-import com.rinthy.mobile.ui.components.RinthyTopBar
-import com.rinthy.mobile.ProjectDetailState
-import com.rinthy.shared.model.Dashboard
-import com.rinthy.shared.model.Organization
-import com.rinthy.shared.model.Project
 import com.composables.icons.lucide.ArrowLeft
 import com.composables.icons.lucide.ChartNoAxesColumnIncreasing
 import com.composables.icons.lucide.LayoutGrid
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Package
 import com.composables.icons.lucide.UsersRound
+import com.rinthy.mobile.OrganizationDetailState
+import com.rinthy.mobile.R
+import com.rinthy.mobile.MemberSearchState
+import com.rinthy.mobile.AnalyticsState
+import com.rinthy.mobile.ProfileUpdateState
+import com.rinthy.mobile.ProjectActionState
+import com.rinthy.mobile.ProjectDetailState
+import com.rinthy.mobile.preferences.AppLanguage
+import com.rinthy.mobile.preferences.GlassQuality
+import com.rinthy.mobile.preferences.AppearanceMode
+import com.rinthy.mobile.preferences.RinthyPreferences
+import com.rinthy.mobile.preferences.ThemeStyle
+import com.rinthy.mobile.ui.components.RinthyTab
+import com.rinthy.mobile.ui.components.RinthyTabBar
+import com.rinthy.mobile.ui.components.RinthyTopBar
+import com.rinthy.mobile.ui.theme.RinthyDesign
+import com.rinthy.mobile.ui.dashboard.account.AccountScreen
+import com.rinthy.mobile.ui.dashboard.analytics.AnalyticsScreen
+import com.rinthy.mobile.ui.dashboard.organizations.OrganizationDetailScreen
+import com.rinthy.mobile.ui.dashboard.organizations.OrganizationsScreen
+import com.rinthy.mobile.ui.dashboard.overview.OverviewScreen
+import com.rinthy.mobile.ui.dashboard.project.ProjectDetailScreen
+import com.rinthy.mobile.ui.dashboard.projects.ProjectsScreen
+import com.rinthy.shared.model.Dashboard
+import com.rinthy.shared.model.Organization
+import com.rinthy.shared.model.Project
+import com.rinthy.shared.model.CreateVersionRequest
+import com.rinthy.shared.model.ProjectFileUpload
+import com.rinthy.shared.model.ProjectMemberUpdate
+import com.rinthy.shared.model.ProjectSortMode
+import com.rinthy.shared.model.VersionUpdate
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
+import kotlinx.coroutines.delay
 
 private enum class DashboardDestination(
-    val label: String,
+    @StringRes val labelRes: Int,
     val icon: ImageVector,
 ) {
-    Overview("Dashboard", Lucide.LayoutGrid),
-    Projects("Projects", Lucide.Package),
-    Organizations("Teams", Lucide.UsersRound),
-    Analytics("Analytics", Lucide.ChartNoAxesColumnIncreasing),
+    Overview(R.string.nav_dashboard, Lucide.LayoutGrid),
+    Projects(R.string.nav_projects, Lucide.Package),
+    Organizations(R.string.nav_teams, Lucide.UsersRound),
+    Analytics(R.string.nav_analytics, Lucide.ChartNoAxesColumnIncreasing),
+}
+
+private enum class DashboardLayer {
+    Tabs,
+    Profile,
+    Project,
+    Organization,
 }
 
 @Composable
@@ -59,20 +101,81 @@ fun DashboardScreen(
     onCloseProject: () -> Unit = {},
     onOrganizationClick: (Organization) -> Unit = {},
     onCloseOrganization: () -> Unit = {},
+    profileUpdate: ProfileUpdateState = ProfileUpdateState(),
+    onUpdateProfile: (String, String, String) -> Unit = { _, _, _ -> },
+    projectUpdate: com.rinthy.mobile.ProjectUpdateState = com.rinthy.mobile.ProjectUpdateState(),
+    onUpdateProject: (String, com.rinthy.shared.model.ProjectUpdate) -> Unit = { _, _ -> },
+    onClearProjectUpdateStatus: () -> Unit = {},
+    projectAction: ProjectActionState = ProjectActionState(),
+    memberSearch: MemberSearchState = MemberSearchState(),
+    analytics: AnalyticsState = AnalyticsState(),
+    preferences: RinthyPreferences = RinthyPreferences(),
+    onLoadAnalytics: (Int) -> Unit = {},
+    onChangeProjectIcon: (String, ProjectFileUpload) -> Unit = { _, _ -> },
+    onDeleteProjectIcon: (String) -> Unit = {},
+    onAddGalleryImage: (String, ProjectFileUpload) -> Unit = { _, _ -> },
+    onDeleteGalleryImage: (String, String) -> Unit = { _, _ -> },
+    onCreateVersion: (String, CreateVersionRequest) -> Unit = { _, _ -> },
+    onUpdateVersion: (String, VersionUpdate) -> Unit = { _, _ -> },
+    onDeleteVersion: (String) -> Unit = {},
+    onSearchMember: (String) -> Unit = {},
+    onInviteMember: (String, String) -> Unit = { _, _ -> },
+    onUpdateMember: (String, String, ProjectMemberUpdate) -> Unit = { _, _, _ -> },
+    onRemoveMember: (String, String) -> Unit = { _, _ -> },
+    onJoinTeam: (String) -> Unit = {},
+    onTransferOwnership: (String, String) -> Unit = { _, _ -> },
+    onClearProjectActionStatus: () -> Unit = {},
+    onThemeStyleChange: (ThemeStyle) -> Unit = {},
+    onAppearanceModeChange: (AppearanceMode) -> Unit = {},
+    onAppLanguageChange: (AppLanguage) -> Unit = {},
+    onShowFavoriteProjectsChange: (Boolean) -> Unit = {},
+    onReduceMotionChange: (Boolean) -> Unit = {},
+    onGlassQualityChange: (GlassQuality) -> Unit = {},
+    onSortModeChange: (ProjectSortMode) -> Unit = {},
+    onToggleFavoriteProject: (String) -> Unit = {},
+    onResetAppearance: () -> Unit = {},
+    onExportPreferences: (String) -> String = { "" },
+    onImportPreferences: (String) -> Result<Unit> = { Result.failure(IllegalArgumentException("Import unavailable.")) },
     onSignOut: () -> Unit,
 ) {
     var destination by rememberSaveable { mutableStateOf(DashboardDestination.Overview) }
     var isProfileVisible by rememberSaveable { mutableStateOf(false) }
-    val snackbarHostState = remember { SnackbarHostState() }
+    var visibleError by remember { mutableStateOf<String?>(null) }
+    var retainedProjectDetail by remember { mutableStateOf<ProjectDetailState?>(null) }
+    var retainedOrganizationDetail by remember { mutableStateOf<OrganizationDetailState?>(null) }
+    val tabStateHolder = rememberSaveableStateHolder()
     val hazeState = rememberHazeState()
+    val colors = RinthyDesign.colors
+    val motion = RinthyDesign.motion
+    val isPlatformNative = RinthyDesign.isPlatformNative
+    val detailTitle = projectDetail?.project?.title ?: organizationDetail?.organization?.name
+    val isDetailVisible = isProfileVisible || projectDetail != null || organizationDetail != null
+    val contentLayer = when {
+        projectDetail != null -> DashboardLayer.Project
+        organizationDetail != null -> DashboardLayer.Organization
+        isProfileVisible -> DashboardLayer.Profile
+        else -> DashboardLayer.Tabs
+    }
+
+    LaunchedEffect(projectDetail) {
+        projectDetail?.let { retainedProjectDetail = it }
+    }
+    LaunchedEffect(organizationDetail) {
+        organizationDetail?.let { retainedOrganizationDetail = it }
+    }
 
     LaunchedEffect(errorMessage) {
-        errorMessage?.let { snackbarHostState.showSnackbar(it) }
+        visibleError = errorMessage
+        if (errorMessage != null) {
+            delay(4_500)
+            visibleError = null
+        }
     }
 
     val destinations = DashboardDestination.entries
-    val tabs = remember {
-        destinations.map { RinthyTab(it.label, it.icon) }
+    val destinationLabels = destinations.map { stringResource(it.labelRes) }
+    val tabs = remember(destinationLabels) {
+        destinations.mapIndexed { index, item -> RinthyTab(destinationLabels[index], item.icon) }
     }
     BackHandler(enabled = isProfileVisible || projectDetail != null || organizationDetail != null) {
         when {
@@ -82,81 +185,182 @@ fun DashboardScreen(
         }
     }
 
-    Surface(
-        color = MaterialTheme.colorScheme.background,
-        contentColor = MaterialTheme.colorScheme.onBackground,
+    Box(
         modifier = Modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .background(colors.background),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .hazeSource(hazeState)
+                    .then(if (isDetailVisible || isPlatformNative) Modifier else Modifier.hazeSource(hazeState))
                     .statusBarsPadding()
                     .navigationBarsPadding()
-                    .padding(top = 76.dp),
+                    .padding(top = 84.dp),
             ) {
-                if (projectDetail != null) {
-                    ProjectDetailScreen(
-                        project = projectDetail.project,
-                        versions = projectDetail.versions,
-                        members = projectDetail.members,
-                        isLoading = projectDetail.isLoading,
-                        errorMessage = projectDetail.errorMessage,
-                        memberErrorMessage = projectDetail.memberErrorMessage,
+                AnimatedContent(
+                    targetState = contentLayer,
+                    transitionSpec = {
+                        val duration = motion.duration(300)
+                        when {
+                            targetState == DashboardLayer.Tabs -> {
+                                fadeIn(tween(duration)) togetherWith
+                                    slideOutOfContainer(
+                                        towards = androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.End,
+                                        animationSpec = tween(duration),
+                                    )
+                            }
+                            initialState == DashboardLayer.Tabs -> {
+                                slideIntoContainer(
+                                    towards = androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Start,
+                                    animationSpec = tween(duration),
+                                ) togetherWith
+                                    fadeOut(tween(motion.duration(120)))
+                            }
+                            else -> fadeIn(tween(motion.duration(180))) togetherWith
+                                fadeOut(tween(motion.duration(120)))
+                        }
+                    },
+                    label = "Dashboard layer",
+                    modifier = Modifier.fillMaxSize(),
+                ) { layer ->
+                    when (layer) {
+                    DashboardLayer.Project -> (projectDetail ?: retainedProjectDetail)?.let { detail ->
+                        ProjectDetailScreen(
+                        project = detail.project,
+                        versions = detail.versions,
+                        dependencies = detail.dependencies,
+                        members = detail.members,
+                        organizationMembers = detail.organizationMembers,
+                        organizationName = detail.organizationName,
+                        currentUserId = dashboard.account.id,
+                        isLoading = detail.isLoading,
+                        errorMessage = detail.errorMessage,
+                        memberErrorMessage = detail.memberErrorMessage,
+                        projectUpdate = projectUpdate,
+                        onUpdateProject = onUpdateProject,
+                        onClearProjectUpdateStatus = onClearProjectUpdateStatus,
+                        projectAction = projectAction,
+                        memberSearch = memberSearch,
+                        onChangeProjectIcon = onChangeProjectIcon,
+                        onDeleteProjectIcon = onDeleteProjectIcon,
+                        onAddGalleryImage = onAddGalleryImage,
+                        onDeleteGalleryImage = onDeleteGalleryImage,
+                        onCreateVersion = onCreateVersion,
+                        onUpdateVersion = onUpdateVersion,
+                        onDeleteVersion = onDeleteVersion,
+                        onSearchMember = onSearchMember,
+                        onInviteMember = onInviteMember,
+                        onUpdateMember = onUpdateMember,
+                        onRemoveMember = onRemoveMember,
+                        onJoinTeam = onJoinTeam,
+                        onTransferOwnership = onTransferOwnership,
+                        onClearProjectActionStatus = onClearProjectActionStatus,
                     )
-                } else if (organizationDetail != null) {
-                    OrganizationDetailScreen(
-                        organization = organizationDetail.organization,
-                        projects = organizationDetail.projects,
-                        isLoading = organizationDetail.isLoading,
-                        errorMessage = organizationDetail.errorMessage,
+                    }
+                    DashboardLayer.Organization -> (organizationDetail ?: retainedOrganizationDetail)?.let { detail ->
+                        OrganizationDetailScreen(
+                        organization = detail.organization,
+                        projects = detail.projects,
+                        members = detail.members,
+                        currentUserId = dashboard.account.id,
+                        isLoading = detail.isLoading,
+                        errorMessage = detail.errorMessage,
+                        projectAction = projectAction,
+                        memberSearch = memberSearch,
                         onProjectClick = onProjectClick,
+                        onSearchMember = onSearchMember,
+                        onInviteMember = onInviteMember,
+                        onUpdateMember = onUpdateMember,
+                        onRemoveMember = onRemoveMember,
+                        onJoinTeam = onJoinTeam,
+                        onTransferOwnership = onTransferOwnership,
+                        onClearProjectActionStatus = onClearProjectActionStatus,
                     )
-                } else if (isProfileVisible) {
-                    AccountScreen(
+                    }
+                    DashboardLayer.Profile -> AccountScreen(
                         account = dashboard.account,
                         projectCount = dashboard.projects.size,
                         organizationCount = dashboard.organizations.size,
+                        profileUpdate = profileUpdate,
+                        preferences = preferences,
+                        onUpdateProfile = onUpdateProfile,
+                        onThemeStyleChange = onThemeStyleChange,
+                        onAppearanceModeChange = onAppearanceModeChange,
+                        onAppLanguageChange = onAppLanguageChange,
+                        onShowFavoriteProjectsChange = onShowFavoriteProjectsChange,
+                        onReduceMotionChange = onReduceMotionChange,
+                        onGlassQualityChange = onGlassQualityChange,
+                        onResetAppearance = onResetAppearance,
+                        onExportPreferences = { onExportPreferences(dashboard.account.username) },
+                        onImportPreferences = onImportPreferences,
                         onSignOut = onSignOut,
                     )
-                } else {
-                    when (destination) {
-                        DashboardDestination.Overview -> OverviewScreen(
-                            dashboard = dashboard,
-                            onProjectClick = onProjectClick,
-                        )
-                        DashboardDestination.Projects -> ProjectsScreen(
-                            projects = dashboard.projects,
-                            onProjectClick = onProjectClick,
-                        )
-                        DashboardDestination.Organizations -> OrganizationsScreen(
-                            organizations = dashboard.organizations,
-                            onOrganizationClick = onOrganizationClick,
-                        )
-                        DashboardDestination.Analytics -> AnalyticsScreen(dashboard)
+                    DashboardLayer.Tabs -> AnimatedContent(
+                        targetState = destination,
+                        transitionSpec = {
+                            fadeIn(
+                                animationSpec = tween(
+                                    durationMillis = motion.duration(220),
+                                    delayMillis = motion.duration(90),
+                                ),
+                            ) togetherWith fadeOut(tween(motion.duration(90)))
+                        },
+                        label = "Dashboard destination",
+                        modifier = Modifier.fillMaxSize(),
+                    ) { targetDestination ->
+                        tabStateHolder.SaveableStateProvider(targetDestination) {
+                            when (targetDestination) {
+                            DashboardDestination.Overview -> OverviewScreen(
+                                dashboard = dashboard,
+                                onProjectClick = onProjectClick,
+                            )
+                            DashboardDestination.Projects -> ProjectsScreen(
+                                projects = dashboard.projects,
+                                sortMode = preferences.projectSortMode,
+                                favoriteProjectIds = preferences.favoriteProjectIds,
+                                showFavoriteProjects = preferences.showFavoriteProjects,
+                                onSortModeChange = onSortModeChange,
+                                onToggleFavoriteProject = onToggleFavoriteProject,
+                                onProjectClick = onProjectClick,
+                            )
+                            DashboardDestination.Organizations -> OrganizationsScreen(
+                                organizations = dashboard.organizations,
+                                onOrganizationClick = onOrganizationClick,
+                            )
+                            DashboardDestination.Analytics -> AnalyticsScreen(
+                                dashboard = dashboard,
+                                state = analytics,
+                                onRangeChange = onLoadAnalytics,
+                            )
+                            }
+                        }
+                    }
                     }
                 }
             }
-            val detailTitle = projectDetail?.project?.title ?: organizationDetail?.organization?.name
             RinthyTopBar(
-                title = detailTitle ?: if (isProfileVisible) "Profile" else destination.label,
+                title = detailTitle ?: if (isProfileVisible) {
+                    stringResource(R.string.nav_profile)
+                } else {
+                    destinationLabels[destination.ordinal]
+                },
                 avatarUrl = dashboard.account.avatarUrl,
-                avatarDescription = "Open ${dashboard.account.username}'s account",
+                avatarDescription = stringResource(R.string.nav_open_account, dashboard.account.username),
                 isRefreshing = isRefreshing,
                 onAvatarClick = { isProfileVisible = true },
-                navigationIcon = if (isProfileVisible || projectDetail != null || organizationDetail != null) Lucide.ArrowLeft else null,
-                navigationDescription = if (isProfileVisible || projectDetail != null || organizationDetail != null) "Back" else null,
+                navigationIcon = if (isDetailVisible) Lucide.ArrowLeft else null,
+                navigationDescription = if (isDetailVisible) stringResource(R.string.nav_back) else null,
                 onNavigationClick = {
                     onCloseProject()
                     onCloseOrganization()
                     isProfileVisible = false
                 },
-                showAvatar = !isProfileVisible && projectDetail == null && organizationDetail == null,
+                showAvatar = !isDetailVisible,
                 modifier = Modifier.align(Alignment.TopCenter),
             )
-            if (!isProfileVisible && projectDetail == null && organizationDetail == null) {
+            if (!isDetailVisible) {
                 RinthyTabBar(
                     tabs = tabs,
                     selectedIndex = destination.ordinal,
@@ -165,16 +369,30 @@ fun DashboardScreen(
                         isProfileVisible = false
                     },
                     hazeState = hazeState,
+                    glassQuality = preferences.glassQuality,
                     modifier = Modifier.align(Alignment.BottomCenter),
                 )
             }
-            SnackbarHost(
-                hostState = snackbarHostState,
+            AnimatedVisibility(
+                visible = visibleError != null,
+                enter = fadeIn(tween(motion.duration(180))) +
+                    slideInVertically(tween(motion.duration(180))) { it / 2 },
+                exit = fadeOut(tween(motion.duration(130))) +
+                    slideOutVertically(tween(motion.duration(130))) { it / 2 },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
-                    .padding(bottom = 92.dp),
-            )
+                    .padding(start = 18.dp, end = 18.dp, bottom = 96.dp),
+            ) {
+                BasicText(
+                    text = visibleError.orEmpty(),
+                    style = RinthyDesign.body.copy(color = colors.labelPrimary),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(colors.surfaceRaised.copy(alpha = 0.98f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 16.dp, vertical = 13.dp),
+                )
+            }
         }
     }
 }

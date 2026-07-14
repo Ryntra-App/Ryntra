@@ -6,6 +6,7 @@ coroutines = "1.11.0"
 serialization = "1.11.0"
 composeBom = "2026.06.01"
 activityCompose = "1.13.0"
+appcompat = "1.7.1"
 lifecycle = "2.10.0"
 navigation = "2.9.8"
 coil = "3.5.0"
@@ -13,6 +14,7 @@ androidxBrowser = "1.9.0"
 androidxCore = "1.18.0"
 haze = "1.7.2"
 composeIcons = "2.2.1"
+jetbrainsMarkdown = "0.7.7"
 
 [libraries]
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -25,7 +27,9 @@ ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "kto
 ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
 ktor-serialization-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+androidx-compose-material-icons-core = { module = "androidx.compose.material:material-icons-core" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
 androidx-compose-ui = { module = "androidx.compose.ui:ui" }
 androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
@@ -39,6 +43,7 @@ coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" 
 coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coil" }
 haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
 icons-lucide = { module = "com.composables:icons-lucide-cmp", version.ref = "composeIcons" }
+jetbrains-markdown = { module = "org.jetbrains:markdown", version.ref = "jetbrainsMarkdown" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -22,6 +22,17 @@
 		A014 /* RinthyChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = B016 /* RinthyChrome.swift */; };
 		A015 /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B017 /* AnalyticsView.swift */; };
 		A016 /* ProjectDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B018 /* ProjectDetailView.swift */; };
+		A017 /* ProjectVersionsManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B019 /* ProjectVersionsManagementView.swift */; };
+		A018 /* ProjectMembersManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B020 /* ProjectMembersManagementView.swift */; };
+		A019 /* RinthyTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B021 /* RinthyTheme.swift */; };
+		A020 /* EditProjectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B022 /* EditProjectView.swift */; };
+		A021 /* MarkdownContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B023 /* MarkdownContentView.swift */; };
+		A022 /* AnalyticsWalletView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B024 /* AnalyticsWalletView.swift */; };
+		A023 /* AnalyticsTrendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B025 /* AnalyticsTrendView.swift */; };
+		A024 /* AnalyticsBreakdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B026 /* AnalyticsBreakdownView.swift */; };
+		A025 /* ProjectBannerCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B027 /* ProjectBannerCard.swift */; };
+		A026 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = D006 /* Localizable.strings */; };
+		A027 /* ProjectStatusSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B030 /* ProjectStatusSupport.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,6 +54,18 @@
 		B016 /* RinthyChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RinthyChrome.swift; sourceTree = "<group>"; };
 		B017 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
 		B018 /* ProjectDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDetailView.swift; sourceTree = "<group>"; };
+		B019 /* ProjectVersionsManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectVersionsManagementView.swift; sourceTree = "<group>"; };
+		B020 /* ProjectMembersManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectMembersManagementView.swift; sourceTree = "<group>"; };
+		B021 /* RinthyTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RinthyTheme.swift; sourceTree = "<group>"; };
+		B022 /* EditProjectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProjectView.swift; sourceTree = "<group>"; };
+		B023 /* MarkdownContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownContentView.swift; sourceTree = "<group>"; };
+		B024 /* AnalyticsWalletView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsWalletView.swift; sourceTree = "<group>"; };
+		B025 /* AnalyticsTrendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsTrendView.swift; sourceTree = "<group>"; };
+		B026 /* AnalyticsBreakdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsBreakdownView.swift; sourceTree = "<group>"; };
+		B027 /* ProjectBannerCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectBannerCard.swift; sourceTree = "<group>"; };
+		B028 /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Localizable.strings; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B029 /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Localizable.strings; path = ru.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B030 /* ProjectStatusSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectStatusSupport.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -51,7 +74,8 @@
 
 /* Begin PBXGroup section */
 		D001 = {isa = PBXGroup; children = (D002, D003, D004,); sourceTree = "<group>"; };
-		D002 /* Rinthy */ = {isa = PBXGroup; path = Rinthy; sourceTree = "<group>"; children = (B001, B002, B003, B014, B004, B005, B006, B016, B015, B017, B007, B018, B008, B009, B010, B013,); };
+		D002 /* Rinthy */ = {isa = PBXGroup; path = Rinthy; sourceTree = "<group>"; children = (B001, B021, B030, B002, B003, B014, B004, B005, B006, B016, B015, B017, B025, B026, B024, B007, B027, D005, B008, B009, D006, B010, B013,); };
+		D005 /* ProjectDetail */ = {isa = PBXGroup; path = ProjectDetail; sourceTree = "<group>"; children = (B018, B023, B022, B019, B020,); };
 		D003 /* Frameworks */ = {isa = PBXGroup; children = (B012,); name = Frameworks; sourceTree = "<group>"; };
 		D004 /* Products */ = {isa = PBXGroup; children = (B011,); name = Products; sourceTree = "<group>"; };
 /* End PBXGroup section */
@@ -61,19 +85,23 @@
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		E002 /* Project object */ = {isa = PBXProject; attributes = {BuildIndependentTargetsInParallel = YES; LastSwiftUpdateCheck = 1600; LastUpgradeCheck = 1600; TargetAttributes = {E001 = {CreatedOnToolsVersion = 16.0;};};}; buildConfigurationList = F001; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base,); mainGroup = D001; productRefGroup = D004; projectDirPath = ""; projectRoot = ""; targets = (E001,); };
+		E002 /* Project object */ = {isa = PBXProject; attributes = {BuildIndependentTargetsInParallel = YES; LastSwiftUpdateCheck = 1600; LastUpgradeCheck = 1600; TargetAttributes = {E001 = {CreatedOnToolsVersion = 16.0;};};}; buildConfigurationList = F001; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, ru, Base,); mainGroup = D001; productRefGroup = D004; projectDirPath = ""; projectRoot = ""; targets = (E001,); };
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		C003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A010,); runOnlyForDeploymentPostprocessing = 0; };
+		C003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A010, A026,); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		D006 /* Localizable.strings */ = {isa = PBXVariantGroup; children = (B028, B029,); name = Localizable.strings; sourceTree = "<group>"; };
+/* End PBXVariantGroup section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		C004 /* Build shared Kotlin framework */ = {isa = PBXShellScriptBuildPhase; alwaysOutOfDate = 1; buildActionMask = 2147483647; files = (); inputFileListPaths = (); inputPaths = (); name = "Build shared Kotlin framework"; outputFileListPaths = (); outputPaths = (); runOnlyForDeploymentPostprocessing = 0; shellPath = /bin/sh; shellScript = "cd \"$SRCROOT/..\"\n./gradlew :shared:embedAndSignAppleFrameworkForXcode\n"; };
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		C002 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A001, A002, A003, A012, A004, A005, A006, A014, A013, A015, A007, A016, A008, A009,); runOnlyForDeploymentPostprocessing = 0; };
+		C002 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A001, A019, A027, A002, A003, A012, A004, A005, A006, A014, A013, A015, A023, A024, A022, A007, A025, A016, A021, A020, A017, A018, A008, A009,); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */

@@ -16,5 +16,6 @@ sealed interface AppState {
     data class Failed(
         val message: String,
         val previousDashboard: Dashboard? = null,
+        val isAuthenticationFailure: Boolean = false,
     ) : AppState
 }

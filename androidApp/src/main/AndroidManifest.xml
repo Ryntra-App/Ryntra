@@ -6,8 +6,10 @@
         android:name=".RinthyApplication"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="false"
         android:icon="@drawable/rinthy_logo"
-        android:label="Rinthy"
+        android:label="@string/app_name"
+        android:localeConfig="@xml/locales_config"
         android:supportsRtl="true"
         android:theme="@style/Theme.Rinthy">
         <activity
@@ -28,5 +30,15 @@
                     android:scheme="rinthy" />
             </intent-filter>
         </activity>
+        <!-- Required so AppCompat can persist/restore per-app locales on older Android. -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="false" />
+        </service>
     </application>
 </manifest>
+

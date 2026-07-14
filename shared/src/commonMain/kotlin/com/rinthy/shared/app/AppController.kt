@@ -1,15 +1,30 @@
 package com.rinthy.shared.app
 
 import com.rinthy.shared.data.DashboardRepository
+import com.rinthy.shared.data.OrganizationDetail
+import com.rinthy.shared.model.AccountProfileUpdate
+import com.rinthy.shared.model.Account
+import com.rinthy.shared.model.AnalyticsQuery
+import com.rinthy.shared.model.AnalyticsReport
+import com.rinthy.shared.model.CreateVersionRequest
 import com.rinthy.shared.model.Dashboard
+import com.rinthy.shared.model.Organization
 import com.rinthy.shared.model.Project
+import com.rinthy.shared.model.ProjectDependency
+import com.rinthy.shared.model.ProjectFileUpload
 import com.rinthy.shared.model.ProjectMember
+import com.rinthy.shared.model.ProjectMemberUpdate
+import com.rinthy.shared.model.ProjectTeamRoster
 import com.rinthy.shared.model.ProjectVersion
+import com.rinthy.shared.model.VersionUpdate
+import com.rinthy.shared.model.WalletReport
 import com.rinthy.shared.network.ModrinthApi
+import com.rinthy.shared.network.ApiException
 import com.rinthy.shared.network.createPlatformHttpClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -57,9 +72,36 @@ class AppController internal constructor(
         return repository.loadProjectVersions(projectIdOrSlug, token)
     }
 
+    suspend fun loadAnalytics(query: AnalyticsQuery): AnalyticsReport {
+        val token = requireToken("loading analytics")
+        return repository.loadAnalytics(query, token)
+    }
+
+    suspend fun loadWallet(): WalletReport {
+        val token = requireToken("loading wallet")
+        val account = currentDashboard()?.account ?: error("Load the dashboard before loading wallet data.")
+        return repository.loadWallet(account, token)
+    }
+
+    suspend fun loadProjectDependencies(versions: List<ProjectVersion>): List<ProjectDependency> {
+        val token = requireToken("loading project dependencies")
+        val latestDependencies = versions.maxByOrNull { it.datePublished.orEmpty() }?.dependencies.orEmpty()
+        return repository.enrichDependencies(latestDependencies, token)
+    }
+
     suspend fun loadProjectMembers(projectIdOrSlug: String, teamId: String?): List<ProjectMember> {
         val token = accessToken ?: error("Sign in before loading project members.")
         return repository.loadProjectMembers(projectIdOrSlug, teamId, token)
+    }
+
+    suspend fun loadProjectTeamRoster(project: Project): ProjectTeamRoster {
+        val token = accessToken ?: error("Sign in before loading project members.")
+        return repository.loadProjectTeamRoster(project, token)
+    }
+
+    suspend fun loadOrganizationMembers(organizationIdOrSlug: String, teamId: String?): List<ProjectMember> {
+        val token = accessToken ?: error("Sign in before loading organization members.")
+        return repository.loadOrganizationMembers(organizationIdOrSlug, teamId, token)
     }
 
     suspend fun loadOrganizationProjects(organizationIdOrSlug: String): List<Project> {
@@ -67,10 +109,136 @@ class AppController internal constructor(
         return repository.loadOrganizationProjects(organizationIdOrSlug, token)
     }
 
+    suspend fun loadOrganizationDetail(organization: Organization): OrganizationDetail {
+        val token = accessToken ?: error("Sign in before loading organization details.")
+        val knownProjects = when (val current = mutableState.value) {
+            is AppState.Ready -> current.dashboard.projects
+            is AppState.Loading -> current.previousDashboard?.projects.orEmpty()
+            is AppState.Failed -> current.previousDashboard?.projects.orEmpty()
+            AppState.SignedOut -> emptyList()
+        }
+        return repository.loadOrganizationDetail(
+            organization = organization,
+            token = token,
+            knownProjects = knownProjects,
+        )
+    }
+
+    suspend fun updateAccountProfile(userId: String, username: String, bio: String) {
+        val token = accessToken ?: error("Sign in before updating your profile.")
+        val normalizedUsername = username.trim()
+        require(normalizedUsername.isNotEmpty()) { "Username cannot be empty." }
+        val normalizedBio = bio.trim()
+
+        repository.updateAccountProfile(
+            userId = userId,
+            update = AccountProfileUpdate(username = normalizedUsername, bio = normalizedBio),
+            token = token,
+        )
+        if (accessToken != token) return
+
+        mutableState.value = when (val current = mutableState.value) {
+            is AppState.Ready -> AppState.Ready(current.dashboard.withUpdatedAccount(normalizedUsername, normalizedBio))
+            is AppState.Loading -> current.copy(
+                previousDashboard = current.previousDashboard?.withUpdatedAccount(normalizedUsername, normalizedBio),
+            )
+            is AppState.Failed -> current.copy(
+                previousDashboard = current.previousDashboard?.withUpdatedAccount(normalizedUsername, normalizedBio),
+            )
+            AppState.SignedOut -> AppState.SignedOut
+        }
+    }
+
     fun signOut() {
         loadJob?.cancel()
         accessToken = null
         mutableState.value = AppState.SignedOut
+    }
+
+    suspend fun updateProject(projectIdOrSlug: String, update: com.rinthy.shared.model.ProjectUpdate) {
+        val token = accessToken ?: error("Sign in before updating a project.")
+        repository.updateProject(projectIdOrSlug, update, token)
+        if (accessToken != token) return
+
+        mutableState.value = when (val current = mutableState.value) {
+            is AppState.Ready -> AppState.Ready(current.dashboard.withUpdatedProject(projectIdOrSlug, update))
+            is AppState.Loading -> current.copy(
+                previousDashboard = current.previousDashboard?.withUpdatedProject(projectIdOrSlug, update),
+            )
+            is AppState.Failed -> current.copy(
+                previousDashboard = current.previousDashboard?.withUpdatedProject(projectIdOrSlug, update),
+            )
+            AppState.SignedOut -> AppState.SignedOut
+        }
+    }
+
+    suspend fun changeProjectIcon(projectIdOrSlug: String, file: ProjectFileUpload) {
+        require(file.bytes.isNotEmpty()) { "Select an image to upload." }
+        require(file.bytes.size <= MAX_PROJECT_ICON_BYTES) { "Project icons must be 256 KiB or smaller." }
+        repository.changeProjectIcon(projectIdOrSlug, file, requireToken("changing a project icon"))
+    }
+
+    suspend fun deleteProjectIcon(projectIdOrSlug: String) {
+        repository.deleteProjectIcon(projectIdOrSlug, requireToken("deleting a project icon"))
+    }
+
+    suspend fun addGalleryImage(
+        projectIdOrSlug: String,
+        file: ProjectFileUpload,
+        featured: Boolean = false,
+        title: String = "Gallery image",
+        description: String = "",
+    ) {
+        require(file.bytes.isNotEmpty()) { "Select an image to upload." }
+        repository.addGalleryImage(
+            projectIdOrSlug,
+            file,
+            featured,
+            title.trim(),
+            description.trim(),
+            requireToken("adding a gallery image"),
+        )
+    }
+
+    suspend fun deleteGalleryImage(projectIdOrSlug: String, imageUrl: String) {
+        repository.deleteGalleryImage(projectIdOrSlug, imageUrl, requireToken("deleting a gallery image"))
+    }
+
+    suspend fun createVersion(projectId: String, request: CreateVersionRequest): ProjectVersion {
+        require(request.files.sumOf { it.bytes.size.toLong() } <= MAX_VERSION_UPLOAD_BYTES) {
+            "Version files must be 128 MiB or smaller in total."
+        }
+        return repository.createVersion(projectId, request, requireToken("creating a version"))
+    }
+
+    suspend fun updateVersion(versionId: String, update: VersionUpdate) {
+        repository.updateVersion(versionId, update, requireToken("updating a version"))
+    }
+
+    suspend fun deleteVersion(versionId: String) {
+        repository.deleteVersion(versionId, requireToken("deleting a version"))
+    }
+
+    suspend fun findUser(username: String): Account? = repository.findUser(username, requireToken("searching for a user"))
+
+    suspend fun addTeamMember(teamId: String, userId: String) {
+        repository.addTeamMember(teamId, userId, requireToken("inviting a team member"))
+    }
+
+    suspend fun updateTeamMember(teamId: String, userId: String, update: ProjectMemberUpdate) {
+        repository.updateTeamMember(teamId, userId, update, requireToken("updating a team member"))
+    }
+
+    suspend fun deleteTeamMember(teamId: String, userId: String) {
+        repository.deleteTeamMember(teamId, userId, requireToken("removing a team member"))
+    }
+
+    suspend fun joinTeam(teamId: String) {
+        repository.joinTeam(teamId, requireToken("joining a team"))
+    }
+
+    suspend fun transferTeamOwnership(teamId: String, userId: String) {
+        repository.transferTeamOwnership(teamId, userId, requireToken("transferring team ownership"))
     }
 
     fun observe(listener: (AppState) -> Unit): Observation {
@@ -91,16 +259,22 @@ class AppController internal constructor(
         loadJob?.cancel()
         mutableState.value = AppState.Loading(previousDashboard)
         loadJob = scope.launch {
-            mutableState.value = runCatching { repository.load(token) }
-                .fold(
-                    onSuccess = AppState::Ready,
-                    onFailure = { error ->
-                        AppState.Failed(
-                            message = error.message ?: "Unable to reach Modrinth.",
-                            previousDashboard = previousDashboard,
-                        )
-                    },
+            mutableState.value = try {
+                AppState.Ready(repository.load(token))
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: ApiException) {
+                AppState.Failed(
+                    message = error.message,
+                    previousDashboard = previousDashboard,
+                    isAuthenticationFailure = error.statusCode == 401,
                 )
+            } catch (error: Exception) {
+                AppState.Failed(
+                    message = error.message ?: "Unable to reach Modrinth.",
+                    previousDashboard = previousDashboard,
+                )
+            }
         }
     }
 
@@ -109,6 +283,36 @@ class AppController internal constructor(
         is AppState.Loading -> current.previousDashboard
         is AppState.Failed -> current.previousDashboard
         AppState.SignedOut -> null
+    }
+
+    private fun requireToken(action: String): String = accessToken ?: error("Sign in before $action.")
+
+    private fun Dashboard.withUpdatedAccount(username: String, bio: String): Dashboard =
+        copy(account = account.copy(username = username, bio = bio.ifEmpty { null }))
+
+    private fun Dashboard.withUpdatedProject(projectIdOrSlug: String, update: com.rinthy.shared.model.ProjectUpdate): Dashboard =
+        copy(projects = projects.map { project ->
+            if (project.id == projectIdOrSlug || project.slug == projectIdOrSlug) {
+                project.copy(
+                    title = update.title ?: project.title,
+                    description = update.description ?: project.description,
+                    body = update.body ?: project.body,
+                    sourceUrl = update.sourceUrl?.ifBlank { null } ?: if (update.sourceUrl != null) null else project.sourceUrl,
+                    issuesUrl = update.issuesUrl?.ifBlank { null } ?: if (update.issuesUrl != null) null else project.issuesUrl,
+                    wikiUrl = update.wikiUrl?.ifBlank { null } ?: if (update.wikiUrl != null) null else project.wikiUrl,
+                    discordUrl = update.discordUrl?.ifBlank { null } ?: if (update.discordUrl != null) null else project.discordUrl,
+                    status = update.status ?: project.status,
+                    license = update.licenseId?.let { project.license?.copy(id = it) ?: com.rinthy.shared.model.ProjectLicense(it) }
+                        ?: project.license,
+                )
+            } else {
+                project
+            }
+        })
+
+    private companion object {
+        const val MAX_PROJECT_ICON_BYTES = 256 * 1024
+        const val MAX_VERSION_UPLOAD_BYTES = 128L * 1024 * 1024
     }
 }
 

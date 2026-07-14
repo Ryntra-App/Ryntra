@@ -2,7 +2,8 @@ package com.rinthy.mobile.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,12 +22,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
@@ -34,10 +40,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
@@ -47,7 +52,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.rinthy.mobile.preferences.GlassQuality
 import com.rinthy.mobile.ui.theme.RinthyDesign
+import dev.chrisbanes.haze.ExperimentalHazeApi
+import dev.chrisbanes.haze.HazeInputScale
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
@@ -66,39 +74,70 @@ fun RinthyTopBar(
     avatarDescription: String,
     isRefreshing: Boolean,
     onAvatarClick: () -> Unit,
+    modifier: Modifier = Modifier,
     navigationIcon: ImageVector? = null,
     navigationDescription: String? = null,
     onNavigationClick: () -> Unit = {},
     showAvatar: Boolean = true,
-    modifier: Modifier = Modifier,
 ) {
+    if (RinthyDesign.isPlatformNative) {
+        PlatformTopBar(
+            title = title,
+            avatarUrl = avatarUrl,
+            avatarDescription = avatarDescription,
+            isRefreshing = isRefreshing,
+            onAvatarClick = onAvatarClick,
+            navigationIcon = navigationIcon,
+            navigationDescription = navigationDescription,
+            onNavigationClick = onNavigationClick,
+            showAvatar = showAvatar,
+            modifier = modifier,
+        )
+        return
+    }
+    val colors = RinthyDesign.colors
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .statusBarsPadding()
             .fillMaxWidth()
-            .height(76.dp)
-            .padding(start = 20.dp, end = 18.dp),
+            .height(84.dp)
+            .background(colors.background)
+            .padding(start = if (navigationIcon == null) 20.dp else 8.dp, end = 18.dp),
     ) {
         if (navigationIcon != null) {
-            IconButton(onClick = onNavigationClick) {
-                Icon(navigationIcon, contentDescription = navigationDescription)
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .clickable(role = Role.Button, onClick = onNavigationClick),
+            ) {
+                RinthyIcon(
+                    icon = navigationIcon,
+                    contentDescription = navigationDescription,
+                    tint = colors.accent,
+                    modifier = Modifier.size(23.dp),
+                )
             }
         }
-        Text(
-            text = title,
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+        Crossfade(
+            targetState = title,
+            animationSpec = tween(RinthyDesign.motion.duration(180)),
+            label = "Top bar title",
             modifier = Modifier.weight(1f),
-        )
+        ) { currentTitle ->
+            BasicText(
+                text = currentTitle,
+                style = RinthyDesign.largeTitle.copy(color = colors.labelPrimary),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
         if (isRefreshing) {
-            CircularProgressIndicator(
-                strokeWidth = 2.dp,
-                modifier = Modifier
-                    .padding(end = 12.dp)
-                    .size(19.dp),
+            RinthyProgressIndicator(
+                color = colors.labelSecondary,
+                modifier = Modifier.padding(end = 12.dp).size(19.dp),
             )
         }
         if (showAvatar) {
@@ -107,14 +146,77 @@ fun RinthyTopBar(
                 contentDescription = avatarDescription,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .padding(start = 2.dp)
-                    .size(38.dp)
+                    .padding(start = 6.dp)
+                    .size(44.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .background(colors.surfaceRaised)
+                    .border(1.dp, Color.White.copy(alpha = 0.14f), CircleShape)
                     .clickable(role = Role.Button, onClick = onAvatarClick),
             )
         }
     }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun PlatformTopBar(
+    title: String,
+    avatarUrl: String?,
+    avatarDescription: String,
+    isRefreshing: Boolean,
+    onAvatarClick: () -> Unit,
+    navigationIcon: ImageVector?,
+    navigationDescription: String?,
+    onNavigationClick: () -> Unit,
+    showAvatar: Boolean,
+    modifier: Modifier,
+) {
+    TopAppBar(
+        title = {
+            Crossfade(
+                targetState = title,
+                animationSpec = tween(RinthyDesign.motion.duration(180)),
+                label = "Top app bar title",
+            ) { currentTitle ->
+                Text(currentTitle, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        },
+        navigationIcon = {
+            navigationIcon?.let { icon ->
+                IconButton(onClick = onNavigationClick) {
+                    Icon(icon, contentDescription = navigationDescription)
+                }
+            }
+        },
+        actions = {
+            if (isRefreshing) {
+                RinthyProgressIndicator(
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .padding(horizontal = 12.dp)
+                        .size(18.dp),
+                )
+            }
+            if (showAvatar) {
+                IconButton(onClick = onAvatarClick) {
+                    AsyncImage(
+                        model = avatarUrl,
+                        contentDescription = avatarDescription,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                    )
+                }
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background,
+            scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+        ),
+        modifier = modifier,
+    )
 }
 
 @Composable
@@ -123,21 +225,45 @@ fun RinthyTabBar(
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
     hazeState: HazeState,
+    glassQuality: GlassQuality = GlassQuality.Balanced,
     modifier: Modifier = Modifier,
 ) {
+    if (RinthyDesign.isPlatformNative) {
+        NavigationBar(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            modifier = modifier.fillMaxWidth(),
+        ) {
+            tabs.forEachIndexed { index, tab ->
+                NavigationBarItem(
+                    selected = selectedIndex == index,
+                    onClick = { onSelect(index) },
+                    icon = { Icon(tab.icon, contentDescription = tab.label) },
+                    label = { Text(tab.label, maxLines = 1) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
+                )
+            }
+        }
+        return
+    }
     GlassSurface(
+        hazeState = hazeState,
+        quality = glassQuality,
         modifier = modifier
             .navigationBarsPadding()
-            .padding(start = 16.dp, end = 16.dp, bottom = 10.dp),
-        shape = RoundedCornerShape(28.dp),
-        hazeState = hazeState,
+            .padding(start = 14.dp, end = 14.dp, bottom = 10.dp),
     ) {
         Row(
             horizontalArrangement = Arrangement.SpaceEvenly,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(60.dp)
-                .padding(horizontal = 4.dp),
+                .height(70.dp)
+                .padding(horizontal = 5.dp, vertical = 5.dp),
         ) {
             tabs.forEachIndexed { index, tab ->
                 RinthyTabItem(
@@ -156,45 +282,45 @@ private fun RowScope.RinthyTabItem(
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
+    val colors = RinthyDesign.colors
+    val motion = RinthyDesign.motion
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val pressedScale by animateFloatAsState(
-        targetValue = if (isPressed) 0.96f else 1f,
-        animationSpec = tween(durationMillis = 120),
+        targetValue = if (isPressed) 0.95f else 1f,
+        animationSpec = tween(durationMillis = motion.duration(120)),
         label = "Tab press",
     )
-    val color = if (isSelected) {
-        RinthyDesign.colors.positive
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    val itemShape = RoundedCornerShape(22.dp)
-    val selectedFill = if (isSelected) {
-        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.075f)
-    } else {
-        Color.Transparent
-    }
-    val selectedBorder = Brush.verticalGradient(
-        colors = listOf(
-            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.22f),
-            RinthyDesign.colors.positive.copy(alpha = 0.10f),
-            Color.Transparent,
-        ),
+    val contentColor by animateColorAsState(
+        targetValue = if (isSelected) colors.accent else colors.labelPrimary.copy(alpha = 0.78f),
+        animationSpec = tween(durationMillis = motion.duration(180)),
+        label = "Tab content",
     )
+    val selectionColor by animateColorAsState(
+        targetValue = if (isSelected) Color(0xD909090B) else Color.Transparent,
+        animationSpec = tween(durationMillis = motion.duration(180)),
+        label = "Tab selection",
+    )
+    val selectionBorder by animateColorAsState(
+        targetValue = if (isSelected) Color.White.copy(alpha = 0.14f) else Color.Transparent,
+        animationSpec = tween(durationMillis = motion.duration(180)),
+        label = "Tab border",
+    )
+    val itemShape = RoundedCornerShape(28.dp)
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = Modifier
             .weight(1f)
             .height(60.dp)
-            .padding(horizontal = 3.dp, vertical = 5.dp)
+            .padding(horizontal = 2.dp)
             .graphicsLayer {
                 scaleX = pressedScale
                 scaleY = pressedScale
             }
             .clip(itemShape)
-            .background(selectedFill)
-            .then(if (isSelected) Modifier.border(0.75.dp, selectedBorder, itemShape) else Modifier)
+            .background(selectionColor, itemShape)
+            .border(0.75.dp, selectionBorder, itemShape)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -203,65 +329,74 @@ private fun RowScope.RinthyTabItem(
             )
             .semantics { selected = isSelected },
     ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(width = 38.dp, height = 30.dp)
-                .clip(RoundedCornerShape(11.dp))
-        ) {
-            Icon(tab.icon, contentDescription = null, tint = color, modifier = Modifier.size(21.dp))
-        }
-        Text(
+        RinthyIcon(
+            icon = tab.icon,
+            contentDescription = null,
+            tint = contentColor,
+            modifier = Modifier.size(23.dp),
+        )
+        BasicText(
             text = tab.label,
-            color = color,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+            style = RinthyDesign.caption.copy(
+                color = contentColor,
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+            ),
             maxLines = 1,
+            modifier = Modifier.padding(top = 3.dp),
         )
     }
 }
 
 @Composable
+@OptIn(ExperimentalHazeApi::class)
 private fun GlassSurface(
-    modifier: Modifier,
-    shape: RoundedCornerShape,
     hazeState: HazeState,
+    quality: GlassQuality,
+    modifier: Modifier,
     content: @Composable () -> Unit,
 ) {
-    val chrome = RinthyDesign.colors.chrome
-    val background = MaterialTheme.colorScheme.background
-    val glassTint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.07f)
-    val hazeStyle = remember(chrome, background, glassTint) {
+    val colors = RinthyDesign.colors
+    val shape = RoundedCornerShape(35.dp)
+    val blurRadius = when (quality) {
+        GlassQuality.Performance -> 12.dp
+        GlassQuality.Balanced -> 15.dp
+        GlassQuality.Quality -> 18.dp
+    }
+    val inputScale = when (quality) {
+        GlassQuality.Performance -> 0.30f
+        GlassQuality.Balanced -> 0.40f
+        GlassQuality.Quality -> 0.55f
+    }
+    val hazeStyle = remember(colors.background, colors.chrome, blurRadius) {
         HazeStyle(
-            backgroundColor = background,
-            tint = HazeTint(glassTint),
-            blurRadius = 18.dp,
-            noiseFactor = 0.01f,
-            fallbackTint = HazeTint(chrome.copy(alpha = 0.88f)),
+            backgroundColor = colors.background,
+            tint = HazeTint(Color(0x940B0B0D)),
+            blurRadius = blurRadius,
+            noiseFactor = 0f,
+            fallbackTint = HazeTint(colors.chrome),
         )
     }
-    val glassBorder = Brush.verticalGradient(
-        colors = listOf(
-            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.32f),
-            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
-            RinthyDesign.colors.positive.copy(alpha = 0.08f),
-        ),
-    )
-    Surface(
-        color = Color.Transparent,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        shape = shape,
-        border = BorderStroke(0.8.dp, glassBorder),
+    Box(
         modifier = modifier
             .shadow(
-                elevation = 12.dp,
+                elevation = 22.dp,
                 shape = shape,
                 clip = false,
-                ambientColor = MaterialTheme.colorScheme.background.copy(alpha = 0.28f),
-                spotColor = MaterialTheme.colorScheme.background.copy(alpha = 0.38f),
+                ambientColor = Color.Black.copy(alpha = 0.48f),
+                spotColor = Color.Black.copy(alpha = 0.62f),
             )
             .clip(shape)
-            .hazeEffect(state = hazeState, style = hazeStyle),
-        content = content,
-    )
+            .hazeEffect(state = hazeState, style = hazeStyle) {
+                this.inputScale = HazeInputScale.Fixed(inputScale)
+            }
+            .border(0.75.dp, colors.chromeBorder, shape),
+    ) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .padding(1.dp)
+                .border(0.5.dp, colors.chromeHighlight, RoundedCornerShape(34.dp)),
+        )
+        content()
+    }
 }

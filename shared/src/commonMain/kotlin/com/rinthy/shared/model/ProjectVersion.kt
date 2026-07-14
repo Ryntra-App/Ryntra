@@ -2,6 +2,7 @@ package com.rinthy.shared.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 @Serializable
 data class ProjectVersion(
@@ -28,6 +29,8 @@ data class ProjectDependency(
     @SerialName("project_id") val projectId: String? = null,
     @SerialName("file_name") val fileName: String? = null,
     @SerialName("dependency_type") val dependencyType: String = "required",
+    @Transient val title: String? = null,
+    @Transient val iconUrl: String? = null,
 )
 
 @Serializable

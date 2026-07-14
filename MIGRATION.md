@@ -18,7 +18,8 @@ This checklist tracks user-visible behavior from the `main` Capacitor branch. Fe
 - [x] Project details: overview, links, environment, categories, gallery
 - [x] Project search, sorting, and favorites
 - [ ] Create and delete projects
-- [ ] Edit metadata, status, license, links, icon, and gallery
+- [x] Edit metadata and links
+- [ ] Edit status, license, icon, and gallery
 - [x] Versions: list and inspect
 - [ ] Versions: create, edit, delete, and upload files
 - [ ] Resolve and manage dependencies
@@ -48,6 +49,6 @@ This checklist tracks user-visible behavior from the `main` Capacitor branch. Fe
 ## Account
 
 - [x] Profile summary and sign out
-- [ ] Edit username and bio
+- [x] Edit username and bio
 - [ ] Upload and remove avatar
 - [ ] Onboarding and welcome setup

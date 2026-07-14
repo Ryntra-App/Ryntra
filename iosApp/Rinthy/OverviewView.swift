@@ -3,99 +3,196 @@ import SwiftUI
 
 struct OverviewView: View {
     @EnvironmentObject private var model: AppModel
+    @AppStorage("themeStyle") private var storedThemeStyle = RinthyThemeStyle.platform.rawValue
 
     let dashboard: Dashboard
     var onProjectTap: (Project) -> Void = { _ in }
 
+    private var totalDownloads: Int64 {
+        dashboard.projects.reduce(0) { $0 + $1.downloads }
+    }
+
+    private var totalFollowers: Int64 {
+        dashboard.projects.reduce(0) { $0 + $1.followers }
+    }
+
     private var attentionProjects: [Project] {
-        Array(dashboard.projects.filter { !$0.isHealthy }.prefix(3))
+        Array(
+            dashboard.projects
+                .filter { $0.needsAttention() }
+                .sorted { attentionRank($0) < attentionRank($1) }
+                .prefix(5)
+        )
+    }
+
+    private var attentionCount: Int {
+        dashboard.projects.filter { $0.needsAttention() }.count
+    }
+
+    private var inReviewProjects: [Project] {
+        Array(
+            dashboard.projects
+                // Quiet processing only — moderator issues go under Needs attention.
+                .filter { $0.isInReview() && !$0.needsAttention() }
+                .sorted { ($0.queued ?? $0.updated ?? "") > ($1.queued ?? $1.updated ?? "") }
+                .prefix(5)
+        )
+    }
+
+    private var inReviewCount: Int {
+        dashboard.projects.filter { $0.isInReview() && !$0.needsAttention() }.count
     }
 
     private var recentProjects: [Project] {
         Array(dashboard.projects.sorted { ($0.updated ?? "") > ($1.updated ?? "") }.prefix(4))
     }
 
+    private var leadingProject: Project? {
+        dashboard.projects.max { $0.downloads < $1.downloads }
+    }
+
+    private var projectTypes: [(name: String, count: Int)] {
+        Dictionary(grouping: dashboard.projects, by: { $0.displayTypeLabel })
+            .map { (name: $0.key, count: $0.value.count) }
+            .sorted { $0.count == $1.count ? $0.name < $1.name : $0.count > $1.count }
+            .prefix(4)
+            .map { $0 }
+    }
+
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                creatorHeader
-                metricStrip
+                Text(String(format: NSLocalizedString("Welcome back, %@", comment: "Overview welcome"), dashboard.account.username))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 8)
+                    .padding(.bottom, 14)
+
+                portfolioSummary
+
                 sectionHeader(
-                    "Needs attention",
-                    detail: attentionProjects.isEmpty
+                    NSLocalizedString("Needs attention", comment: "Overview section"),
+                    detail: attentionCount == 0
                         ? nil
-                        : "\(attentionProjects.count) open actions"
+                        : String(format: NSLocalizedString("%d open actions", comment: "Attention count"), attentionCount)
                 )
                 attentionContent
-                sectionHeader("Recent projects", detail: "Updated across your workspace")
+
+                if !inReviewProjects.isEmpty {
+                    sectionHeader(
+                        NSLocalizedString("In review", comment: "Overview section"),
+                        detail: String(
+                            format: NSLocalizedString("%d projects awaiting moderation", comment: "In review count"),
+                            inReviewCount
+                        )
+                    )
+                    ForEach(inReviewProjects, id: \.id) { project in
+                        Button { onProjectTap(project) } label: { InReviewRow(project: project) }
+                            .buttonStyle(.plain)
+                        Divider()
+                    }
+                }
+
+                if let leadingProject {
+                    sectionHeader(
+                        NSLocalizedString("Portfolio leader", comment: "Overview section"),
+                        detail: NSLocalizedString("Your most downloaded project", comment: "Overview section detail")
+                    )
+                    leadingProjectRow(leadingProject)
+                }
+
+                sectionHeader(
+                    NSLocalizedString("Recently updated", comment: "Overview section"),
+                    detail: NSLocalizedString("Latest activity across your workspace", comment: "Overview section detail")
+                )
                 recentContent
+
+                if !projectTypes.isEmpty {
+                    sectionHeader(NSLocalizedString("Portfolio mix", comment: "Overview section"), detail: nil)
+                    ForEach(Array(projectTypes.enumerated()), id: \.element.name) { index, type in
+                        HStack {
+                            Text(type.name)
+                            Spacer()
+                            Text(String(format: NSLocalizedString("%d of %d", comment: "Count of total"), type.count, dashboard.projects.count))
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 10)
+                        if index < projectTypes.count - 1 { Divider() }
+                    }
+                }
             }
             .padding(.horizontal, 16)
-            .padding(.bottom, 120)
+            .padding(.bottom, isPlatformNative ? 16 : 120)
         }
-        .background(Color(uiColor: .systemBackground))
+        .background(Color.rinthyBackground)
         .refreshable { model.refresh() }
     }
 
-    private var creatorHeader: some View {
-        Text("Welcome back, \(dashboard.account.username)")
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .padding(.top, 8)
-            .padding(.bottom, 18)
+    private var isPlatformNative: Bool {
+        storedThemeStyle == RinthyThemeStyle.platform.rawValue
     }
 
-    private var metricStrip: some View {
-        HStack(spacing: 0) {
-            metric(
-                "Downloads",
-                value: compact(dashboard.projects.reduce(0) { $0 + $1.downloads }),
-                symbol: "arrow.down"
-            )
-            Divider().frame(height: 52)
-            metric(
-                "Followers",
-                value: compact(dashboard.projects.reduce(0) { $0 + $1.followers }),
-                symbol: "heart"
-            )
-            Divider().frame(height: 52)
-            metric("Projects", value: "\(dashboard.projects.count)", symbol: "shippingbox")
-        }
-        .padding(.vertical, 14)
-        .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 8))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color(uiColor: .separator), lineWidth: 0.5)
-        }
-    }
-
-    private func metric(_ label: String, value: String, symbol: String) -> some View {
-        HStack(spacing: 7) {
-            Image(systemName: symbol)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(label)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                Text(value)
-                    .font(.headline)
-                    .monospacedDigit()
+    private var portfolioSummary: some View {
+        VStack(spacing: 0) {
+            summaryRow("Downloads", value: rinthyExactCount(totalDownloads), symbol: "arrow.down")
+            Divider().padding(.leading, 44)
+            summaryRow("Followers", value: rinthyExactCount(totalFollowers), symbol: "heart")
+            Divider().padding(.leading, 44)
+            HStack(spacing: 16) {
+                compactFact(
+                    "\(dashboard.projects.count) \(dashboard.projects.count == 1 ? "project" : "projects")",
+                    symbol: "shippingbox"
+                )
+                compactFact(
+                    "\(dashboard.projects.filter { $0.status == "approved" }.count) approved",
+                    symbol: "checkmark.seal"
+                )
+                compactFact(
+                    "\(dashboard.organizations.count) \(dashboard.organizations.count == 1 ? "team" : "teams")",
+                    symbol: "person.2"
+                )
             }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
         }
-        .frame(maxWidth: .infinity)
+        .background(Color.rinthySurface, in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func summaryRow(_ label: String, value: String, symbol: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: symbol)
+                .foregroundStyle(label == "Downloads" ? Color.rinthyGreen : Color.secondary)
+                .frame(width: 18)
+            Text(label)
+            Spacer()
+            Text(value).fontWeight(.semibold).monospacedDigit()
+        }
+        .font(.subheadline)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(label), \(value)")
     }
 
+    private func compactFact(_ label: String, symbol: String) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: symbol)
+            Text(label).lineLimit(1).minimumScaleFactor(0.75)
+        }
+        .font(.caption2)
+        .foregroundStyle(.secondary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     private func sectionHeader(_ title: String, detail: String?) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title).font(.title3.bold())
+        VStack(alignment: .leading, spacing: 4) {
+            RinthySectionLabel(text: title)
             if let detail {
                 Text(detail).font(.caption).foregroundStyle(.secondary)
             }
         }
-        .padding(.top, 28)
+        .padding(.top, 26)
         .padding(.bottom, 8)
     }
 
@@ -103,32 +200,50 @@ struct OverviewView: View {
     private var attentionContent: some View {
         if attentionProjects.isEmpty {
             HStack(spacing: 12) {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(Color.rinthyGreen)
+                Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.rinthyGreen)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("All clear").fontWeight(.semibold)
-                    Text("No projects currently require action.")
+                    Text(NSLocalizedString("All clear", comment: "Overview all clear")).fontWeight(.semibold)
+                    Text(NSLocalizedString("No moderation issues right now. Projects waiting for review are listed separately.", comment: "Overview all clear hint"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)
-            .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
-            .overlay {
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color(uiColor: .separator), lineWidth: 0.5)
-            }
+            .background(Color.rinthySurface, in: RoundedRectangle(cornerRadius: 10))
         } else {
             ForEach(attentionProjects, id: \.id) { project in
-                Button {
-                    onProjectTap(project)
-                } label: {
-                    AttentionRow(project: project)
-                }
-                .buttonStyle(.plain)
+                Button { onProjectTap(project) } label: { AttentionRow(project: project) }
+                    .buttonStyle(.plain)
                 Divider()
             }
         }
+    }
+
+    private func leadingProjectRow(_ project: Project) -> some View {
+        let share = totalDownloads == 0 ? 0 : Double(project.downloads) / Double(totalDownloads)
+        return Button { onProjectTap(project) } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 12) {
+                    ProjectArtwork(project: project)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(project.title).fontWeight(.semibold).lineLimit(1)
+                        Text("\(rinthyExactCount(project.downloads)) downloads")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "arrow.down").foregroundStyle(Color.rinthyGreen)
+                }
+                ProgressView(value: share).tint(Color.rinthyGreen)
+                Text("\(Int(share * 100))% of portfolio downloads")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(14)
+            .background(Color.rinthySurface, in: RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder
@@ -141,22 +256,14 @@ struct OverviewView: View {
             )
         } else {
             ForEach(recentProjects, id: \.id) { project in
-                Button {
-                    onProjectTap(project)
-                } label: {
+                Button { onProjectTap(project) } label: {
                     ProjectRow(project: project, showDescription: false, showStatus: false)
-                        .padding(.vertical, 8)
+                        .padding(.vertical, 4)
                 }
                 .buttonStyle(.plain)
                 Divider()
             }
         }
-    }
-
-    private func compact(_ value: Int64) -> String {
-        if value >= 1_000_000 { return String(format: "%.1fM", Double(value) / 1_000_000) }
-        if value >= 1_000 { return String(format: "%.1fK", Double(value) / 1_000) }
-        return "\(value)"
     }
 }
 
@@ -168,33 +275,46 @@ private struct AttentionRow: View {
             ProjectArtwork(project: project)
             VStack(alignment: .leading, spacing: 3) {
                 Text(project.title).fontWeight(.semibold).lineLimit(1)
-                Text(project.statusMessage)
+                Text(project.attentionMessageText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .lineLimit(2)
             }
             Spacer(minLength: 8)
-            Image(systemName: "exclamationmark.triangle")
-                .foregroundStyle(.orange)
-                .accessibilityLabel("Attention required")
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.red)
+                .accessibilityLabel(NSLocalizedString("Attention required", comment: "Attention a11y"))
         }
         .padding(.vertical, 10)
     }
 }
 
-private extension Project {
-    var isHealthy: Bool {
-        status == "approved" || status == "archived"
-    }
+private struct InReviewRow: View {
+    let project: Project
 
-    var statusMessage: String {
-        switch status {
-        case "processing": return "Modrinth is processing this project"
-        case "rejected": return "Review the moderation response"
-        case "withheld": return "Project is withheld from publishing"
-        case "scheduled": return "Publication is scheduled"
-        case "private": return "Project is currently private"
-        case "draft": return "Draft is waiting to be finished"
-        default: return "Status: \(status.capitalized)"
+    var body: some View {
+        HStack(spacing: 12) {
+            ProjectArtwork(project: project)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(project.title).fontWeight(.semibold).lineLimit(1)
+                Text(NSLocalizedString("Submitted for publication · awaiting moderation", comment: "In review"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+            Spacer(minLength: 8)
+            Image(systemName: "clock")
+                .foregroundStyle(.orange)
+                .accessibilityLabel(NSLocalizedString("In review", comment: "In review a11y"))
         }
+        .padding(.vertical, 10)
+    }
+}
+
+private func attentionRank(_ project: Project) -> Int {
+    switch project.attentionState().kind {
+    case .rejected: return 0
+    case .withheld: return 1
+    default: return 2
     }
 }

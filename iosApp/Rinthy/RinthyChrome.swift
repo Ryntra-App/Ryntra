@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 enum RinthyDestination: Int, CaseIterable {
@@ -8,10 +9,10 @@ enum RinthyDestination: Int, CaseIterable {
 
     var label: String {
         switch self {
-        case .dashboard: return "Dashboard"
-        case .projects: return "Projects"
-        case .teams: return "Teams"
-        case .analytics: return "Analytics"
+        case .dashboard: return NSLocalizedString("Dashboard", comment: "Navigation destination")
+        case .projects: return NSLocalizedString("Projects", comment: "Navigation destination")
+        case .teams: return NSLocalizedString("Teams", comment: "Navigation destination")
+        case .analytics: return NSLocalizedString("Analytics", comment: "Navigation destination")
         }
     }
 
@@ -21,6 +22,15 @@ enum RinthyDestination: Int, CaseIterable {
         case .projects: return "shippingbox.fill"
         case .teams: return "person.3.fill"
         case .analytics: return "chart.bar.fill"
+        }
+    }
+
+    var platformSymbol: String {
+        switch self {
+        case .dashboard: return "square.grid.2x2"
+        case .projects: return "shippingbox"
+        case .teams: return "person.3"
+        case .analytics: return "chart.bar"
         }
     }
 }
@@ -74,12 +84,20 @@ struct RinthyTopBar: View {
 struct RinthyTabBar: View {
     @Binding var selection: RinthyDestination
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @AppStorage("reduceMotion") private var appReduceMotion = false
 
     var body: some View {
         HStack(spacing: 0) {
             ForEach(RinthyDestination.allCases, id: \.rawValue) { destination in
                 Button {
-                    selection = destination
+                    if systemReduceMotion || appReduceMotion {
+                        selection = destination
+                    } else {
+                        withAnimation(RinthyMotion.control) {
+                            selection = destination
+                        }
+                    }
                 } label: {
                     VStack(spacing: 2) {
                         Image(systemName: destination.symbol)
@@ -95,6 +113,7 @@ struct RinthyTabBar: View {
                         selection == destination ? selectedBackground : Color.clear,
                         in: RoundedRectangle(cornerRadius: 24)
                     )
+                    .scaleEffect(selection == destination ? 1 : 0.97)
                     .overlay {
                         if selection == destination {
                             RoundedRectangle(cornerRadius: 24)
@@ -113,6 +132,10 @@ struct RinthyTabBar: View {
         .padding(.horizontal, 16)
         .padding(.top, 6)
         .padding(.bottom, 8)
+        .animation(
+            RinthyMotion.resolved(.control, reduceMotion: systemReduceMotion || appReduceMotion),
+            value: selection
+        )
     }
 
     private var selectedBackground: Color {
