@@ -1,5 +1,7 @@
 package com.rinthy.mobile.ui.dashboard.account
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -11,17 +13,21 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -29,45 +35,115 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.composables.icons.lucide.Camera
 import com.composables.icons.lucide.FileText
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Package
 import com.composables.icons.lucide.Pencil
 import com.composables.icons.lucide.Save
+import com.composables.icons.lucide.Trash2
 import com.composables.icons.lucide.User
 import com.composables.icons.lucide.UsersRound
 import com.rinthy.mobile.ProfileUpdateState
 import com.rinthy.mobile.R
+import com.rinthy.mobile.media.ImageUploadReader
 import com.rinthy.mobile.ui.components.RinthyIcon
 import com.rinthy.mobile.ui.components.RinthyPrimaryButton
+import com.rinthy.mobile.ui.components.RinthySecondaryButton
 import com.rinthy.mobile.ui.components.RinthyTextField
 import com.rinthy.mobile.ui.theme.RinthyDesign
 import com.rinthy.shared.model.Account
+import com.rinthy.shared.model.ProjectFileUpload
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 internal fun ProfileHeader(
     account: Account,
+    isAvatarBusy: Boolean,
     onEditClick: () -> Unit,
+    onChangeAvatar: (ProjectFileUpload) -> Unit,
+    onDeleteAvatar: () -> Unit,
+    onAvatarError: (String) -> Unit,
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val tooLarge = stringResource(R.string.profile_avatar_too_large)
+    val notImage = stringResource(R.string.profile_avatar_not_image)
+    val unread = stringResource(R.string.profile_avatar_unreadable)
+
+    val picker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val upload = withContext(Dispatchers.IO) {
+                ImageUploadReader.read(
+                    context = context,
+                    uri = uri,
+                    fallbackName = "avatar.png",
+                    maxBytes = MAX_AVATAR_BYTES,
+                )
+            }
+            when {
+                upload == null -> onAvatarError(unread)
+                !upload.contentType.startsWith("image/") -> onAvatarError(notImage)
+                upload.bytes.size > MAX_AVATAR_BYTES -> onAvatarError(tooLarge)
+                else -> onChangeAvatar(upload)
+            }
+        }
+    }
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        AsyncImage(
-            model = account.avatarUrl,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
+        Box(
+            contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(76.dp)
                 .clip(CircleShape)
                 .background(RinthyDesign.colors.surface)
-                .border(1.dp, RinthyDesign.colors.accent.copy(alpha = 0.38f), CircleShape),
-        )
+                .border(1.dp, RinthyDesign.colors.accent.copy(alpha = 0.38f), CircleShape)
+                .clickable(enabled = !isAvatarBusy) {
+                    picker.launch(arrayOf("image/png", "image/jpeg", "image/webp", "image/gif"))
+                },
+        ) {
+            AsyncImage(
+                model = account.avatarUrl,
+                contentDescription = stringResource(R.string.profile_avatar_change),
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(RinthyDesign.colors.surface.copy(alpha = 0.35f)),
+            ) {
+                if (isAvatarBusy) {
+                    CircularProgressIndicator(
+                        strokeWidth = 2.dp,
+                        color = RinthyDesign.colors.accent,
+                        modifier = Modifier.size(22.dp),
+                    )
+                } else {
+                    RinthyIcon(
+                        Lucide.Camera,
+                        contentDescription = stringResource(R.string.profile_avatar_change),
+                        tint = RinthyDesign.colors.accent,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+        }
         Column(modifier = Modifier.weight(1f).padding(start = 15.dp, end = 10.dp)) {
             Text(
                 text = account.username,
@@ -83,12 +159,12 @@ internal fun ProfileHeader(
                 modifier = Modifier.padding(top = 2.dp),
             )
             Text(
-                text = account.id,
+                text = stringResource(R.string.profile_avatar_hint),
                 color = RinthyDesign.colors.labelSecondary,
                 style = MaterialTheme.typography.labelSmall,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 3.dp),
+                modifier = Modifier.padding(top = 4.dp),
             )
         }
         Box(
@@ -107,6 +183,16 @@ internal fun ProfileHeader(
                 modifier = Modifier.size(19.dp),
             )
         }
+    }
+    if (!account.avatarUrl.isNullOrBlank()) {
+        RinthySecondaryButton(
+            text = stringResource(R.string.profile_avatar_remove),
+            icon = Lucide.Trash2,
+            onClick = onDeleteAvatar,
+            enabled = !isAvatarBusy,
+            isDestructive = true,
+            modifier = Modifier.padding(top = 12.dp),
+        )
     }
     account.bio?.takeIf(String::isNotBlank)?.let { bio ->
         Text(
@@ -217,3 +303,5 @@ private fun AccountMetric(icon: ImageVector, label: String, value: String, modif
         }
     }
 }
+
+private const val MAX_AVATAR_BYTES = 2 * 1024 * 1024

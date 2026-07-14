@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Rinthy</string>
+    <string name="app_name">Ryntra</string>
     <string name="nav_dashboard">Главная</string>
     <string name="nav_projects">Проекты</string>
     <string name="nav_teams">Команды</string>
@@ -142,8 +142,16 @@
     <string name="settings_clear_images_hint">Удалить локально сохранённые изображения проектов и значки</string>
     <string name="settings_about">О приложении</string>
     <string name="settings_unofficial">Неофициальный клиент Modrinth</string>
+    <string name="settings_author">Автор</string>
+    <string name="settings_author_name">sawiq</string>
     <string name="settings_releases">Версии приложения</string>
     <string name="settings_releases_hint">Обновления и список изменений</string>
+    <string name="profile_avatar_change">Сменить аватар</string>
+    <string name="profile_avatar_hint">Нажмите на фото, чтобы загрузить аватар (только изображения)</string>
+    <string name="profile_avatar_remove">Удалить аватар</string>
+    <string name="profile_avatar_too_large">Аватар должен быть не больше 2 МиБ.</string>
+    <string name="profile_avatar_not_image">Можно выбрать только изображение.</string>
+    <string name="profile_avatar_unreadable">Не удалось прочитать изображение.</string>
     <string name="settings_sign_out">Выйти</string>
     <string name="settings_sign_out_hint">Удалить сохранённый токен с устройства</string>
     <string name="profile_workspace">Рабочее пространство</string>
@@ -277,7 +285,8 @@
     <string name="project_members_org_hint">Участники организации. Управление — во вкладке «Команды».</string>
     <string name="project_members_loading">Загружаем участников</string>
     <string name="project_members_invite">Пригласить</string>
-    <string name="project_members_invite_username">Точный username на Modrinth</string>
+    <string name="project_members_invite_username">Username</string>
+    <string name="project_members_invite_username_hint">Точный username на Modrinth</string>
     <string name="project_members_not_found">Пользователь не найден</string>
     <string name="project_members_close">Закрыть</string>
     <string name="project_members_edit">Изменить %1$s</string>

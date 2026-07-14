@@ -311,6 +311,46 @@ class RinthyViewModel(application: Application) : AndroidViewModel(application) 
         mutableOrganizationDetail.value = null
     }
 
+    fun changeAvatar(userId: String, file: ProjectFileUpload) {
+        if (file.bytes.size > MAX_USER_AVATAR_BYTES) {
+            mutableProfileUpdate.value = ProfileUpdateState(
+                errorMessage = "Avatar images must be 2 MiB or smaller.",
+            )
+            return
+        }
+        if (!file.contentType.startsWith("image/")) {
+            mutableProfileUpdate.value = ProfileUpdateState(
+                errorMessage = "Only image files can be used as an avatar.",
+            )
+            return
+        }
+        mutableProfileUpdate.value = ProfileUpdateState(isSaving = true)
+        viewModelScope.launch {
+            suspendCatching { controller.changeUserAvatar(userId, file) }.fold(
+                onSuccess = { mutableProfileUpdate.value = ProfileUpdateState(isSuccess = true) },
+                onFailure = { error ->
+                    mutableProfileUpdate.value = ProfileUpdateState(
+                        errorMessage = error.message ?: "Unable to update avatar.",
+                    )
+                },
+            )
+        }
+    }
+
+    fun deleteAvatar(userId: String) {
+        mutableProfileUpdate.value = ProfileUpdateState(isSaving = true)
+        viewModelScope.launch {
+            suspendCatching { controller.deleteUserAvatar(userId) }.fold(
+                onSuccess = { mutableProfileUpdate.value = ProfileUpdateState(isSuccess = true) },
+                onFailure = { error ->
+                    mutableProfileUpdate.value = ProfileUpdateState(
+                        errorMessage = error.message ?: "Unable to remove avatar.",
+                    )
+                },
+            )
+        }
+    }
+
     fun updateProfile(userId: String, username: String, bio: String) {
         val normalizedUsername = username.trim()
         if (normalizedUsername.isEmpty()) {
@@ -556,6 +596,10 @@ class RinthyViewModel(application: Application) : AndroidViewModel(application) 
         controller.close()
         super.onCleared()
     }
+
+    private companion object {
+        const val MAX_USER_AVATAR_BYTES = 2 * 1024 * 1024
+    }
 }
 
 private suspend inline fun <T> suspendCatching(crossinline block: suspend () -> T): Result<T> =
@@ -591,6 +635,7 @@ data class OrganizationDetailState(
 
 data class ProfileUpdateState(
     val isSaving: Boolean = false,
+    val isSuccess: Boolean = false,
     val errorMessage: String? = null,
 )
 

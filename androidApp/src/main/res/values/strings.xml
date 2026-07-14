@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Rinthy</string>
+    <string name="app_name">Ryntra</string>
     <string name="nav_dashboard">Dashboard</string>
     <string name="nav_projects">Projects</string>
     <string name="nav_teams">Teams</string>
@@ -142,8 +142,16 @@
     <string name="settings_clear_images_hint">Free locally cached project images and badges</string>
     <string name="settings_about">About</string>
     <string name="settings_unofficial">Unofficial Modrinth client</string>
+    <string name="settings_author">Author</string>
+    <string name="settings_author_name">sawiq</string>
     <string name="settings_releases">Releases</string>
     <string name="settings_releases_hint">View updates and release notes</string>
+    <string name="profile_avatar_change">Change avatar</string>
+    <string name="profile_avatar_hint">Tap photo to upload a new avatar (images only)</string>
+    <string name="profile_avatar_remove">Remove avatar</string>
+    <string name="profile_avatar_too_large">Avatar images must be 2 MiB or smaller.</string>
+    <string name="profile_avatar_not_image">Only image files can be used as an avatar.</string>
+    <string name="profile_avatar_unreadable">Unable to read that image.</string>
     <string name="settings_sign_out">Sign out</string>
     <string name="settings_sign_out_hint">Remove the saved token from this device</string>
     <string name="profile_workspace">Workspace</string>
@@ -273,7 +281,8 @@
     <string name="project_members_org_hint">Managed through the organization. Edit members under Teams.</string>
     <string name="project_members_loading">Loading members</string>
     <string name="project_members_invite">Invite member</string>
-    <string name="project_members_invite_username">Exact Modrinth username</string>
+    <string name="project_members_invite_username">Username</string>
+    <string name="project_members_invite_username_hint">Exact Modrinth username</string>
     <string name="project_members_not_found">User not found</string>
     <string name="project_members_close">Close</string>
     <string name="project_members_edit">Edit %1$s</string>

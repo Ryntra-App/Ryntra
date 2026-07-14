@@ -188,7 +188,14 @@ struct AccountView: View {
             .themedListRowBackground(isPlatformNative: isPlatformNative)
 
             Section {
-                LabeledContent("Version", value: appVersion)
+                LabeledContent(
+                    NSLocalizedString("Ryntra", comment: "App name"),
+                    value: appVersion
+                )
+                LabeledContent(
+                    NSLocalizedString("Author", comment: "About"),
+                    value: "sawiq"
+                )
                 Link(destination: URL(string: "https://github.com/imsawiq/Rinthy/releases")!) {
                     Label("Releases", systemImage: "arrow.up.right.square")
                 }
@@ -196,9 +203,9 @@ struct AccountView: View {
                     Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
                 }
             } header: {
-                RinthySectionLabel(text: "About")
+                RinthySectionLabel(text: NSLocalizedString("About", comment: "Settings"))
             } footer: {
-                Text("Unofficial Modrinth client")
+                Text(NSLocalizedString("Unofficial Modrinth client", comment: "About"))
             }
             .themedListRowBackground(isPlatformNative: isPlatformNative)
         }

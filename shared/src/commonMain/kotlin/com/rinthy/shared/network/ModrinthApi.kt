@@ -35,6 +35,12 @@ class ModrinthApi(
 
     suspend fun findUser(username: String, token: String): Account? = accounts.findUser(username, token)
 
+    suspend fun changeUserAvatar(userId: String, file: ProjectFileUpload, token: String) =
+        accounts.changeAvatar(userId, file, token)
+
+    suspend fun deleteUserAvatar(userId: String, token: String) =
+        accounts.deleteAvatar(userId, token)
+
     suspend fun getProjects(userId: String, token: String): List<Project> = projects.getForUser(userId, token)
 
     suspend fun getProject(projectIdOrSlug: String, token: String): Project = projects.get(projectIdOrSlug, token)

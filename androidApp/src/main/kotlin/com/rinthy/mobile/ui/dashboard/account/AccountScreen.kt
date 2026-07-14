@@ -56,6 +56,8 @@ fun AccountScreen(
     profileUpdate: ProfileUpdateState,
     preferences: RinthyPreferences,
     onUpdateProfile: (String, String, String) -> Unit,
+    onChangeAvatar: (String, com.rinthy.shared.model.ProjectFileUpload) -> Unit = { _, _ -> },
+    onDeleteAvatar: (String) -> Unit = {},
     onThemeStyleChange: (ThemeStyle) -> Unit,
     onAppearanceModeChange: (AppearanceMode) -> Unit,
     onAppLanguageChange: (AppLanguage) -> Unit,
@@ -130,7 +132,14 @@ fun AccountScreen(
         contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 48.dp),
     ) {
         item(key = "profile-header", contentType = "profile-header") {
-            ProfileHeader(account = account, onEditClick = { isEditorVisible = !isEditorVisible })
+            ProfileHeader(
+                account = account,
+                isAvatarBusy = profileUpdate.isSaving,
+                onEditClick = { isEditorVisible = !isEditorVisible },
+                onChangeAvatar = { onChangeAvatar(account.id, it) },
+                onDeleteAvatar = { onDeleteAvatar(account.id) },
+                onAvatarError = { showNotice(it) },
+            )
             AnimatedVisibility(
                 visible = isEditorVisible,
                 enter = fadeIn(tween(motion.duration(180))) +

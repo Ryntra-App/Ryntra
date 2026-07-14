@@ -70,6 +70,8 @@ fun RinthyApp(viewModel: RinthyViewModel) {
                         onOrganizationClick = viewModel::openOrganization,
                         onCloseOrganization = viewModel::closeOrganization,
                         onUpdateProfile = viewModel::updateProfile,
+                        onChangeAvatar = viewModel::changeAvatar,
+                        onDeleteAvatar = viewModel::deleteAvatar,
                         onUpdateProject = viewModel::updateProject,
                         onClearProjectUpdateStatus = viewModel::clearProjectUpdateStatus,
                         onLoadAnalytics = viewModel::loadAnalytics,

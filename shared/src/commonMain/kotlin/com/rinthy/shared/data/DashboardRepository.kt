@@ -44,6 +44,14 @@ class DashboardRepository(
     suspend fun updateAccountProfile(userId: String, update: AccountProfileUpdate, token: String) =
         api.updateAccountProfile(userId, update, token)
 
+    suspend fun changeUserAvatar(userId: String, file: ProjectFileUpload, token: String) =
+        api.changeUserAvatar(userId, file, token)
+
+    suspend fun deleteUserAvatar(userId: String, token: String) =
+        api.deleteUserAvatar(userId, token)
+
+    suspend fun loadCurrentAccount(token: String): Account = api.getCurrentAccount(token)
+
     suspend fun updateProject(projectIdOrSlug: String, update: com.rinthy.shared.model.ProjectUpdate, token: String) =
         api.updateProject(projectIdOrSlug, update, token)
 

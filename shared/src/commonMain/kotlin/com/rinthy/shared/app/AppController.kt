@@ -149,6 +149,49 @@ class AppController internal constructor(
         }
     }
 
+    suspend fun changeUserAvatar(userId: String, file: ProjectFileUpload) {
+        require(file.bytes.size <= MAX_USER_AVATAR_BYTES) {
+            "Avatar images must be 2 MiB or smaller."
+        }
+        val token = requireToken("updating your avatar")
+        repository.changeUserAvatar(userId, file, token)
+        if (accessToken != token) return
+        // Refresh account so avatar_url points at the new CDN asset.
+        val account = repository.loadCurrentAccount(token)
+        mutableState.value = when (val current = mutableState.value) {
+            is AppState.Ready -> AppState.Ready(current.dashboard.copy(account = account))
+            is AppState.Loading -> current.copy(
+                previousDashboard = current.previousDashboard?.copy(account = account),
+            )
+            is AppState.Failed -> current.copy(
+                previousDashboard = current.previousDashboard?.copy(account = account),
+            )
+            AppState.SignedOut -> AppState.SignedOut
+        }
+    }
+
+    suspend fun deleteUserAvatar(userId: String) {
+        val token = requireToken("removing your avatar")
+        repository.deleteUserAvatar(userId, token)
+        if (accessToken != token) return
+        mutableState.value = when (val current = mutableState.value) {
+            is AppState.Ready -> AppState.Ready(
+                current.dashboard.copy(account = current.dashboard.account.copy(avatarUrl = null)),
+            )
+            is AppState.Loading -> current.copy(
+                previousDashboard = current.previousDashboard?.let {
+                    it.copy(account = it.account.copy(avatarUrl = null))
+                },
+            )
+            is AppState.Failed -> current.copy(
+                previousDashboard = current.previousDashboard?.let {
+                    it.copy(account = it.account.copy(avatarUrl = null))
+                },
+            )
+            AppState.SignedOut -> AppState.SignedOut
+        }
+    }
+
     fun signOut() {
         loadJob?.cancel()
         accessToken = null
@@ -312,6 +355,7 @@ class AppController internal constructor(
 
     private companion object {
         const val MAX_PROJECT_ICON_BYTES = 256 * 1024
+        const val MAX_USER_AVATAR_BYTES = 2 * 1024 * 1024
         const val MAX_VERSION_UPLOAD_BYTES = 128L * 1024 * 1024
     }
 }

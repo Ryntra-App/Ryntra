@@ -5,6 +5,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import com.composables.icons.lucide.User
 import com.composables.icons.lucide.ZapOff
 import com.composables.icons.lucide.Copy
 import com.composables.icons.lucide.Download
@@ -194,7 +195,7 @@ internal fun AboutSettingsSection(
     SettingsGroup(title = stringResource(R.string.settings_about), modifier = modifier) {
         SettingsRow(
             icon = Lucide.Info,
-            title = "Rinthy",
+            title = stringResource(R.string.app_name),
             subtitle = stringResource(R.string.settings_unofficial),
             trailing = {
                 Text(
@@ -203,6 +204,12 @@ internal fun AboutSettingsSection(
                     style = MaterialTheme.typography.labelMedium,
                 )
             },
+        )
+        SettingsDivider()
+        SettingsRow(
+            icon = Lucide.User,
+            title = stringResource(R.string.settings_author),
+            subtitle = stringResource(R.string.settings_author_name),
         )
         SettingsDivider()
         SettingsRow(

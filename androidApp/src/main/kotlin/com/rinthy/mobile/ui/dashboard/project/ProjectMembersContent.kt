@@ -173,6 +173,12 @@ internal fun InviteMemberDialog(
         Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surface) {
             Column(modifier = Modifier.padding(18.dp)) {
                 Text(stringResource(R.string.project_members_invite), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(
+                    stringResource(R.string.project_members_invite_username_hint),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
                 RinthyTextField(
                     value = query,
                     onValueChange = {
@@ -182,7 +188,7 @@ internal fun InviteMemberDialog(
                     placeholder = stringResource(R.string.project_members_invite_username),
                     leadingIcon = Lucide.Search,
                     leadingIconDescription = null,
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                 )
                 when {
                     search.isSearching -> CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.padding(top = 18.dp).size(22.dp))
