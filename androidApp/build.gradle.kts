@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+    implementation(libs.coil.svg)
     implementation(libs.haze)
     implementation(libs.icons.lucide)
     debugImplementation(libs.androidx.compose.ui.tooling)

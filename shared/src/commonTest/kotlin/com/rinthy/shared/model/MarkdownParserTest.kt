@@ -107,4 +107,48 @@ class MarkdownParserTest {
         assertEquals(MarkdownSpanType.Link, block.spans.single().type)
         assertEquals("https://modrinth.com/project/rinthy", block.spans.single().linkUrl)
     }
+
+    @Test
+    fun shieldsBadgeWithUrlEmbeddedInAltIsRecovered() {
+        val markdown =
+            "![Fabric (https://img.shields.io/badge/Loader-Fabric-7BE0C3?style=for-the-badge)](https://fabricmc.net/)"
+        val image = MarkdownParser.parse(markdown).single().images.single()
+
+        assertEquals(
+            "https://img.shields.io/badge/Loader-Fabric-7BE0C3?style=for-the-badge",
+            image.url,
+        )
+        assertEquals("https://fabricmc.net/", image.linkUrl)
+        assertEquals(true, image.isBadge)
+    }
+
+    @Test
+    fun standardLinkedShieldsBadgeParses() {
+        val markdown =
+            "[![Minecraft](https://img.shields.io/badge/Minecraft-1.21.x-A9B8FF?style=for-the-badge)](https://minecraft.net/)"
+        val image = MarkdownParser.parse(markdown).single().images.single()
+
+        assertEquals(
+            "https://img.shields.io/badge/Minecraft-1.21.x-A9B8FF?style=for-the-badge",
+            image.url,
+        )
+        assertEquals("https://minecraft.net/", image.linkUrl)
+        assertEquals(true, image.isBadge)
+    }
+
+    @Test
+    fun badgeRowOfThreeShieldsStaysOneImageBlock() {
+        val markdown = listOf(
+            "![Fabric (https://img.shields.io/badge/Loader-Fabric-7BE0C3?style=for-the-badge)](https://fabricmc.net/)",
+            "![Minecraft (https://img.shields.io/badge/Minecraft-1.21.x-A9B8FF?style=for-the-badge)](https://minecraft.net/)",
+            "![License (https://img.shields.io/badge/License-GPL--3.0-FFC36B?style=for-the-badge)](LICENSE.txt)",
+        ).joinToString("\n")
+
+        val blocks = MarkdownParser.parse(markdown)
+        val images = blocks.flatMap { it.images }
+
+        assertEquals(3, images.size)
+        assertEquals(true, images.all { it.isBadge })
+        assertEquals(true, images.all { "shields.io" in it.url })
+    }
 }

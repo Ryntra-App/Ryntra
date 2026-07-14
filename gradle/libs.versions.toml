@@ -41,6 +41,7 @@ androidx-browser = { module = "androidx.browser:browser", version.ref = "android
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coil" }
+coil-svg = { module = "io.coil-kt.coil3:coil-svg", version.ref = "coil" }
 haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
 icons-lucide = { module = "com.composables:icons-lucide-cmp", version.ref = "composeIcons" }
 jetbrains-markdown = { module = "org.jetbrains:markdown", version.ref = "jetbrainsMarkdown" }

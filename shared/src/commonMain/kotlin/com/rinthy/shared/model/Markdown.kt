@@ -242,17 +242,86 @@ object MarkdownParser {
         return blocks.takeIf { foundImage }
     }
 
-    /** Matches `![alt](url)` at [from]; returns the image and the index just past it. */
+    /**
+     * Matches `![alt](url)` at [from]; returns the image and the index just past it.
+     *
+     * Also recovers a common Modrinth/badge pattern where the image host is nested in alt:
+     * `![Fabric (https://img.shields.io/badge/...)](https://fabricmc.net/)`
+     * → image = shields URL, link = fabricmc URL.
+     */
     private fun matchImage(text: String, from: Int): Pair<MarkdownImage, Int>? {
         if (!text.startsWith("![", from)) return null
-        val altEnd = text.indexOf(']', from + 2)
+        val altEnd = indexOfMatchingBracket(text, from + 1) // '[' of ![
         if (altEnd < 0 || altEnd + 1 >= text.length || text[altEnd + 1] != '(') return null
-        val urlEnd = text.indexOf(')', altEnd + 2)
+        val urlEnd = indexOfMatchingParen(text, altEnd + 1)
         if (urlEnd < 0) return null
-        val url = text.substring(altEnd + 2, urlEnd).trim()
-        if (url.isEmpty()) return null
+        val declaredUrl = text.substring(altEnd + 2, urlEnd).trim()
+        if (declaredUrl.isEmpty()) return null
         val alt = text.substring(from + 2, altEnd)
-        return MarkdownImage(alt, url, isBadge = looksLikeBadge(alt, url)) to urlEnd + 1
+        val embeddedImageUrl = extractHttpUrl(alt)
+        val (imageUrl, linkUrl) = when {
+            looksLikeImageUrl(declaredUrl) -> declaredUrl to null
+            embeddedImageUrl != null && looksLikeImageUrl(embeddedImageUrl) ->
+                embeddedImageUrl to declaredUrl.takeIf { it.startsWith("http", ignoreCase = true) }
+            else -> declaredUrl to null
+        }
+        val cleanAlt = alt
+            .replace(embeddedImageUrl.orEmpty(), "")
+            .replace(Regex("""\s*\(\s*\)\s*"""), " ")
+            .trim()
+            .ifBlank { alt }
+        return MarkdownImage(
+            alt = cleanAlt,
+            url = imageUrl,
+            linkUrl = linkUrl,
+            isBadge = looksLikeBadge(cleanAlt, imageUrl),
+        ) to urlEnd + 1
+    }
+
+    /** Index of the `]` that closes the `[` at [openBracketIndex]. */
+    private fun indexOfMatchingBracket(text: String, openBracketIndex: Int): Int {
+        if (openBracketIndex < 0 || openBracketIndex >= text.length || text[openBracketIndex] != '[') return -1
+        var depth = 0
+        for (i in openBracketIndex until text.length) {
+            when (text[i]) {
+                '[' -> depth++
+                ']' -> {
+                    depth--
+                    if (depth == 0) return i
+                }
+            }
+        }
+        return -1
+    }
+
+    /** Index of the `)` that closes the `(` at [openParenIndex]. */
+    private fun indexOfMatchingParen(text: String, openParenIndex: Int): Int {
+        if (openParenIndex < 0 || openParenIndex >= text.length || text[openParenIndex] != '(') return -1
+        var depth = 0
+        for (i in openParenIndex until text.length) {
+            when (text[i]) {
+                '(' -> depth++
+                ')' -> {
+                    depth--
+                    if (depth == 0) return i
+                }
+            }
+        }
+        return -1
+    }
+
+    private fun extractHttpUrl(text: String): String? {
+        val match = Regex("""https?://[^\s)\]]+""").find(text) ?: return null
+        return match.value.trimEnd('.', ',', ';')
+    }
+
+    private fun looksLikeImageUrl(url: String): Boolean {
+        val normalized = url.lowercase()
+        if ("shields.io" in normalized || "/badge" in normalized) return true
+        if ("cdn.modrinth.com" in normalized || "i.imgur.com" in normalized) return true
+        if ("raw.githubusercontent.com" in normalized || "user-images.githubusercontent.com" in normalized) return true
+        val path = normalized.substringBefore('?').substringBefore('#')
+        return IMAGE_EXTENSIONS.any { path.endsWith(it) }
     }
 
     /** Matches `[![alt](url)](link)` at [from]; returns the linked image and the index just past it. */
@@ -261,10 +330,12 @@ object MarkdownParser {
         val inner = matchImage(text, from + 1) ?: return null
         val afterImage = inner.second
         if (afterImage >= text.length || text[afterImage] != ']' || afterImage + 1 >= text.length || text[afterImage + 1] != '(') return null
-        val linkEnd = text.indexOf(')', afterImage + 2)
+        val linkEnd = indexOfMatchingParen(text, afterImage + 1)
         if (linkEnd < 0) return null
         val link = text.substring(afterImage + 2, linkEnd).trim()
-        return inner.first.copy(linkUrl = link.ifBlank { null }) to linkEnd + 1
+        // Prefer outer link; keep any link recovered from alt-embedded image forms.
+        val resolvedLink = link.ifBlank { null } ?: inner.first.linkUrl
+        return inner.first.copy(linkUrl = resolvedLink) to linkEnd + 1
     }
 
     /**
@@ -309,7 +380,10 @@ object MarkdownParser {
         if ("shields.io" in normalizedUrl || "/badge" in normalizedUrl) return true
         val normalizedAlt = alt.lowercase()
         val hasBadgeAlt = BADGE_ALT_HINTS.any { hint ->
-            normalizedAlt == hint || normalizedAlt.startsWith("$hint ") || normalizedAlt.startsWith("$hint-")
+            normalizedAlt == hint ||
+                normalizedAlt.startsWith("$hint ") ||
+                normalizedAlt.startsWith("$hint-") ||
+                normalizedAlt.contains(hint)
         }
         return hasBadgeAlt || (
             normalizedUrl.substringBefore('?').endsWith(".svg") &&
@@ -318,6 +392,7 @@ object MarkdownParser {
     }
 
     private const val MAX_HEADING_LEVEL = 6
+    private val IMAGE_EXTENSIONS = listOf(".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp", ".avif")
     private val BADGE_ALT_HINTS = listOf(
         "github",
         "download",
@@ -326,6 +401,12 @@ object MarkdownParser {
         "build",
         "discord",
         "modrinth",
+        "fabric",
+        "forge",
+        "quilt",
+        "neoforge",
+        "minecraft",
+        "loader",
     )
 }
 

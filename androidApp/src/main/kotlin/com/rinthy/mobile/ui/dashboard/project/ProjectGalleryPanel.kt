@@ -112,12 +112,6 @@ internal fun ProjectGalleryManageSection(
     }
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            stringResource(R.string.project_gallery_manage_hint),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(bottom = 10.dp),
-        )
         if (gallery.isEmpty()) {
             Text(
                 stringResource(R.string.project_gallery_empty),
