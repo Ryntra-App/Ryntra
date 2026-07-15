@@ -32,6 +32,10 @@ The shared module has no UI dependency. `AppController` owns session-scoped load
 - Xcode 16 or newer for iOS builds.
 - No Node.js, CocoaPods or web runtime is required.
 
+## Translations
+
+New languages are scaffolded and registered for Android and iOS with one command. See [Translating Ryntra](docs/TRANSLATING.md) for the contributor workflow, validation command, language rules, and pull request checklist.
+
 ## Android
 
 ```powershell

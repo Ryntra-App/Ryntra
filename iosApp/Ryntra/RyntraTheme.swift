@@ -33,34 +33,33 @@ enum RyntraAppearanceMode: String, CaseIterable, Identifiable {
 }
 
 enum RyntraAppLanguage: String, CaseIterable, Identifiable {
+    // <localization-tool:ios-language-cases>
     case system
     case english = "en"
     case russian = "ru"
+    // </localization-tool:ios-language-cases>
 
     var id: String { rawValue }
 
     var label: String {
         switch self {
+        // <localization-tool:ios-language-labels>
         case .system: return NSLocalizedString("System", comment: "Language")
         case .english: return "English"
         case .russian: return "Русский"
+        // </localization-tool:ios-language-labels>
         }
     }
 
     var locale: Locale? {
-        switch self {
-        case .system: return nil
-        case .english: return Locale(identifier: "en")
-        case .russian: return Locale(identifier: "ru")
-        }
+        self == .system ? nil : Locale(identifier: rawValue)
     }
 
     static func apply(_ rawValue: String) {
         let language = RyntraAppLanguage(rawValue: rawValue) ?? .system
-        switch language {
-        case .system:
+        if language == .system {
             UserDefaults.standard.removeObject(forKey: "AppleLanguages")
-        case .english, .russian:
+        } else {
             UserDefaults.standard.set([language.rawValue], forKey: "AppleLanguages")
         }
         UserDefaults.standard.synchronize()

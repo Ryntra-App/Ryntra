@@ -23,6 +23,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -34,7 +36,9 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,6 +54,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.ChevronRight
+import com.composables.icons.lucide.Check
+import com.composables.icons.lucide.ChevronDown
 import com.composables.icons.lucide.Lucide
 import com.ryntra.mobile.preferences.AppLanguage
 import com.ryntra.mobile.preferences.GlassQuality
@@ -379,21 +385,63 @@ internal fun AppLanguagePicker(
     selected: AppLanguage,
     onSelect: (AppLanguage) -> Unit,
 ) {
-    SettingsSegmentedPicker(
-        options = AppLanguage.entries,
-        selected = selected,
-        label = { language ->
-            stringResource(
-                when (language) {
-                    AppLanguage.System -> R.string.settings_language_system
-                    AppLanguage.English -> R.string.settings_language_english
-                    AppLanguage.Russian -> R.string.settings_language_russian
-                },
+    var isExpanded by remember { mutableStateOf(false) }
+    val selectedLabel = selected.displayName()
+    Box(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { isExpanded = true }
+                .padding(start = 61.dp, end = 14.dp, top = 10.dp, bottom = 12.dp),
+        ) {
+            Text(
+                text = selectedLabel,
+                color = RyntraDesign.colors.labelPrimary,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.weight(1f),
             )
-        },
-        onSelect = onSelect,
-    )
+            RyntraIcon(
+                icon = Lucide.ChevronDown,
+                contentDescription = null,
+                tint = RyntraDesign.colors.labelSecondary,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+        DropdownMenu(
+            expanded = isExpanded,
+            onDismissRequest = { isExpanded = false },
+            modifier = Modifier.align(Alignment.TopEnd),
+        ) {
+            AppLanguage.entries.forEach { language ->
+                DropdownMenuItem(
+                    text = { Text(language.displayName()) },
+                    onClick = {
+                        isExpanded = false
+                        onSelect(language)
+                    },
+                    trailingIcon = if (language == selected) {
+                        {
+                            RyntraIcon(
+                                icon = Lucide.Check,
+                                contentDescription = null,
+                                tint = RyntraDesign.colors.accent,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                    } else {
+                        null
+                    },
+                )
+            }
+        }
+    }
 }
+
+@Composable
+private fun AppLanguage.displayName(): String =
+    if (this == AppLanguage.System) stringResource(R.string.settings_language_system) else label
 
 @Composable
 private fun <T> SettingsSegmentedPicker(

@@ -1,0 +1,18 @@
+{
+  "locales": [
+    {
+      "tag": "en",
+      "nativeName": "English",
+      "androidQualifier": "values",
+      "androidName": "English",
+      "iosCase": "english"
+    },
+    {
+      "tag": "ru",
+      "nativeName": "Русский",
+      "androidQualifier": "values-ru",
+      "androidName": "Russian",
+      "iosCase": "russian"
+    }
+  ]
+}

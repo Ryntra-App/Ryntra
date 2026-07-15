@@ -10,6 +10,8 @@ lerna-debug.log*
 *.local
 node_modules/
 dist/
+__pycache__/
+*.py[cod]
 android/
 ios/
 

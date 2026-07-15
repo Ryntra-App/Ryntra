@@ -18,9 +18,14 @@ jobs:
           distribution: temurin
           java-version: 21
           cache: gradle
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: android-actions/setup-android@v3
       - name: Install Android SDK 36
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Validate localizations
+        run: python tools/localization.py check
       - name: Test shared logic and build Android
         run: ./gradlew :shared:testAndroidHostTest :androidApp:assembleDebug --stacktrace
 

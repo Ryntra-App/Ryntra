@@ -34,9 +34,11 @@ enum class AppearanceMode(val label: String) {
 }
 
 enum class AppLanguage(val label: String, val tag: String?) {
+    // <localization-tool:android-languages>
     System("System", null),
     English("English", "en"),
     Russian("Русский", "ru"),
+    // </localization-tool:android-languages>
 }
 
 enum class GlassQuality(val label: String) {

@@ -148,7 +148,7 @@ struct AccountView: View {
                         Text(language.label).tag(language.rawValue)
                     }
                 }
-                .pickerStyle(.segmented)
+                .pickerStyle(.menu)
                 .onChange(of: storedAppLanguage) { _ in
                     RyntraAppLanguage.apply(storedAppLanguage)
                 }
