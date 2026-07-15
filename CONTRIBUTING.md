@@ -8,6 +8,6 @@ Before opening a pull request, run:
 ./gradlew :shared:testAndroidHostTest :androidApp:assembleDebug
 ```
 
-On macOS, also build the `Rinthy` Xcode scheme. New API behavior should include a `MockEngine` test, and tokens or personal data must never appear in fixtures, logs or screenshots.
+On macOS, also build the `Ryntra` Xcode scheme. New API behavior should include a `MockEngine` test, and tokens or personal data must never appear in fixtures, logs or screenshots.
 
 Contributors must accept the agreement in [CLA.md](CLA.md).

@@ -14,7 +14,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Rinthy"
+rootProject.name = "Ryntra"
 
 include(":androidApp")
 include(":shared")

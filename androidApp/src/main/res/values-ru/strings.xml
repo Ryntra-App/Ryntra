@@ -100,10 +100,10 @@
     <string name="settings_appearance">Оформление</string>
     <string name="settings_interface_style">Стиль интерфейса</string>
     <string name="settings_native_style">Нативные компоненты Android и динамические цвета</string>
-    <string name="settings_rinthy_style">Тёмный стеклянный интерфейс Rinthy</string>
+    <string name="settings_ryntra_style">Тёмный стеклянный интерфейс Ryntra</string>
     <string name="settings_appearance_hint">Следовать Android или выбрать светлую либо тёмную тему</string>
     <string name="settings_theme_platform">Системный</string>
-    <string name="settings_theme_rinthy">Rinthy</string>
+    <string name="settings_theme_ryntra">Ryntra</string>
     <string name="settings_mode_system">Система</string>
     <string name="settings_mode_light">Светлая</string>
     <string name="settings_mode_dark">Тёмная</string>
@@ -137,7 +137,7 @@
     <string name="settings_export">Экспорт настроек</string>
     <string name="settings_export_hint">Сохранить оформление, сортировку и избранное в JSON</string>
     <string name="settings_import">Импорт настроек</string>
-    <string name="settings_import_hint">Восстановить настройки Rinthy из JSON</string>
+    <string name="settings_import_hint">Восстановить настройки Ryntra из JSON</string>
     <string name="settings_clear_images">Очистить кеш изображений</string>
     <string name="settings_clear_images_hint">Удалить локально сохранённые изображения проектов и значки</string>
     <string name="settings_about">О приложении</string>

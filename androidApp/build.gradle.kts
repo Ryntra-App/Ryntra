@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.rinthy.mobile"
+    namespace = "com.ryntra.mobile"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.rinthy.mobile"
+        applicationId = "com.ryntra.mobile"
         minSdk = 26
         targetSdk = 36
         versionCode = 30000

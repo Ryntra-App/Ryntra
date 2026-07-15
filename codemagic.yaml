@@ -23,8 +23,8 @@ workflows:
       - name: Build iOS simulator app
         script: |
           xcodebuild \
-            -project iosApp/Rinthy.xcodeproj \
-            -scheme Rinthy \
+            -project iosApp/Ryntra.xcodeproj \
+            -scheme Ryntra \
             -configuration Debug \
             -destination "generic/platform=iOS Simulator" \
             CODE_SIGNING_ALLOWED=NO \
@@ -43,8 +43,8 @@ workflows:
       - name: Build unsigned iPhone app
         script: |
           xcodebuild \
-            -project iosApp/Rinthy.xcodeproj \
-            -scheme Rinthy \
+            -project iosApp/Ryntra.xcodeproj \
+            -scheme Ryntra \
             -configuration Release \
             -destination "generic/platform=iOS" \
             -derivedDataPath "$CM_BUILD_DIR/build/ios/DerivedData" \
@@ -53,12 +53,12 @@ workflows:
             build
       - name: Package unsigned IPA
         script: |
-          APP_PATH="$CM_BUILD_DIR/build/ios/DerivedData/Build/Products/Release-iphoneos/Rinthy.app"
+          APP_PATH="$CM_BUILD_DIR/build/ios/DerivedData/Build/Products/Release-iphoneos/Ryntra.app"
           IPA_ROOT="$CM_BUILD_DIR/build/ipa"
           test -d "$APP_PATH"
           rm -rf "$IPA_ROOT/Payload"
           mkdir -p "$IPA_ROOT/Payload"
-          ditto "$APP_PATH" "$IPA_ROOT/Payload/Rinthy.app"
+          ditto "$APP_PATH" "$IPA_ROOT/Payload/Ryntra.app"
           cd "$IPA_ROOT"
           /usr/bin/zip -qry Ryntra-unsigned.ipa Payload
     artifacts:

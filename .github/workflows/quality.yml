@@ -36,8 +36,8 @@ jobs:
       - name: Build iOS app
         run: >-
           xcodebuild
-          -project iosApp/Rinthy.xcodeproj
-          -scheme Rinthy
+          -project iosApp/Ryntra.xcodeproj
+          -scheme Ryntra
           -configuration Debug
           -destination 'generic/platform=iOS Simulator'
           CODE_SIGNING_ALLOWED=NO

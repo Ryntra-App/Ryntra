@@ -3,12 +3,12 @@
     <background android:drawable="@color/launcher_icon_background" />
     <foreground>
         <inset
-            android:drawable="@drawable/rinthy_launcher_foreground"
+            android:drawable="@drawable/ryntra_launcher_foreground"
             android:inset="16.7%" />
     </foreground>
     <monochrome>
         <inset
-            android:drawable="@drawable/rinthy_launcher_monochrome"
+            android:drawable="@drawable/ryntra_launcher_monochrome"
             android:inset="16.7%" />
     </monochrome>
 </adaptive-icon>

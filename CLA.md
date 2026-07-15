@@ -1,6 +1,6 @@
-# Rinthy Contributor License Agreement
+# Ryntra Contributor License Agreement
 
-Thank you for contributing to Rinthy.
+Thank you for contributing to Ryntra.
 
 By submitting a contribution to this project, you agree to the terms below.
 
@@ -10,9 +10,9 @@ By submitting a contribution to this project, you agree to the terms below.
 
 "Contribution" means any code, documentation, translation, design, asset, issue patch, pull request, or other material submitted by you to this project.
 
-"Project" means Rinthy and its related source code, documentation, releases, and project materials.
+"Project" means Ryntra and its related source code, documentation, releases, and project materials.
 
-"Maintainer" means the project owner or authorized maintainers of Rinthy.
+"Maintainer" means the project owner or authorized maintainers of Ryntra.
 
 ## 2. Copyright
 

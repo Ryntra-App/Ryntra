@@ -8,18 +8,18 @@ plugins {
 
 kotlin {
     android {
-        namespace = "com.rinthy.shared"
+        namespace = "com.ryntra.shared"
         compileSdk = 36
         minSdk = 26
         withHostTestBuilder {}
     }
 
-    val frameworkName = "RinthyShared"
+    val frameworkName = "RyntraShared"
     val xcframework = XCFramework(frameworkName)
     listOf(iosArm64(), iosSimulatorArm64(), iosX64()).forEach { target ->
         target.binaries.framework {
             baseName = frameworkName
-            binaryOption("bundleId", "com.rinthy.mobile.shared")
+            binaryOption("bundleId", "com.ryntra.mobile.shared")
             isStatic = true
             xcframework.add(this)
         }

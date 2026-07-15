@@ -14,7 +14,7 @@ The shared module has no UI dependency. `AppController` owns session-scoped load
 
 ## Implemented
 
-- Modrinth OAuth through the Rinthy auth backend, with validated callback state.
+- Modrinth OAuth through the Ryntra auth backend, with validated callback state.
 - Personal access token authentication as a fallback.
 - Encrypted local session storage on Android and iOS.
 - Account, project and organization loading through the shared Ktor client.
@@ -43,7 +43,7 @@ Open the repository root in Android Studio and run the `androidApp` configuratio
 
 ## iOS
 
-Open `iosApp/Rinthy.xcodeproj` on macOS and run the `Rinthy` scheme. Its build phase calls `:shared:embedAndSignAppleFrameworkForXcode`, so Xcode always consumes the matching Kotlin framework.
+Open `iosApp/Ryntra.xcodeproj` on macOS and run the `Ryntra` scheme. Its build phase calls `:shared:embedAndSignAppleFrameworkForXcode`, so Xcode always consumes the matching Kotlin framework.
 
 To validate the shared Apple framework from a terminal:
 

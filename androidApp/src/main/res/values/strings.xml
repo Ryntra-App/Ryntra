@@ -100,10 +100,10 @@
     <string name="settings_appearance">Appearance</string>
     <string name="settings_interface_style">Interface style</string>
     <string name="settings_native_style">Native Android components and dynamic color</string>
-    <string name="settings_rinthy_style">Original dark Rinthy glass interface</string>
+    <string name="settings_ryntra_style">Original dark Ryntra glass interface</string>
     <string name="settings_appearance_hint">Follow Android or choose light and dark mode</string>
     <string name="settings_theme_platform">Platform</string>
-    <string name="settings_theme_rinthy">Rinthy</string>
+    <string name="settings_theme_ryntra">Ryntra</string>
     <string name="settings_mode_system">System</string>
     <string name="settings_mode_light">Light</string>
     <string name="settings_mode_dark">Dark</string>
@@ -137,7 +137,7 @@
     <string name="settings_export">Export settings</string>
     <string name="settings_export_hint">Save appearance, sorting and favorites as JSON</string>
     <string name="settings_import">Import settings</string>
-    <string name="settings_import_hint">Restore a Rinthy settings JSON file</string>
+    <string name="settings_import_hint">Restore a Ryntra settings JSON file</string>
     <string name="settings_clear_images">Clear image cache</string>
     <string name="settings_clear_images_hint">Free locally cached project images and badges</string>
     <string name="settings_about">About</string>

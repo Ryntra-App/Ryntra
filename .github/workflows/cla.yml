@@ -27,13 +27,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           path-to-signatures: signatures/cla/v1.json
-          path-to-document: https://github.com/imsawiq/Rinthy/blob/main/CLA.md
+          path-to-document: https://github.com/imsawiq/Ryntra/blob/main/CLA.md
           branch: main
           allowlist: imsawiq,dependabot[bot],github-actions[bot],renovate[bot]
           custom-pr-sign-comment: I have read the CLA Document and I hereby sign the CLA
           custom-notsigned-prcomment: >-
             Thanks for the contribution. Before this pull request can be merged,
-            please read the Rinthy CLA and comment exactly:
+            please read the Ryntra CLA and comment exactly:
             I have read the CLA Document and I hereby sign the CLA
-          custom-allsigned-prcomment: All contributors have signed the Rinthy CLA.
+          custom-allsigned-prcomment: All contributors have signed the Ryntra CLA.
           lock-pullrequest-aftermerge: false
