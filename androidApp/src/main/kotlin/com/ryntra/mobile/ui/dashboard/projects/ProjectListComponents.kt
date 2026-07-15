@@ -173,7 +173,7 @@ private fun ProjectMetadata(model: ProjectRowModel, modifier: Modifier = Modifie
         modifier = modifier,
     ) {
         ProjectMetric(Lucide.Download, model.downloads, RyntraDesign.colors.accent)
-        ProjectMetric(Lucide.Heart, model.followers, RyntraDesign.colors.labelSecondary)
+        ProjectMetric(Lucide.Heart, model.followers, RyntraDesign.colors.accent)
         model.updated?.let { date ->
             ProjectMetric(
                 icon = Lucide.RefreshCw,

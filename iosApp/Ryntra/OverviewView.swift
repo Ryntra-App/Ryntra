@@ -135,9 +135,19 @@ struct OverviewView: View {
 
     private var portfolioSummary: some View {
         VStack(spacing: 0) {
-            summaryRow("Downloads", value: ryntraExactCount(totalDownloads), symbol: "arrow.down")
+            summaryRow(
+                "Downloads",
+                value: ryntraExactCount(totalDownloads),
+                symbol: "arrow.down",
+                tint: .ryntraGreen
+            )
             Divider().padding(.leading, 44)
-            summaryRow("Followers", value: ryntraExactCount(totalFollowers), symbol: "heart")
+            summaryRow(
+                "Followers",
+                value: ryntraExactCount(totalFollowers),
+                symbol: "heart",
+                tint: .ryntraGreen
+            )
             Divider().padding(.leading, 44)
             HStack(spacing: 16) {
                 compactFact(
@@ -159,10 +169,10 @@ struct OverviewView: View {
         .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 10))
     }
 
-    private func summaryRow(_ label: String, value: String, symbol: String) -> some View {
+    private func summaryRow(_ label: String, value: String, symbol: String, tint: Color) -> some View {
         HStack(spacing: 12) {
             Image(systemName: symbol)
-                .foregroundStyle(label == "Downloads" ? Color.ryntraGreen : Color.secondary)
+                .foregroundStyle(tint)
                 .frame(width: 18)
             Text(label)
             Spacer()

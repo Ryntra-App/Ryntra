@@ -48,7 +48,7 @@ internal fun CreatorSummary(
             .fillMaxWidth()
             .background(RyntraDesign.colors.surface, RoundedCornerShape(10.dp)),
     ) {
-        SummaryRow(Lucide.Download, stringResource(R.string.analytics_downloads), formatExactCount(snapshot.totalDownloads), isAccent = true)
+        SummaryRow(Lucide.Download, stringResource(R.string.analytics_downloads), formatExactCount(snapshot.totalDownloads))
         HorizontalDivider(color = RyntraDesign.colors.separator, modifier = Modifier.padding(start = 44.dp))
         SummaryRow(Lucide.Heart, stringResource(R.string.analytics_followers), formatExactCount(snapshot.totalFollowers))
         HorizontalDivider(color = RyntraDesign.colors.separator, modifier = Modifier.padding(start = 44.dp))
@@ -80,7 +80,6 @@ private fun SummaryRow(
     icon: ImageVector,
     label: String,
     value: String,
-    isAccent: Boolean = false,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -91,7 +90,7 @@ private fun SummaryRow(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = if (isAccent) RyntraDesign.colors.accent else RyntraDesign.colors.labelSecondary,
+            tint = RyntraDesign.colors.accent,
             modifier = Modifier.size(18.dp),
         )
         Text(

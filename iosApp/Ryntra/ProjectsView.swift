@@ -170,7 +170,7 @@ struct ProjectRow: View {
                 }
                 HStack(spacing: 13) {
                     metric(ryntraExactCount(project.downloads), symbol: "arrow.down", tint: Color.ryntraGreen)
-                    metric(ryntraExactCount(project.followers), symbol: "heart", tint: .secondary)
+                    metric(ryntraExactCount(project.followers), symbol: "heart", tint: Color.ryntraGreen)
                     if let updated = ryntraProjectDate(project.updated) {
                         Text(updated).font(.caption2).foregroundStyle(.secondary)
                     }
