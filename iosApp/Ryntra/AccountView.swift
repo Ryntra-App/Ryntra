@@ -24,6 +24,7 @@ struct AccountView: View {
     @State private var errorMessage: String?
     @State private var avatarError: String?
     @State private var isChangingNotifications = false
+    @State private var copiedSupportAddress: String?
 
     private var normalizedUsername: String {
         username.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -69,6 +70,32 @@ struct AccountView: View {
                         .foregroundStyle(.red)
                 }
             }
+            .themedListRowBackground(isPlatformNative: isPlatformNative)
+
+            Section {
+                Link(destination: SupportDetails.donationAlertsURL) {
+                    Label(NSLocalizedString("DonationAlerts", comment: "Support option"), systemImage: "heart")
+                }
+                Button {
+                    copySupportAddress(SupportDetails.usdtTRC20, label: "USDT · TRC20")
+                } label: {
+                    supportAddressLabel("USDT · TRC20", address: SupportDetails.usdtTRC20)
+                }
+                Button {
+                    copySupportAddress(SupportDetails.tonUSDT, label: "USDT · TON")
+                } label: {
+                    supportAddressLabel("USDT · TON", address: SupportDetails.tonUSDT)
+                }
+            } header: {
+                RyntraSectionLabel(text: NSLocalizedString("Support the author", comment: "Settings section"))
+            } footer: {
+                if let copiedSupportAddress {
+                    Text(String(format: NSLocalizedString("%@ address copied.", comment: "Support copy result"), copiedSupportAddress))
+                } else {
+                    Text(NSLocalizedString("Thank you for supporting Ryntra development.", comment: "Support hint"))
+                }
+            }
+            .tint(Color.ryntraGreen)
             .themedListRowBackground(isPlatformNative: isPlatformNative)
 
             Section {
@@ -310,6 +337,22 @@ struct AccountView: View {
         avatarError = nil
         defer { isAvatarSaving = false }
         try await model.deleteAvatar(userID: account.id)
+    }
+
+    private func copySupportAddress(_ value: String, label: String) {
+        UIPasteboard.general.string = value
+        copiedSupportAddress = label
+    }
+
+    private func supportAddressLabel(_ title: String, address: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title).foregroundStyle(.primary)
+            Text(address)
+                .font(.caption.monospaced())
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

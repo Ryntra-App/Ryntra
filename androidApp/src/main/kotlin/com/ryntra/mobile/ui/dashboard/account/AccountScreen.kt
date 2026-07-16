@@ -87,6 +87,7 @@ fun AccountScreen(
     val appearanceReset = stringResource(R.string.settings_appearance_reset)
     val imageCacheCleared = stringResource(R.string.settings_image_cache_cleared)
     val notificationPermissionDenied = stringResource(R.string.notifications_permission_denied)
+    val supportAddressCopied = stringResource(R.string.support_address_copied)
     val authorUrl = stringResource(R.string.settings_author_url)
 
     fun showNotice(message: String) {
@@ -242,6 +243,20 @@ fun AccountScreen(
                 modifier = Modifier.padding(top = 26.dp),
             )
         }
+        item(key = "profile-support", contentType = "settings-group") {
+            SupportAuthorSection(
+                onOpenDonationAlerts = { uriHandler.openUri(SupportDetails.DONATION_ALERTS_URL) },
+                onCopyTrc20 = {
+                    context.copyToClipboard("USDT TRC20", SupportDetails.USDT_TRC20)
+                    showNotice(supportAddressCopied)
+                },
+                onCopyTon = {
+                    context.copyToClipboard("TON USDT", SupportDetails.TON_USDT)
+                    showNotice(supportAddressCopied)
+                },
+                modifier = Modifier.padding(top = 26.dp),
+            )
+        }
         item(key = "profile-about", contentType = "settings-group") {
             AboutSettingsSection(
                 appVersion = BuildConfig.VERSION_NAME,
@@ -252,6 +267,11 @@ fun AccountScreen(
             )
         }
     }
+}
+
+private fun android.content.Context.copyToClipboard(label: String, value: String) {
+    val clipboard = getSystemService(android.content.ClipboardManager::class.java)
+    clipboard.setPrimaryClip(android.content.ClipData.newPlainText(label, value))
 }
 
 @Composable

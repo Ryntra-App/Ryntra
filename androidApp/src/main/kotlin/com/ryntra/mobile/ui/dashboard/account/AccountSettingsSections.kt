@@ -24,6 +24,7 @@ import com.composables.icons.lucide.Star
 import com.composables.icons.lucide.Upload
 import com.composables.icons.lucide.Wallet
 import com.composables.icons.lucide.Bell
+import com.composables.icons.lucide.HeartHandshake
 import com.ryntra.mobile.preferences.AppLanguage
 import com.ryntra.mobile.preferences.GlassQuality
 import com.ryntra.mobile.preferences.AppearanceMode
@@ -243,6 +244,37 @@ internal fun AboutSettingsSection(
             subtitle = stringResource(R.string.settings_sign_out_hint),
             onClick = onSignOut,
             isDestructive = true,
+        )
+    }
+}
+
+@Composable
+internal fun SupportAuthorSection(
+    onOpenDonationAlerts: () -> Unit,
+    onCopyTrc20: () -> Unit,
+    onCopyTon: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    SettingsGroup(title = stringResource(R.string.support_title), modifier = modifier) {
+        SettingsRow(
+            icon = Lucide.HeartHandshake,
+            title = stringResource(R.string.support_donation_alerts),
+            subtitle = stringResource(R.string.support_donation_alerts_hint),
+            onClick = onOpenDonationAlerts,
+        )
+        SettingsDivider()
+        SettingsRow(
+            icon = Lucide.Copy,
+            title = stringResource(R.string.support_usdt_trc20),
+            subtitle = SupportDetails.USDT_TRC20,
+            onClick = onCopyTrc20,
+        )
+        SettingsDivider()
+        SettingsRow(
+            icon = Lucide.Copy,
+            title = stringResource(R.string.support_ton_usdt),
+            subtitle = SupportDetails.TON_USDT,
+            onClick = onCopyTon,
         )
     }
 }

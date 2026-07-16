@@ -195,6 +195,10 @@
 "Retry" = "Retry";
 "Local background checks" = "Local background checks";
 "Private on-device checks scheduled by iOS. Delivery time is not guaranteed." = "Private on-device checks scheduled by iOS. Delivery time is not guaranteed.";
+"DonationAlerts" = "DonationAlerts";
+"Support the author" = "Support the author";
+"%@ address copied." = "%@ address copied.";
+"Thank you for supporting Ryntra development." = "Thank you for supporting Ryntra development.";
 "Status and license" = "Status and license";
 "Status" = "Status";
 "License ID" = "License ID";

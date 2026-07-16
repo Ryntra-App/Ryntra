@@ -388,4 +388,10 @@
     <string name="notifications_channel_name">Обновления Modrinth</string>
     <string name="notifications_channel_description">Статусы проектов, приглашения, релизы и сообщения модераторов</string>
     <string name="common_retry">Повторить</string>
+    <string name="support_title">Поддержать автора</string>
+    <string name="support_donation_alerts">DonationAlerts</string>
+    <string name="support_donation_alerts_hint">Разовая поддержка разработки Ryntra</string>
+    <string name="support_usdt_trc20">USDT · TRC20</string>
+    <string name="support_ton_usdt">USDT · TON</string>
+    <string name="support_address_copied">Адрес кошелька скопирован.</string>
 </resources>
