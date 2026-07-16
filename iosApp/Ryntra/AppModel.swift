@@ -304,6 +304,18 @@ final class AppModel: ObservableObject {
         try await controller.loadProjectDependencies(versions: versions)
     }
 
+    func loadModerationThread(threadID: String) async throws -> ModerationThread {
+        try await controller.loadModerationThread(threadId: threadID)
+    }
+
+    func sendModerationReply(threadID: String, body: String, replyingTo: String?) async throws {
+        try await controller.replyToModerationThread(threadId: threadID, body: body, replyingTo: replyingTo)
+    }
+
+    func deleteModerationMessage(messageID: String) async throws {
+        try await controller.deleteModerationMessage(messageId: messageID)
+    }
+
     func loadProjectMembers(project: Project) async throws -> [ProjectMember] {
         try await controller.loadProjectMembers(projectIdOrSlug: project.slug ?? project.id, teamId: project.team)
     }

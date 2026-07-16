@@ -66,6 +66,11 @@ struct ProjectDetailView: View {
                         errorMessage: memberError,
                         onReload: { await loadMembers() }
                     )
+                case .moderation:
+                    ProjectModerationView(
+                        project: project,
+                        currentUserID: model.currentAccountID
+                    )
                 }
             }
             .padding(.horizontal, 16)
@@ -105,6 +110,19 @@ struct ProjectDetailView: View {
     }
 
     private var projectTabs: some View {
+        Group {
+            if availableTabs.count > 4 {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    projectTabBar(isScrollable: true)
+                }
+            } else {
+                projectTabBar(isScrollable: false)
+            }
+        }
+        .padding(.bottom, 18)
+    }
+
+    private func projectTabBar(isScrollable: Bool) -> some View {
         HStack(spacing: 0) {
             ForEach(availableTabs, id: \.self) { tab in
                 Button {
@@ -119,7 +137,8 @@ struct ProjectDetailView: View {
                             .minimumScaleFactor(0.78)
                     }
                     .foregroundStyle(selectedTab == tab ? Color.ryntraGreen : Color.secondary)
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: isScrollable ? nil : .infinity)
+                    .frame(width: isScrollable ? 112 : nil)
                     .frame(height: 44)
                     .background(
                         selectedTab == tab ? Color.ryntraSurfaceRaised : Color.clear,
@@ -135,7 +154,6 @@ struct ProjectDetailView: View {
             RoundedRectangle(cornerRadius: 11)
                 .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
         }
-        .padding(.bottom, 18)
     }
 
     private func loadVersions() async {
@@ -412,6 +430,7 @@ private enum ProjectDetailTab: CaseIterable {
     case versions
     case edit
     case members
+    case moderation
 
     var label: String {
         switch self {
@@ -419,6 +438,7 @@ private enum ProjectDetailTab: CaseIterable {
         case .versions: return NSLocalizedString("Versions", comment: "Project tab")
         case .edit: return NSLocalizedString("Edit", comment: "Project tab")
         case .members: return NSLocalizedString("Members", comment: "Project tab")
+        case .moderation: return NSLocalizedString("Moderation", comment: "Project tab")
         }
     }
 
@@ -428,6 +448,7 @@ private enum ProjectDetailTab: CaseIterable {
         case .versions: return "arrow.down.circle.fill"
         case .edit: return "slider.horizontal.3"
         case .members: return "person.3.fill"
+        case .moderation: return "text.bubble.fill"
         }
     }
 }
