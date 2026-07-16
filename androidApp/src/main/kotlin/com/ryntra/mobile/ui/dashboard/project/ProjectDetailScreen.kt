@@ -77,6 +77,8 @@ import com.ryntra.shared.model.ProjectVersion
 import com.ryntra.shared.model.VersionUpdate
 import com.ryntra.mobile.MemberSearchState
 import com.ryntra.mobile.ProjectActionState
+import com.ryntra.mobile.ProjectModerationState
+import com.ryntra.mobile.ui.dashboard.project.moderation.moderationContentItems
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -97,6 +99,7 @@ fun ProjectDetailScreen(
     onUpdateProject: (String, com.ryntra.shared.model.ProjectUpdate) -> Unit = { _, _ -> },
     onClearProjectUpdateStatus: () -> Unit = {},
     projectAction: ProjectActionState = ProjectActionState(),
+    moderation: ProjectModerationState = ProjectModerationState(),
     memberSearch: MemberSearchState = MemberSearchState(),
     onChangeProjectIcon: (String, ProjectFileUpload) -> Unit = { _, _ -> },
     onDeleteProjectIcon: (String) -> Unit = {},
@@ -114,6 +117,9 @@ fun ProjectDetailScreen(
     onJoinTeam: (String) -> Unit = {},
     onTransferOwnership: (String, String) -> Unit = { _, _ -> },
     onClearProjectActionStatus: () -> Unit = {},
+    onLoadModeration: (String, Boolean) -> Unit = { _, _ -> },
+    onSendModerationReply: (String, String, String?) -> Unit = { _, _, _ -> },
+    onDeleteModerationMessage: (String, String) -> Unit = { _, _ -> },
 ) {
     val uriHandler = LocalUriHandler.current
     var selectedTab by rememberSaveable(project.id) { mutableStateOf(ProjectDetailTab.Overview) }
@@ -146,6 +152,7 @@ fun ProjectDetailScreen(
     var isInvitingMember by remember(project.id) { mutableStateOf(false) }
     var editingMember by remember(project.id) { mutableStateOf<ProjectMember?>(null) }
     var viewingGalleryImage by remember(project.id) { mutableStateOf<com.ryntra.shared.model.GalleryImage?>(null) }
+    var moderationReplyTargetId by rememberSaveable(project.id) { mutableStateOf<String?>(null) }
     // Prefer project-team membership; fall back to org membership for permission checks.
     val currentMember = remember(members, organizationMembers, currentUserId) {
         members.firstOrNull { it.user.id == currentUserId }
@@ -160,6 +167,17 @@ fun ProjectDetailScreen(
         if (isReadOnly && selectedTab !in setOf(ProjectDetailTab.Overview, ProjectDetailTab.Versions)) {
             selectedTab = ProjectDetailTab.Overview
         }
+    }
+
+    LaunchedEffect(selectedTab, project.threadId, isReadOnly) {
+        val threadId = project.threadId
+        if (!isReadOnly && selectedTab == ProjectDetailTab.Moderation && !threadId.isNullOrBlank()) {
+            onLoadModeration(threadId, false)
+        }
+    }
+
+    LaunchedEffect(moderation.replyGeneration) {
+        if (moderation.replyGeneration > 0) moderationReplyTargetId = null
     }
 
     LaunchedEffect(projectAction.successMessage) {
@@ -369,6 +387,23 @@ fun ProjectDetailScreen(
                         }
                     }
                 }
+            }
+
+            ProjectDetailTab.Moderation -> {
+                moderationContentItems(
+                    project = project,
+                    state = moderation,
+                    currentUserId = currentUserId,
+                    replyingToMessageId = moderationReplyTargetId,
+                    onReplyToMessage = { moderationReplyTargetId = it },
+                    onRefresh = { project.threadId?.let { threadId -> onLoadModeration(threadId, true) } },
+                    onSendReply = { body, replyingTo ->
+                        project.threadId?.let { threadId -> onSendModerationReply(threadId, body, replyingTo) }
+                    },
+                    onDeleteMessage = { messageId ->
+                        project.threadId?.let { threadId -> onDeleteModerationMessage(threadId, messageId) }
+                    },
+                )
             }
         }
     }

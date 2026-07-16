@@ -4,12 +4,15 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -28,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Download
 import com.composables.icons.lucide.LayoutGrid
 import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.MessageSquareText
 import com.composables.icons.lucide.Pencil
 import com.composables.icons.lucide.UsersRound
 import com.ryntra.mobile.R
@@ -42,6 +46,7 @@ internal enum class ProjectDetailTab(
     Versions(R.string.project_tab_versions, Lucide.Download),
     Edit(R.string.project_tab_edit, Lucide.Pencil),
     Members(R.string.project_tab_members, Lucide.UsersRound),
+    Moderation(R.string.project_tab_moderation, Lucide.MessageSquareText),
 }
 
 @Composable
@@ -53,6 +58,10 @@ internal fun ProjectDetailTabs(
 ) {
     val colors = RyntraDesign.colors
     val outerShape = RoundedCornerShape(11.dp)
+    val availableTabs = ProjectDetailTab.entries.filter { tab ->
+        !isReadOnly || tab == ProjectDetailTab.Overview || tab == ProjectDetailTab.Versions
+    }
+    val isScrollable = availableTabs.size > 4
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
@@ -60,11 +69,10 @@ internal fun ProjectDetailTabs(
             .clip(outerShape)
             .background(colors.surface)
             .border(0.75.dp, Color.White.copy(alpha = 0.08f), outerShape)
+            .then(if (isScrollable) Modifier.horizontalScroll(rememberScrollState()) else Modifier)
             .padding(3.dp),
     ) {
-        ProjectDetailTab.entries.filter { tab ->
-            !isReadOnly || tab == ProjectDetailTab.Overview || tab == ProjectDetailTab.Versions
-        }.forEach { tab ->
+        availableTabs.forEach { tab ->
             val isSelected = selected == tab
             val itemShape = RoundedCornerShape(8.dp)
             val contentColor = if (isSelected) colors.accent else colors.labelSecondary
@@ -72,7 +80,7 @@ internal fun ProjectDetailTabs(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier
-                    .weight(1f)
+                    .then(if (isScrollable) Modifier.width(112.dp) else Modifier.weight(1f))
                     .height(44.dp)
                     .clip(itemShape)
                     .background(if (isSelected) colors.surfaceRaised else Color.Transparent)

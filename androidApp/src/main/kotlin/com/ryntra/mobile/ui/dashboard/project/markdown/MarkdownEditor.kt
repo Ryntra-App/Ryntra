@@ -19,11 +19,13 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.FileText
 import com.composables.icons.lucide.Lucide
+import com.ryntra.mobile.R
 import com.ryntra.mobile.ui.components.RyntraTextField
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.shared.model.MarkdownBlock
@@ -41,6 +43,8 @@ internal fun MarkdownEditor(
     placeholder: String,
     onMarkdownChange: (String) -> Unit,
     onModeChange: (MarkdownEditorMode) -> Unit,
+    enabled: Boolean = true,
+    minLines: Int = 9,
 ) {
     EditorModePicker(mode, onModeChange)
     if (mode == MarkdownEditorMode.Write) {
@@ -51,7 +55,8 @@ internal fun MarkdownEditor(
             leadingIcon = Lucide.FileText,
             leadingIconDescription = null,
             singleLine = false,
-            minLines = 9,
+            minLines = minLines,
+            enabled = enabled,
             modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
         )
     } else {
@@ -81,7 +86,9 @@ private fun EditorModePicker(selected: MarkdownEditorMode, onSelect: (MarkdownEd
                     .clickable(role = Role.Tab) { onSelect(mode) },
             ) {
                 Text(
-                    mode.name,
+                    stringResource(
+                        if (mode == MarkdownEditorMode.Write) R.string.markdown_write else R.string.markdown_preview,
+                    ),
                     color = if (selected == mode) RyntraDesign.colors.accent else RyntraDesign.colors.labelSecondary,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
@@ -106,7 +113,11 @@ private fun MarkdownDraftPreview(markdown: String, modifier: Modifier = Modifier
             .padding(12.dp),
     ) {
         if (blocks.isEmpty()) {
-            Text("Nothing to preview", color = RyntraDesign.colors.labelSecondary, style = MaterialTheme.typography.bodySmall)
+            Text(
+                stringResource(R.string.markdown_preview_empty),
+                color = RyntraDesign.colors.labelSecondary,
+                style = MaterialTheme.typography.bodySmall,
+            )
         } else {
             blocks.forEach { MarkdownBlockView(it) }
         }

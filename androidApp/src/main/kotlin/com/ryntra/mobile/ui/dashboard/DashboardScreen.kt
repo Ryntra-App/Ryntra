@@ -48,6 +48,7 @@ import com.ryntra.mobile.ProfileUpdateState
 import com.ryntra.mobile.NotificationState
 import com.ryntra.mobile.InstantNotificationState
 import com.ryntra.mobile.ProjectActionState
+import com.ryntra.mobile.ProjectModerationState
 import com.ryntra.mobile.ProjectDetailState
 import com.ryntra.mobile.preferences.AppLanguage
 import com.ryntra.mobile.preferences.GlassQuality
@@ -116,6 +117,7 @@ fun DashboardScreen(
     onUpdateProject: (String, com.ryntra.shared.model.ProjectUpdate) -> Unit = { _, _ -> },
     onClearProjectUpdateStatus: () -> Unit = {},
     projectAction: ProjectActionState = ProjectActionState(),
+    moderation: ProjectModerationState = ProjectModerationState(),
     memberSearch: MemberSearchState = MemberSearchState(),
     analytics: AnalyticsState = AnalyticsState(),
     notifications: NotificationState = NotificationState(),
@@ -138,6 +140,9 @@ fun DashboardScreen(
     onJoinTeam: (String) -> Unit = {},
     onTransferOwnership: (String, String) -> Unit = { _, _ -> },
     onClearProjectActionStatus: () -> Unit = {},
+    onLoadProjectModeration: (String, Boolean) -> Unit = { _, _ -> },
+    onSendModerationReply: (String, String, String?) -> Unit = { _, _, _ -> },
+    onDeleteModerationMessage: (String, String) -> Unit = { _, _ -> },
     onThemeStyleChange: (ThemeStyle) -> Unit = {},
     onAppearanceModeChange: (AppearanceMode) -> Unit = {},
     onAppLanguageChange: (AppLanguage) -> Unit = {},
@@ -265,6 +270,7 @@ fun DashboardScreen(
                         onUpdateProject = onUpdateProject,
                         onClearProjectUpdateStatus = onClearProjectUpdateStatus,
                         projectAction = projectAction,
+                        moderation = moderation,
                         memberSearch = memberSearch,
                         onChangeProjectIcon = onChangeProjectIcon,
                         onDeleteProjectIcon = onDeleteProjectIcon,
@@ -282,6 +288,9 @@ fun DashboardScreen(
                         onJoinTeam = onJoinTeam,
                         onTransferOwnership = onTransferOwnership,
                         onClearProjectActionStatus = onClearProjectActionStatus,
+                        onLoadModeration = onLoadProjectModeration,
+                        onSendModerationReply = onSendModerationReply,
+                        onDeleteModerationMessage = onDeleteModerationMessage,
                     )
                     }
                     DashboardLayer.Organization -> (organizationDetail ?: retainedOrganizationDetail)?.let { detail ->

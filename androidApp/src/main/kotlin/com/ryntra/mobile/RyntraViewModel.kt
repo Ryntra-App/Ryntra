@@ -22,6 +22,7 @@ import com.ryntra.shared.app.AppController
 import com.ryntra.shared.app.AppState
 import com.ryntra.shared.model.Organization
 import com.ryntra.shared.model.ModrinthNotification
+import com.ryntra.shared.model.ModerationThread
 import com.ryntra.shared.model.Account
 import com.ryntra.shared.model.AnalyticsQuery
 import com.ryntra.shared.model.AnalyticsReport
@@ -36,6 +37,7 @@ import com.ryntra.shared.model.ProjectSortMode
 import com.ryntra.shared.model.ProjectVersion
 import com.ryntra.shared.model.VersionUpdate
 import com.ryntra.shared.model.WalletReport
+import com.ryntra.shared.network.ApiException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -60,6 +62,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     private val mutableProfileUpdate = MutableStateFlow(ProfileUpdateState())
     private val mutableProjectUpdate = MutableStateFlow(ProjectUpdateState())
     private val mutableProjectAction = MutableStateFlow(ProjectActionState())
+    private val mutableModeration = MutableStateFlow(ProjectModerationState())
     private val mutableMemberSearch = MutableStateFlow(MemberSearchState())
     private val mutableAnalytics = MutableStateFlow(AnalyticsState())
     private val mutableNotifications = MutableStateFlow(
@@ -75,6 +78,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     private var projectLoadJob: Job? = null
     private var organizationLoadJob: Job? = null
     private var projectActionJob: Job? = null
+    private var moderationJob: Job? = null
     private var memberSearchJob: Job? = null
     private var analyticsJob: Job? = null
     private var notificationsJob: Job? = null
@@ -88,6 +92,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     val profileUpdate: StateFlow<ProfileUpdateState> = mutableProfileUpdate.asStateFlow()
     val projectUpdate: StateFlow<ProjectUpdateState> = mutableProjectUpdate.asStateFlow()
     val projectAction: StateFlow<ProjectActionState> = mutableProjectAction.asStateFlow()
+    val moderation: StateFlow<ProjectModerationState> = mutableModeration.asStateFlow()
     val memberSearch: StateFlow<MemberSearchState> = mutableMemberSearch.asStateFlow()
     val analytics: StateFlow<AnalyticsState> = mutableAnalytics.asStateFlow()
     val notifications: StateFlow<NotificationState> = mutableNotifications.asStateFlow()
@@ -395,6 +400,8 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
         initiallyReadOnly: Boolean = false,
     ) {
         projectLoadJob?.cancel()
+        moderationJob?.cancel()
+        mutableModeration.value = ProjectModerationState()
         mutableProjectDetail.value = ProjectDetailState(
             project = seed,
             isReadOnly = initiallyReadOnly,
@@ -449,10 +456,96 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
 
     fun closeProject() {
         projectLoadJob?.cancel()
+        moderationJob?.cancel()
         projectLoadJob = null
         mutableProjectDetail.value = null
         mutableProjectAction.value = ProjectActionState()
+        mutableModeration.value = ProjectModerationState()
         mutableMemberSearch.value = MemberSearchState()
+    }
+
+    fun loadProjectModeration(threadId: String, force: Boolean = false) {
+        if (threadId.isBlank()) return
+        val current = mutableModeration.value
+        if (!force && (current.isLoading || current.thread?.id == threadId)) return
+
+        moderationJob?.cancel()
+        mutableModeration.value = current.copy(
+            isLoading = true,
+            errorMessage = null,
+            requiresNewAuthorization = false,
+        )
+        moderationJob = viewModelScope.launch {
+            val result = suspendCatching { controller.loadModerationThread(threadId) }
+            if (mutableProjectDetail.value?.project?.threadId != threadId) return@launch
+            mutableModeration.value = result.fold(
+                onSuccess = { thread ->
+                    mutableModeration.value.copy(thread = thread, isLoading = false)
+                },
+                onFailure = { error ->
+                    mutableModeration.value.copy(
+                        isLoading = false,
+                        errorMessage = error.message ?: "Unable to load project moderation.",
+                        requiresNewAuthorization = (error as? ApiException)?.statusCode in setOf(401, 403),
+                    )
+                },
+            )
+        }
+    }
+
+    fun sendModerationReply(threadId: String, body: String, replyingTo: String?) {
+        if (threadId.isBlank() || body.isBlank() || mutableModeration.value.isSending) return
+        moderationJob?.cancel()
+        val previous = mutableModeration.value
+        mutableModeration.value = previous.copy(isSending = true, errorMessage = null)
+        moderationJob = viewModelScope.launch {
+            val result = suspendCatching {
+                controller.replyToModerationThread(threadId, body, replyingTo)
+                controller.loadModerationThread(threadId)
+            }
+            if (mutableProjectDetail.value?.project?.threadId != threadId) return@launch
+            mutableModeration.value = result.fold(
+                onSuccess = { thread ->
+                    mutableModeration.value.copy(
+                        thread = thread,
+                        isSending = false,
+                        replyGeneration = previous.replyGeneration + 1,
+                    )
+                },
+                onFailure = { error ->
+                    mutableModeration.value.copy(
+                        isSending = false,
+                        errorMessage = error.message ?: "Unable to send the moderation reply.",
+                        requiresNewAuthorization = (error as? ApiException)?.statusCode in setOf(401, 403),
+                    )
+                },
+            )
+        }
+    }
+
+    fun deleteModerationMessage(threadId: String, messageId: String) {
+        if (threadId.isBlank() || messageId.isBlank() || mutableModeration.value.deletingMessageId != null) return
+        moderationJob?.cancel()
+        mutableModeration.value = mutableModeration.value.copy(deletingMessageId = messageId, errorMessage = null)
+        moderationJob = viewModelScope.launch {
+            val result = suspendCatching {
+                controller.deleteModerationMessage(messageId)
+                controller.loadModerationThread(threadId)
+            }
+            if (mutableProjectDetail.value?.project?.threadId != threadId) return@launch
+            mutableModeration.value = result.fold(
+                onSuccess = { thread ->
+                    mutableModeration.value.copy(thread = thread, deletingMessageId = null)
+                },
+                onFailure = { error ->
+                    mutableModeration.value.copy(
+                        deletingMessageId = null,
+                        errorMessage = error.message ?: "Unable to delete the moderation reply.",
+                        requiresNewAuthorization = (error as? ApiException)?.statusCode in setOf(401, 403),
+                    )
+                },
+            )
+        }
     }
 
     fun openOrganization(organization: Organization) {
@@ -820,6 +913,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
         mutableProfileUpdate.value = ProfileUpdateState()
         mutableProjectUpdate.value = ProjectUpdateState()
         mutableProjectAction.value = ProjectActionState()
+        mutableModeration.value = ProjectModerationState()
         mutableMemberSearch.value = MemberSearchState()
         mutableAnalytics.value = AnalyticsState()
         mutableNotifications.value = NotificationState()
@@ -830,6 +924,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
         tokenStore.clear()
         projectLoadJob?.cancel()
         projectActionJob?.cancel()
+        moderationJob?.cancel()
         memberSearchJob?.cancel()
         analyticsJob?.cancel()
         notificationsJob?.cancel()
@@ -900,6 +995,16 @@ data class ProjectActionState(
     val targetId: String? = null,
     val successMessage: String? = null,
     val errorMessage: String? = null,
+)
+
+data class ProjectModerationState(
+    val thread: ModerationThread? = null,
+    val isLoading: Boolean = false,
+    val isSending: Boolean = false,
+    val deletingMessageId: String? = null,
+    val errorMessage: String? = null,
+    val requiresNewAuthorization: Boolean = false,
+    val replyGeneration: Int = 0,
 )
 
 data class MemberSearchState(
