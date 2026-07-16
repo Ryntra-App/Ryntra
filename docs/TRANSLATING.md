@@ -53,6 +53,12 @@ Translate only the value on the right:
 
 For an existing language, skip the `create` command and edit its current Android and iOS files directly.
 
+## Notification text
+
+Notification titles and messages shown by the app use the same Android and iOS localization files. Search for the `notification_` keys and translate them like any other app text.
+
+Instant push notifications are formatted before delivery by the separate [Ryntra backend](https://github.com/imsawiq/rinthy-auth-backend). A new app language therefore also needs a companion backend pull request that adds the locale to `src/notification-locales.js`. Keep the `{project}` and `{version}` placeholders unchanged. Until that backend locale is deployed, instant pushes fall back to English while notifications inside the app still use the selected language.
+
 ## Translation rules
 
 - Preserve placeholders exactly: `%1$s`, `%1$d`, `%1$+.1f`, `%@`, and `%%` must remain present and keep their indices and types.
