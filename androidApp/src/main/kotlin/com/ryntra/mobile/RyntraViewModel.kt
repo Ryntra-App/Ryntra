@@ -90,6 +90,9 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     val preferences: StateFlow<RyntraPreferences> = preferencesStore.preferences
 
     init {
+        if (instantNotificationCoordinator.isConnected && preferencesStore.preferences.value.localNotificationsEnabled) {
+            setLocalNotificationsEnabled(false)
+        }
         tokenStore.read()?.let { savedToken ->
             pendingToken = savedToken
             controller.signIn(savedToken)

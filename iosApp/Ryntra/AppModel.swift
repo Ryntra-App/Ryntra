@@ -59,6 +59,9 @@ final class AppModel: ObservableObject {
 
     init() {
         instantNotifications.isConnected = instantNotificationCoordinator.isConnected
+        if instantNotifications.isConnected {
+            Task { _ = await LocalNotificationManager.shared.setEnabled(false) }
+        }
         observation = controller.observe { [weak self] sharedState in
             DispatchQueue.main.async {
                 self?.receive(sharedState)
