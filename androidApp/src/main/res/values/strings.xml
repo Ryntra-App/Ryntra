@@ -384,9 +384,9 @@
     <string name="notifications_local_title">Local background checks</string>
     <string name="notifications_local_hint">Private on-device checks about every 15 minutes; Android may delay them to save battery.</string>
     <string name="notifications_permission_denied">Notification permission was not granted.</string>
-    <string name="notifications_instant_title">Instant notifications</string>
-    <string name="notifications_instant_hint">Optional private relay. Authorize a separate read-only Modrinth session for immediate delivery.</string>
-    <string name="notifications_instant_connected">Connected. Tap to disconnect and erase relay credentials.</string>
+    <string name="notifications_instant_title">Server notifications</string>
+    <string name="notifications_instant_hint">Private checks every 10 minutes using a separate read-only Modrinth authorization.</string>
+    <string name="notifications_instant_connected">Connected. Tap to disconnect and erase the relay credentials.</string>
     <string name="notifications_instant_loading">Contacting the notification service…</string>
     <string name="notifications_instant_unavailable">Not configured in this build. Local checks still work.</string>
     <string name="notifications_channel_name">Modrinth updates</string>
