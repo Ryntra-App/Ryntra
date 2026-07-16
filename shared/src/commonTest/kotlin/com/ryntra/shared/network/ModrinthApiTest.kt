@@ -231,6 +231,64 @@ class ModrinthApiTest {
     }
 
     @Test
+    fun notificationsAreDecodedAndSortedNewestFirst() = runTest {
+        val engine = MockEngine { request ->
+            assertEquals(HttpMethod.Get, request.method)
+            assertEquals("/v2/user/user-1/notifications", request.url.encodedPath)
+            respond(
+                content = """[
+                    {
+                        "id":"older",
+                        "user_id":"user-1",
+                        "type":"team_invite",
+                        "title":"Invitation",
+                        "text":"Join the team",
+                        "link":"team/team-1",
+                        "read":false,
+                        "created":"2026-07-01T10:00:00Z",
+                        "actions":[{"title":"Accept","action_route":["POST","team/team-1/join"]}]
+                    },
+                    {
+                        "id":"newer",
+                        "user_id":"user-1",
+                        "type":"status_change",
+                        "title":"Approved",
+                        "text":"Your project was approved",
+                        "link":"mod/project-1",
+                        "read":true,
+                        "created":"2026-07-02T10:00:00Z",
+                        "actions":[]
+                    }
+                ]""".trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = jsonHeaders,
+            )
+        }
+        val api = ModrinthApi(testClient(engine))
+
+        val notifications = api.getNotifications("user-1", "mrp_test")
+
+        assertEquals(listOf("newer", "older"), notifications.map { it.id })
+        assertEquals("POST", notifications.last().actions.single().actionRoute.first())
+        api.close()
+    }
+
+    @Test
+    fun markingNotificationsReadUsesJsonIdsQuery() = runTest {
+        val engine = MockEngine { request ->
+            assertEquals(HttpMethod.Patch, request.method)
+            assertEquals("/v2/notifications", request.url.encodedPath)
+            assertEquals("[\"one\",\"two\"]", request.url.parameters["ids"])
+            respond(content = "", status = HttpStatusCode.NoContent)
+        }
+        val api = ModrinthApi(testClient(engine))
+
+        api.markNotificationsRead(listOf("one", "two", "one", ""), "mrp_test")
+
+        api.close()
+    }
+
+    @Test
     fun projectUpdateUsesPatch() = runTest {
         val engine = MockEngine { request ->
             assertEquals(HttpMethod.Patch, request.method)

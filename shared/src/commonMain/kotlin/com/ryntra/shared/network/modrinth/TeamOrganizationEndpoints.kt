@@ -46,7 +46,9 @@ internal class TeamOrganizationEndpoints(
         try {
             client.get("project/$projectIdOrSlug/members") { authorize(token) }
                 .decode<List<ProjectMember>>()
-                .forEach { member -> byId.putIfAbsent(member.user.id, member) }
+                .forEach { member ->
+                    if (member.user.id !in byId) byId[member.user.id] = member
+                }
         } catch (error: CancellationException) {
             throw error
         } catch (error: Exception) {
@@ -150,7 +152,9 @@ internal class TeamOrganizationEndpoints(
             try {
                 client.get(endpoint) { authorize(token) }
                     .decode<List<ProjectMember>>()
-                    .forEach { member -> byId.putIfAbsent(member.user.id, member) }
+                    .forEach { member ->
+                        if (member.user.id !in byId) byId[member.user.id] = member
+                    }
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {

@@ -9,6 +9,7 @@ import com.ryntra.shared.model.AnalyticsReport
 import com.ryntra.shared.model.CreateVersionRequest
 import com.ryntra.shared.model.Dashboard
 import com.ryntra.shared.model.Organization
+import com.ryntra.shared.model.ModrinthNotification
 import com.ryntra.shared.model.Project
 import com.ryntra.shared.model.ProjectDependency
 import com.ryntra.shared.model.ProjectFileUpload
@@ -82,6 +83,17 @@ class AppController internal constructor(
         val token = requireToken("loading wallet")
         val account = currentDashboard()?.account ?: error("Load the dashboard before loading wallet data.")
         return repository.loadWallet(account, token)
+    }
+
+    suspend fun loadNotifications(): List<ModrinthNotification> {
+        val token = requireToken("loading notifications")
+        val account = currentDashboard()?.account ?: error("Load the dashboard before loading notifications.")
+        return repository.loadNotifications(account.id, token)
+    }
+
+    suspend fun markNotificationsRead(notificationIds: List<String>) {
+        val token = requireToken("updating notifications")
+        repository.markNotificationsRead(notificationIds, token)
     }
 
     suspend fun loadProjectDependencies(versions: List<ProjectVersion>): List<ProjectDependency> {

@@ -10,6 +10,7 @@ import com.ryntra.shared.model.Project
 import com.ryntra.shared.model.ProjectDependency
 import com.ryntra.shared.model.ProjectFileUpload
 import com.ryntra.shared.model.Organization
+import com.ryntra.shared.model.ModrinthNotification
 import com.ryntra.shared.model.ProjectMember
 import com.ryntra.shared.model.ProjectMemberUpdate
 import com.ryntra.shared.model.ProjectTeamRoster
@@ -51,6 +52,12 @@ class DashboardRepository(
         api.deleteUserAvatar(userId, token)
 
     suspend fun loadCurrentAccount(token: String): Account = api.getCurrentAccount(token)
+
+    suspend fun loadNotifications(userId: String, token: String): List<ModrinthNotification> =
+        api.getNotifications(userId, token)
+
+    suspend fun markNotificationsRead(notificationIds: List<String>, token: String) =
+        api.markNotificationsRead(notificationIds, token)
 
     suspend fun updateProject(projectIdOrSlug: String, update: com.ryntra.shared.model.ProjectUpdate, token: String) =
         api.updateProject(projectIdOrSlug, update, token)
