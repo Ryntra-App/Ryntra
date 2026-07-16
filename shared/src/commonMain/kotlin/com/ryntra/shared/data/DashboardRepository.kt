@@ -11,6 +11,7 @@ import com.ryntra.shared.model.ProjectDependency
 import com.ryntra.shared.model.ProjectFileUpload
 import com.ryntra.shared.model.Organization
 import com.ryntra.shared.model.ModrinthNotification
+import com.ryntra.shared.model.ModerationThread
 import com.ryntra.shared.model.ProjectMember
 import com.ryntra.shared.model.ProjectMemberUpdate
 import com.ryntra.shared.model.ProjectTeamRoster
@@ -58,6 +59,19 @@ class DashboardRepository(
 
     suspend fun markNotificationsRead(notificationIds: List<String>, token: String) =
         api.markNotificationsRead(notificationIds, token)
+
+    suspend fun loadModerationThread(threadId: String, token: String): ModerationThread =
+        api.getModerationThread(threadId, token)
+
+    suspend fun replyToModerationThread(
+        threadId: String,
+        body: String,
+        replyingTo: String?,
+        token: String,
+    ) = api.replyToModerationThread(threadId, body, replyingTo, token)
+
+    suspend fun deleteModerationMessage(messageId: String, token: String) =
+        api.deleteModerationMessage(messageId, token)
 
     suspend fun updateProject(projectIdOrSlug: String, update: com.ryntra.shared.model.ProjectUpdate, token: String) =
         api.updateProject(projectIdOrSlug, update, token)

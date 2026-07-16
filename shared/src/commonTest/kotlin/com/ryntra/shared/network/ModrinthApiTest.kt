@@ -289,6 +289,72 @@ class ModrinthApiTest {
     }
 
     @Test
+    fun moderationThreadSupportsReadingReplyingAndDeleting() = runTest {
+        var requestIndex = 0
+        val engine = MockEngine { request ->
+            requestIndex++
+            assertEquals("mrp_test", request.headers[HttpHeaders.Authorization])
+            when (requestIndex) {
+                1 -> {
+                    assertEquals(HttpMethod.Get, request.method)
+                    assertEquals("/v2/thread/thread-1", request.url.encodedPath)
+                    respond(
+                        content = """{
+                            "id":"thread-1",
+                            "type":"project",
+                            "project_id":"project-1",
+                            "report_id":null,
+                            "messages":[
+                                {
+                                    "id":"message-1",
+                                    "author_id":"user-1",
+                                    "body":{"type":"text","body":"Fixed in **1.0.1**","private":false,"replying_to":null},
+                                    "created":"2026-07-17T10:00:00Z"
+                                },
+                                {
+                                    "id":"message-2",
+                                    "author_id":null,
+                                    "body":{"type":"status_change","old_status":"processing","new_status":"approved"},
+                                    "created":"2026-07-17T11:00:00Z"
+                                }
+                            ],
+                            "members":[{"id":"user-1","username":"alex","avatar_url":null,"role":"developer"}]
+                        }""".trimIndent(),
+                        status = HttpStatusCode.OK,
+                        headers = jsonHeaders,
+                    )
+                }
+                2 -> {
+                    assertEquals(HttpMethod.Post, request.method)
+                    assertEquals("/v2/thread/thread-1", request.url.encodedPath)
+                    val body = request.bodyText()
+                    assertTrue(body.contains("\"type\":\"text\""))
+                    assertTrue(body.contains("\"body\":\"Thanks\""))
+                    assertTrue(body.contains("\"replying_to\":\"message-1\""))
+                    respond(content = "", status = HttpStatusCode.NoContent)
+                }
+                else -> {
+                    assertEquals(HttpMethod.Delete, request.method)
+                    assertEquals("/v2/message/message-1", request.url.encodedPath)
+                    respond(content = "", status = HttpStatusCode.NoContent)
+                }
+            }
+        }
+        val api = ModrinthApi(testClient(engine))
+
+        val thread = api.getModerationThread("thread-1", "mrp_test")
+        assertEquals("project-1", thread.projectId)
+        assertEquals("alex", thread.authorOf(thread.messages.first())?.username)
+        assertEquals("approved", thread.messages.last().body.newStatus)
+
+        api.replyToModerationThread("thread-1", "Thanks", "message-1", "mrp_test")
+        api.deleteModerationMessage("message-1", "mrp_test")
+
+        assertEquals(3, requestIndex)
+        api.close()
+    }
+
+    @Test
     fun notificationIdsAreResolvedToProjectAndVersionNames() = runTest {
         val engine = MockEngine { request ->
             when (request.url.encodedPath) {

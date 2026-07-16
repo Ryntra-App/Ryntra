@@ -10,6 +10,7 @@ import com.ryntra.shared.model.CreateVersionRequest
 import com.ryntra.shared.model.Dashboard
 import com.ryntra.shared.model.Organization
 import com.ryntra.shared.model.ModrinthNotification
+import com.ryntra.shared.model.ModerationThread
 import com.ryntra.shared.model.Project
 import com.ryntra.shared.model.ProjectDependency
 import com.ryntra.shared.model.ProjectFileUpload
@@ -94,6 +95,27 @@ class AppController internal constructor(
     suspend fun markNotificationsRead(notificationIds: List<String>) {
         val token = requireToken("updating notifications")
         repository.markNotificationsRead(notificationIds, token)
+    }
+
+    suspend fun loadModerationThread(threadId: String): ModerationThread =
+        repository.loadModerationThread(threadId, requireToken("loading project moderation"))
+
+    suspend fun replyToModerationThread(threadId: String, body: String, replyingTo: String?) {
+        val normalizedBody = body.trim()
+        require(normalizedBody.isNotEmpty()) { "Write a reply before sending it." }
+        require(normalizedBody.length <= MAX_MODERATION_REPLY_LENGTH) {
+            "Moderation replies must be $MAX_MODERATION_REPLY_LENGTH characters or fewer."
+        }
+        repository.replyToModerationThread(
+            threadId = threadId,
+            body = normalizedBody,
+            replyingTo = replyingTo,
+            token = requireToken("replying to project moderation"),
+        )
+    }
+
+    suspend fun deleteModerationMessage(messageId: String) {
+        repository.deleteModerationMessage(messageId, requireToken("deleting a moderation reply"))
     }
 
     suspend fun loadProjectDependencies(versions: List<ProjectVersion>): List<ProjectDependency> {
@@ -371,6 +393,10 @@ class AppController internal constructor(
     }
 
     private fun requireToken(action: String): String = accessToken ?: error("Sign in before $action.")
+
+    private companion object {
+        const val MAX_MODERATION_REPLY_LENGTH = 10_000
+    }
 
     private fun Dashboard.withUpdatedAccount(username: String, bio: String): Dashboard =
         copy(account = account.copy(username = username, bio = bio.ifEmpty { null }))

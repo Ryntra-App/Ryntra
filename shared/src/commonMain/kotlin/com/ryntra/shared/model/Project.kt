@@ -30,6 +30,7 @@ data class Project(
      */
     @SerialName("requested_status") val requestedStatus: String? = null,
     @SerialName("moderator_message") val moderatorMessage: ModeratorMessage? = null,
+    @SerialName("thread_id") val threadId: String? = null,
     /** ISO date when the project was submitted to moderators for review. */
     val queued: String? = null,
     val updated: String? = null,

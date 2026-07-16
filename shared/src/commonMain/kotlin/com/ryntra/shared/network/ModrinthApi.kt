@@ -6,6 +6,7 @@ import com.ryntra.shared.model.AnalyticsQuery
 import com.ryntra.shared.model.CreateVersionRequest
 import com.ryntra.shared.model.Organization
 import com.ryntra.shared.model.ModrinthNotification
+import com.ryntra.shared.model.ModerationThread
 import com.ryntra.shared.model.Project
 import com.ryntra.shared.model.ProjectFileUpload
 import com.ryntra.shared.model.ProjectMember
@@ -19,6 +20,7 @@ import com.ryntra.shared.network.modrinth.NotificationEndpoints
 import com.ryntra.shared.network.modrinth.NotificationContentResolver
 import com.ryntra.shared.network.modrinth.ProjectEndpoints
 import com.ryntra.shared.network.modrinth.TeamOrganizationEndpoints
+import com.ryntra.shared.network.modrinth.ThreadEndpoints
 import com.ryntra.shared.network.modrinth.VersionEndpoints
 import io.ktor.client.HttpClient
 
@@ -31,6 +33,7 @@ class ModrinthApi(
     private val teams = TeamOrganizationEndpoints(httpClient)
     private val insights = InsightEndpoints(httpClient)
     private val notifications = NotificationEndpoints(httpClient)
+    private val threads = ThreadEndpoints(httpClient)
     private val notificationContent = NotificationContentResolver(projects, versions)
 
     suspend fun getCurrentAccount(token: String): Account = accounts.getCurrent(token)
@@ -145,6 +148,15 @@ class ModrinthApi(
 
     suspend fun markNotificationsRead(notificationIds: List<String>, token: String) =
         notifications.markRead(notificationIds, token)
+
+    suspend fun getModerationThread(threadId: String, token: String): ModerationThread =
+        threads.get(threadId, token)
+
+    suspend fun replyToModerationThread(threadId: String, body: String, replyingTo: String?, token: String) =
+        threads.reply(threadId, body, replyingTo, token)
+
+    suspend fun deleteModerationMessage(messageId: String, token: String) =
+        threads.deleteMessage(messageId, token)
 
     fun close() = httpClient.close()
 }
