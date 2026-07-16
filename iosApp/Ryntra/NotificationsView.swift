@@ -111,7 +111,7 @@ private struct NotificationRow: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(4)
-                Text(notification.created.replacingOccurrences(of: "T", with: " ").replacingOccurrences(of: "Z", with: ""))
+                Text(notification.localCreatedLabel)
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
@@ -124,7 +124,26 @@ private struct NotificationRow: View {
     }
 }
 
+private let notificationISO8601WithFractionalSeconds: ISO8601DateFormatter = {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return formatter
+}()
+
+private let notificationISO8601 = ISO8601DateFormatter()
+
 private extension ModrinthNotification {
+    var localCreatedLabel: String {
+        guard let date = notificationISO8601WithFractionalSeconds.date(from: created)
+                ?? notificationISO8601.date(from: created) else {
+            return created
+        }
+        if Calendar.current.isDateInToday(date) {
+            return date.formatted(date: .omitted, time: .shortened)
+        }
+        return date.formatted(date: .abbreviated, time: .shortened)
+    }
+
     var symbol: String {
         switch type {
         case "project_update": return "shippingbox.and.arrow.backward"
@@ -139,4 +158,5 @@ private extension ModrinthNotification {
         if link.hasPrefix("https://") || link.hasPrefix("http://") { return URL(string: link) }
         return URL(string: "https://modrinth.com/\(link.trimmingCharacters(in: CharacterSet(charactersIn: "/")))")
     }
+
 }

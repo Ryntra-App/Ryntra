@@ -1,5 +1,7 @@
 package com.ryntra.mobile.ui.dashboard.notifications
 
+import android.content.Context
+import android.text.format.DateUtils
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +28,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -47,6 +50,7 @@ import com.ryntra.mobile.ui.components.RyntraProgressIndicator
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.shared.model.ModrinthNotification
 import com.ryntra.shared.model.ModrinthNotificationKind
+import java.time.Instant
 
 @Composable
 fun NotificationsScreen(
@@ -149,6 +153,7 @@ fun NotificationsScreen(
 @Composable
 private fun NotificationRow(notification: ModrinthNotification, onClick: () -> Unit) {
     val colors = RyntraDesign.colors
+    val context = LocalContext.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -189,7 +194,7 @@ private fun NotificationRow(notification: ModrinthNotification, onClick: () -> U
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = notification.created.replace('T', ' ').substringBefore('.').removeSuffix("Z"),
+                text = notification.created.toLocalNotificationTime(context),
                 style = MaterialTheme.typography.labelSmall,
                 color = colors.labelSecondary.copy(alpha = 0.72f),
             )
@@ -247,6 +252,16 @@ private val ModrinthNotificationKind.icon
     }
 
 private fun String.removeMarkdownEmphasis(): String = replace("**", "").replace("__", "")
+
+private fun String.toLocalNotificationTime(context: Context): String = runCatching {
+    val timestamp = Instant.parse(this).toEpochMilli()
+    val flags = DateUtils.FORMAT_SHOW_TIME or if (DateUtils.isToday(timestamp)) {
+        0
+    } else {
+        DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_ABBREV_MONTH
+    }
+    DateUtils.formatDateTime(context, timestamp, flags)
+}.getOrElse { substringBefore('T') }
 
 private fun String.toModrinthUrl(): String = when {
     startsWith("https://") || startsWith("http://") -> this
