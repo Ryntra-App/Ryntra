@@ -373,7 +373,14 @@ private struct OrganizationDetailView: View {
                     )
                 } else {
                     ForEach(projects, id: \.id) { project in
-                        ProjectRow(project: project, showDescription: true, showStatus: true)
+                        NavigationLink {
+                            ProjectDetailView(project: project, isReadOnly: false)
+                                .navigationTitle(project.title)
+                                .navigationBarTitleDisplayMode(.inline)
+                        } label: {
+                            ProjectRow(project: project, showDescription: true, showStatus: true)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             } header: {

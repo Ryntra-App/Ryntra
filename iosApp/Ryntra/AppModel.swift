@@ -197,12 +197,14 @@ final class AppModel: ObservableObject {
 
     private func markNotificationsRead(_ ids: [String]) async {
         guard !ids.isEmpty else { return }
+        locallyReadNotificationIDs.formUnion(ids)
+        persistUnreadNotificationCount()
+        notificationsError = nil
         do {
             try await controller.markNotificationsRead(notificationIds: ids)
-            locallyReadNotificationIDs.formUnion(ids)
-            persistUnreadNotificationCount()
-            notificationsError = nil
         } catch {
+            locallyReadNotificationIDs.subtract(ids)
+            persistUnreadNotificationCount()
             notificationsError = error.localizedDescription
         }
     }

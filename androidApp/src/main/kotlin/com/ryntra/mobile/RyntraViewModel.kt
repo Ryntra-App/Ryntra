@@ -266,23 +266,28 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     fun markNotificationsRead(notificationIds: List<String>) {
         val ids = notificationIds.filter(String::isNotBlank).distinct()
         if (ids.isEmpty()) return
+        val unreadIds = mutableNotifications.value.items
+            .asSequence()
+            .filter { !it.read && it.id in ids }
+            .map { it.id }
+            .toSet()
+        if (unreadIds.isEmpty()) return
+
+        val optimisticState = mutableNotifications.value.withReadNotifications(unreadIds)
+        mutableNotifications.value = optimisticState
+        notificationBadgeStore.replace(optimisticState.unreadCount)
+
         viewModelScope.launch {
-            suspendCatching { controller.markNotificationsRead(ids) }.fold(
+            suspendCatching { controller.markNotificationsRead(unreadIds.toList()) }.fold(
                 onSuccess = {
-                    val updated = mutableNotifications.value.copy(
-                        items = mutableNotifications.value.items.map { item ->
-                            if (item.id in ids) item.copy(read = true) else item
-                        },
-                        hasLoaded = true,
-                        errorMessage = null,
-                    )
-                    mutableNotifications.value = updated
-                    notificationBadgeStore.replace(updated.unreadCount)
+                    mutableNotifications.value = mutableNotifications.value.copy(errorMessage = null)
                 },
                 onFailure = { error ->
-                    mutableNotifications.value = mutableNotifications.value.copy(
+                    val restored = mutableNotifications.value.withUnreadNotifications(unreadIds).copy(
                         errorMessage = error.message ?: "Unable to update notifications.",
                     )
+                    mutableNotifications.value = restored
+                    notificationBadgeStore.replace(restored.unreadCount)
                 },
             )
         }
@@ -443,9 +448,20 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    private fun isManagedProject(project: Project): Boolean = currentDashboard()?.projects?.any { managed ->
-        managed.id == project.id || (!managed.slug.isNullOrBlank() && managed.slug == project.slug)
-    } == true
+    private fun isManagedProject(project: Project): Boolean {
+        val dashboard = currentDashboard() ?: return false
+        if (dashboard.projects.any { it.matchesProject(project) }) return true
+        if (mutableOrganizationDetail.value?.projects?.any { it.matchesProject(project) } == true) return true
+
+        val organizationReference = project.organization?.normalizedReference() ?: return false
+        return dashboard.organizations.any { organization ->
+            organizationReference in setOf(
+                organization.id.normalizedReference(),
+                organization.slug.normalizedReference(),
+                organization.name.normalizedReference(),
+            )
+        }
+    }
 
     private fun currentDashboard(): com.ryntra.shared.model.Dashboard? = when (val current = state.value) {
         is AppState.Ready -> current.dashboard
@@ -955,6 +971,11 @@ private suspend inline fun <T> suspendCatching(crossinline block: suspend () -> 
         Result.failure(error)
     }
 
+private fun Project.matchesProject(other: Project): Boolean =
+    id == other.id || (!slug.isNullOrBlank() && slug == other.slug)
+
+private fun String.normalizedReference(): String = trim().lowercase()
+
 data class ProjectDetailState(
     val project: Project,
     val versions: List<ProjectVersion> = emptyList(),
@@ -1033,6 +1054,21 @@ data class NotificationState(
 ) {
     val unreadCount: Int get() = if (hasLoaded) items.count { !it.read } else cachedUnreadCount
 }
+
+private fun NotificationState.withReadNotifications(notificationIds: Set<String>): NotificationState = copy(
+    items = items.map { notification ->
+        if (notification.id in notificationIds) notification.copy(read = true) else notification
+    },
+    hasLoaded = true,
+    errorMessage = null,
+)
+
+private fun NotificationState.withUnreadNotifications(notificationIds: Set<String>): NotificationState = copy(
+    items = items.map { notification ->
+        if (notification.id in notificationIds) notification.copy(read = false) else notification
+    },
+    hasLoaded = true,
+)
 
 data class InstantNotificationState(
     val isAvailable: Boolean = false,

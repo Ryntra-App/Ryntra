@@ -189,8 +189,18 @@ struct DashboardView: View {
     }
 
     private func isManagedProject(_ project: Project) -> Bool {
-        dashboard.projects.contains { managed in
+        if dashboard.projects.contains(where: { managed in
             managed.id == project.id || (!(managed.slug?.isEmpty ?? true) && managed.slug == project.slug)
+        }) {
+            return true
+        }
+        guard let reference = project.organization?.normalizedProjectReference, !reference.isEmpty else {
+            return false
+        }
+        return dashboard.organizations.contains { organization in
+            [organization.id, organization.slug, organization.name]
+                .map(\.normalizedProjectReference)
+                .contains(reference)
         }
     }
 
@@ -217,6 +227,12 @@ struct DashboardView: View {
         guard let reference = model.pendingNotificationProjectReference else { return }
         model.consumeNotificationProjectReference()
         openNotificationProject(reference)
+    }
+}
+
+private extension String {
+    var normalizedProjectReference: String {
+        trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 }
 
