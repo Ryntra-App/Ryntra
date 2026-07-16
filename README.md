@@ -15,6 +15,7 @@ The shared module has no UI dependency. `AppController` owns session-scoped load
 ## Implemented
 
 - Modrinth OAuth through the Ryntra auth backend, with validated callback state.
+- Local notification checks plus optional FCM/APNs instant delivery through a limited OAuth relay.
 - Personal access token authentication as a fallback.
 - Encrypted local session storage on Android and iOS.
 - Account, project and organization loading through the shared Ktor client.
@@ -35,6 +36,8 @@ The shared module has no UI dependency. `AppController` owns session-scoped load
 ## Translations
 
 New languages are scaffolded and registered for Android and iOS with one command. See [Translating Ryntra](docs/TRANSLATING.md) for the contributor workflow, validation command, language rules, and pull request checklist.
+
+Notification privacy, Firebase/APNs setup, VPS deployment, and domain migration are documented in [Notification setup](docs/NOTIFICATIONS.md).
 
 ## Android
 

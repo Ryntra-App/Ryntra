@@ -13,7 +13,7 @@
     <key>CFBundleVersion</key>
     <string>30000</string>
     <key>RyntraNotificationBackendURL</key>
-    <string>https://rinthy-auth.vercel.app</string>
+    <string>$(RYNTRA_NOTIFICATION_BACKEND_URL)</string>
     <key>CFBundleURLTypes</key>
     <array>
         <dict>
