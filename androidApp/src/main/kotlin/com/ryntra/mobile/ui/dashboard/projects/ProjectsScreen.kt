@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,15 +38,10 @@ fun ProjectsScreen(
     onProjectClick: (Project) -> Unit = {},
 ) {
     var query by rememberSaveable { mutableStateOf("") }
-    // Optimistic local set so the icon swaps immediately on tap.
-    var localFavoriteIds by remember { mutableStateOf(favoriteProjectIds) }
-    LaunchedEffect(favoriteProjectIds) {
-        localFavoriteIds = favoriteProjectIds
-    }
-    val favoriteIds = if (showFavoriteProjects) localFavoriteIds else emptySet()
+    val pinnedFavoriteIds = if (showFavoriteProjects) favoriteProjectIds else emptySet()
     val totalDownloads = remember(projects) { projects.sumOf(Project::downloads) }
     val totalFollowers = remember(projects) { projects.sumOf(Project::followers) }
-    val filteredProjects = remember(projects, query, sortMode, favoriteIds) {
+    val filteredProjects = remember(projects, query, sortMode, pinnedFavoriteIds) {
         projects
             .filter { project ->
                 query.isBlank() ||
@@ -55,7 +49,7 @@ fun ProjectsScreen(
                     project.description.contains(query, ignoreCase = true) ||
                     project.slug?.contains(query, ignoreCase = true) == true
             }
-            .sortedForDisplay(sortMode, favoriteIds)
+            .sortedForDisplay(sortMode, pinnedFavoriteIds)
     }
     val visibleProjects = filteredProjects.map { it.toProjectRowModel() }
 
@@ -106,19 +100,8 @@ fun ProjectsScreen(
                     val projectId = model.project.id
                     ProjectBannerCard(
                         model = model,
-                        isFavorite = projectId in favoriteIds,
-                        onFavoriteClick = if (showFavoriteProjects) {
-                            {
-                                localFavoriteIds = if (projectId in localFavoriteIds) {
-                                    localFavoriteIds - projectId
-                                } else {
-                                    localFavoriteIds + projectId
-                                }
-                                onToggleFavoriteProject(projectId)
-                            }
-                        } else {
-                            null
-                        },
+                        isFavorite = projectId in favoriteProjectIds,
+                        onFavoriteClick = { onToggleFavoriteProject(projectId) },
                         onClick = { onProjectClick(model.project) },
                     )
                 }

@@ -1,7 +1,6 @@
 package com.ryntra.mobile.preferences
 
 import android.content.Context
-import android.util.Log
 import androidx.compose.runtime.Immutable
 import com.ryntra.shared.model.ProjectSortMode
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -72,7 +71,6 @@ class RyntraPreferencesStore(context: Context) {
 
     fun toggleFavoriteProject(projectId: String) {
         if (projectId.isBlank()) {
-            Log.w(TAG, "toggleFavoriteProject ignored: blank id")
             return
         }
         update {
@@ -81,7 +79,6 @@ class RyntraPreferencesStore(context: Context) {
             } else {
                 favoriteProjectIds + projectId
             }
-            Log.d(TAG, "toggleFavoriteProject id=$projectId next=$nextFavorites")
             copy(favoriteProjectIds = nextFavorites)
         }
     }
@@ -151,7 +148,7 @@ class RyntraPreferencesStore(context: Context) {
     private fun persist(value: RyntraPreferences) {
         // Store favorites as a JSON array string — putStringSet is unreliable across processes/reloads.
         val favoritesJson = JSONArray(value.favoriteProjectIds.sorted()).toString()
-        val written = storage.edit()
+        storage.edit()
             .putString(KEY_THEME_STYLE, value.themeStyle.name)
             .putString(KEY_APPEARANCE_MODE, value.appearanceMode.name)
             .putString(KEY_APP_LANGUAGE, value.appLanguage.name)
@@ -162,10 +159,7 @@ class RyntraPreferencesStore(context: Context) {
             .putString(KEY_FAVORITE_PROJECT_IDS_JSON, favoritesJson)
             .putBoolean(KEY_LOCAL_NOTIFICATIONS, value.localNotificationsEnabled)
             .remove(KEY_FAVORITE_PROJECT_IDS)
-            .commit()
-        if (!written) {
-            Log.e(TAG, "Failed to persist preferences")
-        }
+            .apply()
         mutablePreferences.value = value
     }
 
@@ -213,7 +207,6 @@ class RyntraPreferencesStore(context: Context) {
     }
 
     private companion object {
-        const val TAG = "RyntraFavorites"
         const val FILE_NAME = "ryntra_preferences"
         const val KEY_THEME_STYLE = "themeStyle"
         const val KEY_APPEARANCE_MODE = "appearanceMode"

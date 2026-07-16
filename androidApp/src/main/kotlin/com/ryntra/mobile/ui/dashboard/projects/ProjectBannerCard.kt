@@ -14,16 +14,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -127,6 +130,25 @@ internal fun ProjectBannerCard(
         }
 
         if (onFavoriteClick != null) {
+            val favoriteContainer by animateColorAsState(
+                targetValue = if (isFavorite) {
+                    RyntraDesign.colors.accent.copy(alpha = 0.20f)
+                } else {
+                    MaterialTheme.colorScheme.surface.copy(alpha = 0.88f)
+                },
+                animationSpec = tween(RyntraDesign.motion.duration(180)),
+                label = "Favorite container",
+            )
+            val favoriteTint by animateColorAsState(
+                targetValue = if (isFavorite) RyntraDesign.colors.accent else RyntraDesign.colors.labelSecondary,
+                animationSpec = tween(RyntraDesign.motion.duration(180)),
+                label = "Favorite tint",
+            )
+            val favoriteScale by animateFloatAsState(
+                targetValue = if (isFavorite) 1.08f else 1f,
+                animationSpec = tween(RyntraDesign.motion.duration(180)),
+                label = "Favorite scale",
+            )
             IconButton(
                 onClick = onFavoriteClick,
                 modifier = Modifier
@@ -135,21 +157,18 @@ internal fun ProjectBannerCard(
                     .zIndex(1f)
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.88f)),
+                    .background(favoriteContainer),
             ) {
-                // Lucide = stroke outline (empty). Material Filled = solid when favorited.
-                // Material Outlined.Star looks nearly solid at small sizes — do not use it.
                 Icon(
-                    imageVector = if (isFavorite) Icons.Filled.Star else Lucide.Star,
+                    imageVector = Lucide.Star,
                     contentDescription = stringResource(
                         if (isFavorite) R.string.projects_remove_favorite else R.string.projects_add_favorite,
                     ),
-                    tint = if (isFavorite) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
+                    tint = favoriteTint,
+                    modifier = Modifier.size(22.dp).graphicsLayer {
+                        scaleX = favoriteScale
+                        scaleY = favoriteScale
                     },
-                    modifier = Modifier.size(22.dp),
                 )
             }
         }

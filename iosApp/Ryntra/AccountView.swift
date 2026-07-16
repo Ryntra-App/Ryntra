@@ -183,7 +183,7 @@ struct AccountView: View {
                 }
 
                 Toggle(isOn: $showFavoriteProjects) {
-                    Label(NSLocalizedString("Favorite projects", comment: "Settings"), systemImage: "star")
+                    Label(NSLocalizedString("Pin favorites first", comment: "Settings"), systemImage: "star")
                 }
                 .tint(Color.ryntraGreen)
                 Toggle(isOn: $reduceMotion) {

@@ -21,8 +21,7 @@ struct ProjectsView: View {
     }
 
     private var favoriteIds: Set<String> {
-        guard showFavoriteProjects,
-              let data = storedFavoriteIds.data(using: .utf8),
+        guard let data = storedFavoriteIds.data(using: .utf8),
               let decoded = try? JSONDecoder().decode([String].self, from: data) else { return [] }
         return Set(decoded)
     }
@@ -33,7 +32,10 @@ struct ProjectsView: View {
                 $0.description_.localizedCaseInsensitiveContains(query) ||
                 ($0.slug?.localizedCaseInsensitiveContains(query) ?? false)
         }
-        return filtered.sortedForDisplay(mode: sortMode, favoriteIds: favoriteIds)
+        return filtered.sortedForDisplay(
+            mode: sortMode,
+            favoriteIds: showFavoriteProjects ? favoriteIds : []
+        )
     }
 
     var body: some View {
@@ -67,7 +69,7 @@ struct ProjectsView: View {
                     ProjectBannerCard(
                         project: project,
                         isFavorite: favoriteIds.contains(project.id),
-                        onFavoriteTap: showFavoriteProjects ? { toggleFavorite(project.id) } : nil
+                        onFavoriteTap: { toggleFavorite(project.id) }
                     )
                     .contentShape(Rectangle())
                     .onTapGesture { onProjectTap(project) }

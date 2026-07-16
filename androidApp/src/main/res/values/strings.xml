@@ -115,7 +115,7 @@
     <string name="settings_glass_fast">Fast</string>
     <string name="settings_glass_balanced">Balanced</string>
     <string name="settings_glass_best">Best</string>
-    <string name="settings_favorites">Favorite projects</string>
+    <string name="settings_favorites">Pin favorites first</string>
     <string name="project_type_mod">Mod</string>
     <string name="project_type_plugin">Plugin</string>
     <string name="project_type_hybrid">Mod / Plugin</string>
@@ -126,7 +126,7 @@
     <string name="project_type_server">Server</string>
     <string name="project_type_project">Project</string>
     <string name="analytics_filter_project">Filter by project</string>
-    <string name="settings_favorites_hint">Show favorites first and keep star controls visible</string>
+    <string name="settings_favorites_hint">Keep starred projects at the top of the list</string>
     <string name="settings_reduce_motion">Reduce motion</string>
     <string name="settings_reduce_motion_hint">Use instant state changes and simpler transitions</string>
     <string name="settings_glass_quality">Glass quality</string>

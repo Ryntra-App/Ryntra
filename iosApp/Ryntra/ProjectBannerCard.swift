@@ -64,11 +64,17 @@ struct ProjectBannerCard: View {
 
             if let onFavoriteTap {
                 Button(action: onFavoriteTap) {
-                    Image(systemName: isFavorite ? "star.fill" : "star")
+                    Image(systemName: "star")
+                        .symbolVariant(isFavorite ? .fill : .none)
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(isFavorite ? Color.accentColor : Color.primary)
                         .frame(width: 40, height: 40)
+                        .background(
+                            isFavorite ? Color.accentColor.opacity(0.18) : Color.clear,
+                            in: Circle()
+                        )
                         .background(.regularMaterial, in: Circle())
+                        .scaleEffect(isFavorite ? 1.06 : 1)
                 }
                 .buttonStyle(.plain)
                 .padding(8)

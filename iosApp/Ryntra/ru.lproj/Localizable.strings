@@ -237,6 +237,7 @@
 "Support the author" = "Поддержать автора";
 "%@ address copied." = "Адрес %@ скопирован.";
 "Thank you for supporting Ryntra development." = "Спасибо за поддержку разработки Ryntra.";
+"Pin favorites first" = "Избранное сверху";
 "Status and license" = "Статус и лицензия";
 "Status" = "Статус";
 "License ID" = "ID лицензии";

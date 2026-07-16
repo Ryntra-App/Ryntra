@@ -115,7 +115,7 @@
     <string name="settings_glass_fast">Быстро</string>
     <string name="settings_glass_balanced">Баланс</string>
     <string name="settings_glass_best">Максимум</string>
-    <string name="settings_favorites">Избранные проекты</string>
+    <string name="settings_favorites">Избранное сверху</string>
     <string name="project_type_mod">Мод</string>
     <string name="project_type_plugin">Плагин</string>
     <string name="project_type_hybrid">Мод / Плагин</string>
@@ -126,7 +126,7 @@
     <string name="project_type_server">Сервер</string>
     <string name="project_type_project">Проект</string>
     <string name="analytics_filter_project">Фильтр по проекту</string>
-    <string name="settings_favorites_hint">Показывать избранное первым и отображать кнопки со звездой</string>
+    <string name="settings_favorites_hint">Поднимать отмеченные звездой проекты в начало списка</string>
     <string name="settings_reduce_motion">Меньше анимаций</string>
     <string name="settings_reduce_motion_hint">Мгновенные изменения состояния и простые переходы</string>
     <string name="settings_glass_quality">Качество стекла</string>

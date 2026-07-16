@@ -1,34 +1,27 @@
 package com.ryntra.mobile.ui.dashboard.projects
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -40,7 +33,6 @@ import com.composables.icons.lucide.Download
 import com.composables.icons.lucide.Heart
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.RefreshCw
-import com.composables.icons.lucide.Star
 import com.ryntra.mobile.R
 import com.ryntra.mobile.ui.components.displayTypeLabel
 import com.ryntra.mobile.ui.components.formatExactCount
@@ -73,31 +65,9 @@ internal fun ProjectRow(
     project: Project,
     showDescription: Boolean = true,
     showStatus: Boolean = true,
-    isFavorite: Boolean = false,
-    onFavoriteClick: (() -> Unit)? = null,
     onClick: (() -> Unit)? = null,
 ) {
     val model = project.toProjectRowModel()
-    ProjectRow(
-        model = model,
-        showDescription = showDescription,
-        showStatus = showStatus,
-        isFavorite = isFavorite,
-        onFavoriteClick = onFavoriteClick,
-        onClick = onClick,
-    )
-}
-
-@Composable
-internal fun ProjectRow(
-    model: ProjectRowModel,
-    showDescription: Boolean = true,
-    showStatus: Boolean = true,
-    isFavorite: Boolean = false,
-    onFavoriteClick: (() -> Unit)? = null,
-    onClick: (() -> Unit)? = null,
-) {
-    val project = model.project
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -108,27 +78,21 @@ internal fun ProjectRow(
         ProjectArtwork(project)
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = project.title,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = true),
+                    modifier = Modifier.weight(1f),
                 )
                 if (showStatus && project.status != "approved") {
-                    StatusLabel(
-                        status = project.status,
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
+                    StatusLabel(project.status, Modifier.padding(start = 8.dp))
                 }
             }
             Text(
                 text = model.subtitle,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = RyntraDesign.colors.labelSecondary,
                 style = MaterialTheme.typography.labelMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -137,29 +101,21 @@ internal fun ProjectRow(
             if (showDescription && project.description.isNotBlank()) {
                 Text(
                     text = project.description,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = RyntraDesign.colors.labelSecondary,
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 5.dp),
                 )
             }
-            ProjectMetadata(model, modifier = Modifier.padding(top = 7.dp))
+            ProjectMetadata(model, Modifier.padding(top = 7.dp))
         }
-        if (onFavoriteClick != null) {
-            FavoriteButton(
-                isFavorite = isFavorite,
-                onClick = onFavoriteClick,
-                modifier = Modifier.padding(start = 4.dp),
-            )
-        } else if (onClick != null) {
+        if (onClick != null) {
             Icon(
                 imageVector = Lucide.ChevronRight,
                 contentDescription = null,
                 tint = RyntraDesign.colors.labelSecondary,
-                modifier = Modifier
-                    .padding(start = 8.dp)
-                    .size(17.dp),
+                modifier = Modifier.padding(start = 8.dp).size(17.dp),
             )
         }
     }
@@ -176,9 +132,9 @@ private fun ProjectMetadata(model: ProjectRowModel, modifier: Modifier = Modifie
         ProjectMetric(Lucide.Heart, model.followers, RyntraDesign.colors.accent)
         model.updated?.let { date ->
             ProjectMetric(
-                icon = Lucide.RefreshCw,
-                value = stringResource(R.string.project_updated_label) + " " + date,
-                color = RyntraDesign.colors.labelSecondary,
+                Lucide.RefreshCw,
+                stringResource(R.string.project_updated_label) + " " + date,
+                RyntraDesign.colors.labelSecondary,
             )
         }
     }
@@ -194,53 +150,9 @@ private fun ProjectMetric(
         Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(14.dp))
         Text(
             text = value,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = RyntraDesign.colors.labelSecondary,
             style = MaterialTheme.typography.labelSmall,
             modifier = Modifier.padding(start = 4.dp),
-        )
-    }
-}
-
-@Composable
-private fun FavoriteButton(
-    isFavorite: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val tint by animateColorAsState(
-        targetValue = if (isFavorite) {
-            MaterialTheme.colorScheme.primary
-        } else {
-            MaterialTheme.colorScheme.onSurfaceVariant
-        },
-        animationSpec = tween(RyntraDesign.motion.duration(160)),
-        label = "Favorite color",
-    )
-    val scale by animateFloatAsState(
-        targetValue = if (isFavorite) 1.08f else 1f,
-        animationSpec = tween(RyntraDesign.motion.duration(160)),
-        label = "Favorite scale",
-    )
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier
-            .size(44.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick),
-    ) {
-        Icon(
-            // Lucide stroke = empty outline; Material filled = solid when favorited.
-            imageVector = if (isFavorite) Icons.Filled.Star else Lucide.Star,
-            contentDescription = stringResource(
-                if (isFavorite) R.string.projects_remove_favorite else R.string.projects_add_favorite,
-            ),
-            tint = tint,
-            modifier = Modifier
-                .size(19.dp)
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                },
         )
     }
 }
