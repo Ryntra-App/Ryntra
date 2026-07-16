@@ -24,6 +24,8 @@ import com.composables.icons.lucide.Star
 import com.composables.icons.lucide.Upload
 import com.composables.icons.lucide.Wallet
 import com.composables.icons.lucide.Bell
+import com.composables.icons.lucide.BellRing
+import com.ryntra.mobile.InstantNotificationState
 import com.composables.icons.lucide.HeartHandshake
 import com.ryntra.mobile.preferences.AppLanguage
 import com.ryntra.mobile.preferences.GlassQuality
@@ -190,7 +192,9 @@ internal fun LocalDataSettingsSection(
 @Composable
 internal fun NotificationSettingsSection(
     isEnabled: Boolean,
+    instantState: InstantNotificationState,
     onEnabledChange: (Boolean) -> Unit,
+    onInstantAction: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     SettingsGroup(title = stringResource(R.string.notifications_settings_title), modifier = modifier) {
@@ -205,6 +209,21 @@ internal fun NotificationSettingsSection(
                     contentDescription = stringResource(R.string.notifications_local_title),
                 )
             },
+        )
+        SettingsDivider()
+        val instantSubtitle = when {
+            !instantState.isAvailable -> stringResource(R.string.notifications_instant_unavailable)
+            instantState.isLoading -> stringResource(R.string.notifications_instant_loading)
+            instantState.errorMessage != null -> instantState.errorMessage
+            instantState.isConnected -> stringResource(R.string.notifications_instant_connected)
+            else -> stringResource(R.string.notifications_instant_hint)
+        }
+        SettingsRow(
+            icon = Lucide.BellRing,
+            title = stringResource(R.string.notifications_instant_title),
+            subtitle = instantSubtitle,
+            onClick = if (instantState.isAvailable && !instantState.isLoading) onInstantAction else null,
+            isDestructive = instantState.isConnected,
         )
     }
 }

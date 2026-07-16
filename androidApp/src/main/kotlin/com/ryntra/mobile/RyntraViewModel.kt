@@ -14,6 +14,8 @@ import com.ryntra.mobile.preferences.RyntraPreferences
 import com.ryntra.mobile.preferences.RyntraPreferencesStore
 import com.ryntra.mobile.preferences.ThemeStyle
 import com.ryntra.mobile.notifications.NotificationScheduler
+import com.ryntra.mobile.notifications.instant.InstantCallbackResult
+import com.ryntra.mobile.notifications.instant.InstantNotificationCoordinator
 import com.ryntra.mobile.security.SecureTokenStore
 import com.ryntra.shared.app.AppController
 import com.ryntra.shared.app.AppState
@@ -48,6 +50,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     private val tokenStore = SecureTokenStore(application)
     private val preferencesStore = RyntraPreferencesStore(application)
     private val oauthCoordinator = OAuthCoordinator(application)
+    private val instantNotificationCoordinator = InstantNotificationCoordinator(application)
     private val controller = AppController()
     private val mutableOAuthError = MutableStateFlow<String?>(null)
     private val mutableProjectDetail = MutableStateFlow<ProjectDetailState?>(null)
@@ -58,6 +61,12 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     private val mutableMemberSearch = MutableStateFlow(MemberSearchState())
     private val mutableAnalytics = MutableStateFlow(AnalyticsState())
     private val mutableNotifications = MutableStateFlow(NotificationState())
+    private val mutableInstantNotifications = MutableStateFlow(
+        InstantNotificationState(
+            isAvailable = instantNotificationCoordinator.isAvailable,
+            isConnected = instantNotificationCoordinator.isConnected,
+        ),
+    )
     private var pendingToken: String? = null
     private var projectLoadJob: Job? = null
     private var organizationLoadJob: Job? = null
@@ -77,6 +86,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     val memberSearch: StateFlow<MemberSearchState> = mutableMemberSearch.asStateFlow()
     val analytics: StateFlow<AnalyticsState> = mutableAnalytics.asStateFlow()
     val notifications: StateFlow<NotificationState> = mutableNotifications.asStateFlow()
+    val instantNotifications: StateFlow<InstantNotificationState> = mutableInstantNotifications.asStateFlow()
     val preferences: StateFlow<RyntraPreferences> = preferencesStore.preferences
 
     init {
@@ -113,6 +123,24 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun handleOAuthCallback(uri: Uri) {
+        when (val instantResult = instantNotificationCoordinator.consumeCallback(uri)) {
+            InstantCallbackResult.Ignored -> Unit
+            InstantCallbackResult.Success -> {
+                mutableInstantNotifications.value = mutableInstantNotifications.value.copy(
+                    isConnected = true,
+                    isLoading = false,
+                    errorMessage = null,
+                )
+                return
+            }
+            is InstantCallbackResult.Failure -> {
+                mutableInstantNotifications.value = mutableInstantNotifications.value.copy(
+                    isLoading = false,
+                    errorMessage = instantResult.message,
+                )
+                return
+            }
+        }
         when (val result = oauthCoordinator.consumeCallback(uri)) {
             OAuthCallbackResult.Ignored -> Unit
             is OAuthCallbackResult.Failure -> mutableOAuthError.value = result.message
@@ -143,6 +171,52 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
         preferencesStore.setLocalNotificationsEnabled(isEnabled)
         if (isEnabled) NotificationScheduler.enable(getApplication())
         else NotificationScheduler.disable(getApplication())
+    }
+
+    fun startInstantNotifications() {
+        if (!instantNotificationCoordinator.isAvailable || mutableInstantNotifications.value.isLoading) return
+        mutableInstantNotifications.value = mutableInstantNotifications.value.copy(isLoading = true, errorMessage = null)
+        viewModelScope.launch {
+            suspendCatching { instantNotificationCoordinator.createAuthorizationUri() }.fold(
+                onSuccess = { uri ->
+                    mutableInstantNotifications.value = mutableInstantNotifications.value.copy(
+                        isLoading = false,
+                        authorizationUri = uri,
+                    )
+                },
+                onFailure = { error ->
+                    mutableInstantNotifications.value = mutableInstantNotifications.value.copy(
+                        isLoading = false,
+                        errorMessage = error.message ?: "Unable to start instant notifications.",
+                    )
+                },
+            )
+        }
+    }
+
+    fun authorizationUriOpened() {
+        mutableInstantNotifications.value = mutableInstantNotifications.value.copy(authorizationUri = null)
+    }
+
+    fun disconnectInstantNotifications() {
+        if (mutableInstantNotifications.value.isLoading) return
+        mutableInstantNotifications.value = mutableInstantNotifications.value.copy(isLoading = true, errorMessage = null)
+        viewModelScope.launch {
+            suspendCatching { instantNotificationCoordinator.disconnect() }.fold(
+                onSuccess = {
+                    mutableInstantNotifications.value = mutableInstantNotifications.value.copy(
+                        isConnected = false,
+                        isLoading = false,
+                    )
+                },
+                onFailure = { error ->
+                    mutableInstantNotifications.value = mutableInstantNotifications.value.copy(
+                        isLoading = false,
+                        errorMessage = error.message ?: "Unable to disconnect instant notifications.",
+                    )
+                },
+            )
+        }
     }
 
     fun toggleFavoriteProject(projectId: String) = preferencesStore.toggleFavoriteProject(projectId)
@@ -694,6 +768,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     override fun onCleared() {
+        instantNotificationCoordinator.close()
         controller.close()
         super.onCleared()
     }
@@ -776,3 +851,11 @@ data class NotificationState(
 ) {
     val unreadCount: Int get() = items.count { !it.read }
 }
+
+data class InstantNotificationState(
+    val isAvailable: Boolean = false,
+    val isConnected: Boolean = false,
+    val isLoading: Boolean = false,
+    val authorizationUri: Uri? = null,
+    val errorMessage: String? = null,
+)

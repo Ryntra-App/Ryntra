@@ -16,6 +16,7 @@ workManager = "2.11.2"
 haze = "1.7.2"
 composeIcons = "2.2.1"
 jetbrainsMarkdown = "0.7.7"
+firebaseBom = "34.15.0"
 
 [libraries]
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -46,6 +47,8 @@ coil-svg = { module = "io.coil-kt.coil3:coil-svg", version.ref = "coil" }
 haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
 icons-lucide = { module = "com.composables:icons-lucide-cmp", version.ref = "composeIcons" }
 jetbrains-markdown = { module = "org.jetbrains:markdown", version.ref = "jetbrainsMarkdown" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

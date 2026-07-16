@@ -2,6 +2,7 @@ package com.ryntra.mobile.ui
 
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.platform.LocalContext
@@ -27,12 +28,18 @@ fun RyntraApp(viewModel: RyntraViewModel) {
     val memberSearch by viewModel.memberSearch.collectAsStateWithLifecycle()
     val analytics by viewModel.analytics.collectAsStateWithLifecycle()
     val notifications by viewModel.notifications.collectAsStateWithLifecycle()
+    val instantNotifications by viewModel.instantNotifications.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val startOAuth = {
         CustomTabsIntent.Builder()
             .setShowTitle(true)
             .build()
             .launchUrl(context, viewModel.startOAuth())
+    }
+    LaunchedEffect(instantNotifications.authorizationUri) {
+        val uri = instantNotifications.authorizationUri ?: return@LaunchedEffect
+        CustomTabsIntent.Builder().setShowTitle(true).build().launchUrl(context, uri)
+        viewModel.authorizationUriOpened()
     }
 
     // key(appLanguage) forces stringResource lookups to re-run after a language change.
@@ -66,6 +73,7 @@ fun RyntraApp(viewModel: RyntraViewModel) {
                         memberSearch = memberSearch,
                         analytics = analytics,
                         notifications = notifications,
+                        instantNotifications = instantNotifications,
                         preferences = preferences,
                         onProjectClick = viewModel::openProject,
                         onCloseProject = viewModel::closeProject,
@@ -112,6 +120,8 @@ fun RyntraApp(viewModel: RyntraViewModel) {
                         onSortModeChange = viewModel::setProjectSortMode,
                         onToggleFavoriteProject = viewModel::toggleFavoriteProject,
                         onLocalNotificationsChange = viewModel::setLocalNotificationsEnabled,
+                        onStartInstantNotifications = viewModel::startInstantNotifications,
+                        onDisconnectInstantNotifications = viewModel::disconnectInstantNotifications,
                         onRefreshNotifications = viewModel::refreshNotifications,
                         onMarkNotificationsRead = viewModel::markNotificationsRead,
                         onResetAppearance = viewModel::resetAppearance,

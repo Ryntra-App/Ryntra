@@ -3,6 +3,15 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+fun configurationValue(name: String, defaultValue: String = ""): String =
+    providers.gradleProperty(name)
+        .orElse(providers.environmentVariable(name))
+        .orElse(defaultValue)
+        .get()
+
+fun String.asBuildConfigString(): String =
+    "\"${replace("\\", "\\\\").replace("\"", "\\\"")}\""
+
 android {
     namespace = "com.ryntra.mobile"
     compileSdk = 36
@@ -13,6 +22,19 @@ android {
         targetSdk = 36
         versionCode = 30000
         versionName = "3.0.0-alpha01"
+        buildConfigField(
+            "String",
+            "NOTIFICATION_BACKEND_URL",
+            configurationValue("RYNTRA_NOTIFICATION_BACKEND_URL", "https://rinthy-auth.vercel.app").asBuildConfigString(),
+        )
+        buildConfigField("String", "FIREBASE_API_KEY", configurationValue("RYNTRA_FIREBASE_API_KEY").asBuildConfigString())
+        buildConfigField(
+            "String",
+            "FIREBASE_APPLICATION_ID",
+            configurationValue("RYNTRA_FIREBASE_APPLICATION_ID").asBuildConfigString(),
+        )
+        buildConfigField("String", "FIREBASE_PROJECT_ID", configurationValue("RYNTRA_FIREBASE_PROJECT_ID").asBuildConfigString())
+        buildConfigField("String", "FIREBASE_SENDER_ID", configurationValue("RYNTRA_FIREBASE_SENDER_ID").asBuildConfigString())
     }
 
     buildFeatures {
@@ -56,5 +78,7 @@ dependencies {
     implementation(libs.coil.svg)
     implementation(libs.haze)
     implementation(libs.icons.lucide)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

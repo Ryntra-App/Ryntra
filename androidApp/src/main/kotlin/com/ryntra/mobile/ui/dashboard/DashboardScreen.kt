@@ -44,6 +44,7 @@ import com.ryntra.mobile.MemberSearchState
 import com.ryntra.mobile.AnalyticsState
 import com.ryntra.mobile.ProfileUpdateState
 import com.ryntra.mobile.NotificationState
+import com.ryntra.mobile.InstantNotificationState
 import com.ryntra.mobile.ProjectActionState
 import com.ryntra.mobile.ProjectDetailState
 import com.ryntra.mobile.preferences.AppLanguage
@@ -115,6 +116,7 @@ fun DashboardScreen(
     memberSearch: MemberSearchState = MemberSearchState(),
     analytics: AnalyticsState = AnalyticsState(),
     notifications: NotificationState = NotificationState(),
+    instantNotifications: InstantNotificationState = InstantNotificationState(),
     preferences: RyntraPreferences = RyntraPreferences(),
     onLoadAnalytics: (Int) -> Unit = {},
     onChangeProjectIcon: (String, ProjectFileUpload) -> Unit = { _, _ -> },
@@ -142,6 +144,8 @@ fun DashboardScreen(
     onSortModeChange: (ProjectSortMode) -> Unit = {},
     onToggleFavoriteProject: (String) -> Unit = {},
     onLocalNotificationsChange: (Boolean) -> Unit = {},
+    onStartInstantNotifications: () -> Unit = {},
+    onDisconnectInstantNotifications: () -> Unit = {},
     onRefreshNotifications: () -> Unit = {},
     onMarkNotificationsRead: (List<String>) -> Unit = {},
     onResetAppearance: () -> Unit = {},
@@ -301,6 +305,7 @@ fun DashboardScreen(
                         organizationCount = dashboard.organizations.size,
                         profileUpdate = profileUpdate,
                         preferences = preferences,
+                        instantNotifications = instantNotifications,
                         onUpdateProfile = onUpdateProfile,
                         onChangeAvatar = onChangeAvatar,
                         onDeleteAvatar = onDeleteAvatar,
@@ -311,6 +316,8 @@ fun DashboardScreen(
                         onReduceMotionChange = onReduceMotionChange,
                         onGlassQualityChange = onGlassQualityChange,
                         onLocalNotificationsChange = onLocalNotificationsChange,
+                        onStartInstantNotifications = onStartInstantNotifications,
+                        onDisconnectInstantNotifications = onDisconnectInstantNotifications,
                         onResetAppearance = onResetAppearance,
                         onExportPreferences = { onExportPreferences(dashboard.account.username) },
                         onImportPreferences = onImportPreferences,

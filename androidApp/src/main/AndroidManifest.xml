@@ -34,8 +34,23 @@
                     android:host="auth"
                     android:path="/callback"
                     android:scheme="rinthy" />
+                <data
+                    android:host="notifications"
+                    android:path="/callback"
+                    android:scheme="ryntra" />
+                <data
+                    android:host="notifications"
+                    android:path="/callback"
+                    android:scheme="rinthy" />
             </intent-filter>
         </activity>
+        <service
+            android:name=".notifications.instant.RyntraMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
         <!-- Required so AppCompat can persist/restore per-app locales on older Android. -->
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"

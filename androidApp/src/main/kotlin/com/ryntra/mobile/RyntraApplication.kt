@@ -9,6 +9,7 @@ import coil3.svg.SvgDecoder
 import com.ryntra.mobile.preferences.AppLocale
 import com.ryntra.mobile.preferences.RyntraPreferencesStore
 import com.ryntra.mobile.notifications.NotificationScheduler
+import com.ryntra.mobile.notifications.instant.FirebaseBootstrap
 import okhttp3.OkHttpClient
 
 class RyntraApplication : Application(), SingletonImageLoader.Factory {
@@ -20,6 +21,7 @@ class RyntraApplication : Application(), SingletonImageLoader.Factory {
         super.onCreate()
         val preferences = RyntraPreferencesStore(this).preferences.value
         AppLocale.apply(preferences.appLanguage)
+        FirebaseBootstrap.initialize(this)
         if (preferences.localNotificationsEnabled) {
             NotificationScheduler.enable(this)
         }

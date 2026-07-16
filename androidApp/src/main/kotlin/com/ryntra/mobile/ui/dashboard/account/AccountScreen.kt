@@ -37,6 +37,7 @@ import coil3.SingletonImageLoader
 import com.ryntra.mobile.BuildConfig
 import com.ryntra.mobile.R
 import com.ryntra.mobile.ProfileUpdateState
+import com.ryntra.mobile.InstantNotificationState
 import com.ryntra.mobile.preferences.AppLanguage
 import com.ryntra.mobile.preferences.GlassQuality
 import com.ryntra.mobile.preferences.AppearanceMode
@@ -57,6 +58,7 @@ fun AccountScreen(
     organizationCount: Int,
     profileUpdate: ProfileUpdateState,
     preferences: RyntraPreferences,
+    instantNotifications: InstantNotificationState,
     onUpdateProfile: (String, String, String) -> Unit,
     onChangeAvatar: (String, com.ryntra.shared.model.ProjectFileUpload) -> Unit = { _, _ -> },
     onDeleteAvatar: (String) -> Unit = {},
@@ -67,6 +69,8 @@ fun AccountScreen(
     onReduceMotionChange: (Boolean) -> Unit,
     onGlassQualityChange: (GlassQuality) -> Unit,
     onLocalNotificationsChange: (Boolean) -> Unit,
+    onStartInstantNotifications: () -> Unit,
+    onDisconnectInstantNotifications: () -> Unit,
     onResetAppearance: () -> Unit,
     onExportPreferences: () -> String,
     onImportPreferences: (String) -> Result<Unit>,
@@ -131,6 +135,11 @@ fun AccountScreen(
     ) { isGranted ->
         onLocalNotificationsChange(isGranted)
         if (!isGranted) showNotice(notificationPermissionDenied)
+    }
+    val instantNotificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+    ) { isGranted ->
+        if (isGranted) onStartInstantNotifications() else showNotice(notificationPermissionDenied)
     }
 
     LaunchedEffect(notice) {
@@ -215,11 +224,21 @@ fun AccountScreen(
         item(key = "profile-notifications", contentType = "settings-group") {
             NotificationSettingsSection(
                 isEnabled = preferences.localNotificationsEnabled,
+                instantState = instantNotifications,
                 onEnabledChange = { isEnabled ->
                     if (isEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                     } else {
                         onLocalNotificationsChange(isEnabled)
+                    }
+                },
+                onInstantAction = {
+                    if (instantNotifications.isConnected) {
+                        onDisconnectInstantNotifications()
+                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        instantNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        onStartInstantNotifications()
                     }
                 },
                 modifier = Modifier.padding(top = 26.dp),
