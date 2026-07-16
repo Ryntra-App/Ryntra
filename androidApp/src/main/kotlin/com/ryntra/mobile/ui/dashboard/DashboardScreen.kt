@@ -402,10 +402,12 @@ fun DashboardScreen(
                 navigationIcon = if (isDetailVisible) Lucide.ArrowLeft else null,
                 navigationDescription = if (isDetailVisible) stringResource(R.string.nav_back) else null,
                 onNavigationClick = {
-                    onCloseProject()
-                    onCloseOrganization()
-                    isProfileVisible = false
-                    isNotificationsVisible = false
+                    when {
+                        projectDetail != null -> onCloseProject()
+                        organizationDetail != null -> onCloseOrganization()
+                        isProfileVisible -> isProfileVisible = false
+                        isNotificationsVisible -> isNotificationsVisible = false
+                    }
                 },
                 showAvatar = !isDetailVisible,
                 onNotificationsClick = if (!isDetailVisible) {
