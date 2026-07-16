@@ -229,6 +229,10 @@
 "Updates from Modrinth will appear here." = "Здесь появятся события из Modrinth.";
 "%d unread" = "Непрочитанных: %d";
 "Mark all read" = "Прочитать всё";
+"Show read notifications" = "Показать прочитанные уведомления";
+"Show unread notifications" = "Показать непрочитанные уведомления";
+"No archived notifications" = "Архив уведомлений пуст";
+"Read notifications will appear here." = "Здесь будут прочитанные уведомления.";
 "Loaded directly from your Modrinth account." = "Загружено напрямую из вашего аккаунта Modrinth.";
 "Retry" = "Повторить";
 "Local background checks" = "Локальная фоновая проверка";

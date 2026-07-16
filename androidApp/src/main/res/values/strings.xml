@@ -375,7 +375,10 @@
     <string name="notifications_source_hint">From your Modrinth account</string>
     <string name="notifications_refresh">Refresh notifications</string>
     <string name="notifications_mark_all_read">Mark all as read</string>
+    <string name="notifications_show_archive">Show read notifications</string>
+    <string name="notifications_show_inbox">Show unread notifications</string>
     <string name="notifications_empty">You are all caught up</string>
+    <string name="notifications_archive_empty">No read notifications yet</string>
     <string name="notifications_load_failed">Could not load notifications</string>
     <string name="notifications_settings_title">Notifications</string>
     <string name="notifications_local_title">Local background checks</string>

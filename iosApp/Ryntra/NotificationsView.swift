@@ -3,25 +3,38 @@ import SwiftUI
 
 struct NotificationsView: View {
     @EnvironmentObject private var model: AppModel
+    @State private var isArchiveVisible = false
+
+    private var visibleNotifications: [ModrinthNotification] {
+        model.notifications.filter { isRead($0) == isArchiveVisible }
+    }
 
     var body: some View {
         List {
             Section {
                 if model.isNotificationsLoading && model.notifications.isEmpty {
                     HStack { Spacer(); ProgressView(); Spacer() }
-                } else if model.notifications.isEmpty {
+                } else if visibleNotifications.isEmpty {
                     VStack(spacing: 10) {
-                        Image(systemName: "bell").font(.title2).foregroundStyle(.secondary)
-                        Text(NSLocalizedString("No new notifications", comment: "Notifications empty state"))
+                        Image(systemName: isArchiveVisible ? "archivebox" : "bell")
+                            .font(.title2)
+                            .foregroundStyle(.secondary)
+                        Text(NSLocalizedString(
+                            isArchiveVisible ? "No archived notifications" : "No new notifications",
+                            comment: "Notifications empty state"
+                        ))
                             .font(.headline)
-                        Text(NSLocalizedString("Updates from Modrinth will appear here.", comment: "Notifications empty hint"))
+                        Text(NSLocalizedString(
+                            isArchiveVisible ? "Read notifications will appear here." : "Updates from Modrinth will appear here.",
+                            comment: "Notifications empty hint"
+                        ))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 34)
                 } else {
-                    ForEach(model.notifications, id: \.id) { notification in
+                    ForEach(visibleNotifications, id: \.id) { notification in
                         Button {
                             Task { await model.markNotificationRead(notification) }
                             if let url = notification.modrinthURL {
@@ -30,7 +43,7 @@ struct NotificationsView: View {
                         } label: {
                             NotificationRow(
                                 notification: notification,
-                                isRead: notification.read || model.locallyReadNotificationIDs.contains(notification.id)
+                                isRead: isRead(notification)
                             )
                         }
                         .buttonStyle(.plain)
@@ -40,7 +53,17 @@ struct NotificationsView: View {
                 HStack {
                     Text(String(format: NSLocalizedString("%d unread", comment: "Notification unread count"), model.unreadNotificationCount))
                     Spacer()
-                    if model.unreadNotificationCount > 0 {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) { isArchiveVisible.toggle() }
+                    } label: {
+                        Image(systemName: isArchiveVisible ? "tray" : "archivebox")
+                    }
+                    .foregroundStyle(isArchiveVisible ? Color.ryntraGreen : .secondary)
+                    .accessibilityLabel(NSLocalizedString(
+                        isArchiveVisible ? "Show unread notifications" : "Show read notifications",
+                        comment: "Notifications archive action"
+                    ))
+                    if !isArchiveVisible && model.unreadNotificationCount > 0 {
                         Button(NSLocalizedString("Mark all read", comment: "Notifications action")) {
                             Task { await model.markAllNotificationsRead() }
                         }
@@ -62,6 +85,10 @@ struct NotificationsView: View {
         .listStyle(.insetGrouped)
         .refreshable { await model.refreshNotifications() }
         .task { await model.refreshNotifications() }
+    }
+
+    private func isRead(_ notification: ModrinthNotification) -> Bool {
+        notification.read || model.locallyReadNotificationIDs.contains(notification.id)
     }
 }
 

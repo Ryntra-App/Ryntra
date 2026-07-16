@@ -20,6 +20,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
@@ -27,9 +31,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.composables.icons.lucide.Archive
 import com.composables.icons.lucide.Bell
 import com.composables.icons.lucide.CheckCheck
 import com.composables.icons.lucide.CircleAlert
+import com.composables.icons.lucide.Inbox
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.MessageSquareText
 import com.composables.icons.lucide.RefreshCw
@@ -49,7 +55,9 @@ fun NotificationsScreen(
     onMarkRead: (List<String>) -> Unit,
 ) {
     val uriHandler = LocalUriHandler.current
+    var isArchiveVisible by rememberSaveable { mutableStateOf(false) }
     val unreadIds = state.items.filterNot(ModrinthNotification::read).map(ModrinthNotification::id)
+    val visibleNotifications = state.items.filter { it.read == isArchiveVisible }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -75,11 +83,22 @@ fun NotificationsScreen(
                     )
                 }
                 Row {
+                    IconButton(onClick = { isArchiveVisible = !isArchiveVisible }) {
+                        Icon(
+                            imageVector = if (isArchiveVisible) Lucide.Inbox else Lucide.Archive,
+                            contentDescription = stringResource(
+                                if (isArchiveVisible) R.string.notifications_show_inbox else R.string.notifications_show_archive,
+                            ),
+                            tint = if (isArchiveVisible) RyntraDesign.colors.accent else RyntraDesign.colors.labelPrimary,
+                        )
+                    }
                     IconButton(onClick = onRefresh, enabled = !state.isLoading) {
                         Icon(Lucide.RefreshCw, contentDescription = stringResource(R.string.notifications_refresh))
                     }
-                    IconButton(onClick = { onMarkRead(unreadIds) }, enabled = unreadIds.isNotEmpty()) {
-                        Icon(Lucide.CheckCheck, contentDescription = stringResource(R.string.notifications_mark_all_read))
+                    if (!isArchiveVisible) {
+                        IconButton(onClick = { onMarkRead(unreadIds) }, enabled = unreadIds.isNotEmpty()) {
+                            Icon(Lucide.CheckCheck, contentDescription = stringResource(R.string.notifications_mark_all_read))
+                        }
                     }
                 }
             }
@@ -94,12 +113,16 @@ fun NotificationsScreen(
                     )
                 }
             }
-        } else if (state.items.isEmpty()) {
+        } else if (visibleNotifications.isEmpty()) {
             item(key = "notification-empty") {
-                EmptyNotifications(errorMessage = state.errorMessage, onRefresh = onRefresh)
+                EmptyNotifications(
+                    errorMessage = state.errorMessage,
+                    isArchiveVisible = isArchiveVisible,
+                    onRefresh = onRefresh,
+                )
             }
         } else {
-            items(state.items, key = ModrinthNotification::id, contentType = { "notification" }) { notification ->
+            items(visibleNotifications, key = ModrinthNotification::id, contentType = { "notification" }) { notification ->
                 NotificationRow(
                     notification = notification,
                     onClick = {
@@ -178,20 +201,34 @@ private fun NotificationRow(notification: ModrinthNotification, onClick: () -> U
 }
 
 @Composable
-private fun EmptyNotifications(errorMessage: String?, onRefresh: () -> Unit) {
+private fun EmptyNotifications(
+    errorMessage: String?,
+    isArchiveVisible: Boolean,
+    onRefresh: () -> Unit,
+) {
     Column(
         modifier = Modifier.fillMaxWidth().padding(top = 72.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Icon(
-            imageVector = if (errorMessage == null) Lucide.Bell else Lucide.CircleAlert,
+            imageVector = when {
+                errorMessage != null -> Lucide.CircleAlert
+                isArchiveVisible -> Lucide.Archive
+                else -> Lucide.Bell
+            },
             contentDescription = null,
             tint = RyntraDesign.colors.labelSecondary.copy(alpha = 0.72f),
             modifier = Modifier.size(36.dp),
         )
         Text(
-            text = stringResource(if (errorMessage == null) R.string.notifications_empty else R.string.notifications_load_failed),
+            text = stringResource(
+                when {
+                    errorMessage != null -> R.string.notifications_load_failed
+                    isArchiveVisible -> R.string.notifications_archive_empty
+                    else -> R.string.notifications_empty
+                },
+            ),
             color = RyntraDesign.colors.labelSecondary,
         )
         if (errorMessage != null) {

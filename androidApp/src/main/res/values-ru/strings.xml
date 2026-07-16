@@ -379,7 +379,10 @@
     <string name="notifications_source_hint">Из вашего аккаунта Modrinth</string>
     <string name="notifications_refresh">Обновить уведомления</string>
     <string name="notifications_mark_all_read">Отметить всё прочитанным</string>
+    <string name="notifications_show_archive">Показать прочитанные уведомления</string>
+    <string name="notifications_show_inbox">Показать непрочитанные уведомления</string>
     <string name="notifications_empty">Новых уведомлений нет</string>
+    <string name="notifications_archive_empty">Прочитанных уведомлений пока нет</string>
     <string name="notifications_load_failed">Не удалось загрузить уведомления</string>
     <string name="notifications_settings_title">Уведомления</string>
     <string name="notifications_local_title">Локальная фоновая проверка</string>

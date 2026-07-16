@@ -191,6 +191,10 @@
 "Updates from Modrinth will appear here." = "Updates from Modrinth will appear here.";
 "%d unread" = "%d unread";
 "Mark all read" = "Mark all read";
+"Show read notifications" = "Show read notifications";
+"Show unread notifications" = "Show unread notifications";
+"No archived notifications" = "No archived notifications";
+"Read notifications will appear here." = "Read notifications will appear here.";
 "Loaded directly from your Modrinth account." = "Loaded directly from your Modrinth account.";
 "Retry" = "Retry";
 "Local background checks" = "Local background checks";

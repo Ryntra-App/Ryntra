@@ -289,6 +289,58 @@ class ModrinthApiTest {
     }
 
     @Test
+    fun notificationIdsAreResolvedToProjectAndVersionNames() = runTest {
+        val engine = MockEngine { request ->
+            when (request.url.encodedPath) {
+                "/v2/user/user-1/notifications" -> respond(
+                    content = """[{
+                        "id":"notice-1",
+                        "user_id":"user-1",
+                        "type":"project_update",
+                        "title":"project-1 released version-1",
+                        "text":"Download version-1 for project-1",
+                        "link":"mod/project-1/version/version-1",
+                        "read":false,
+                        "created":"2026-07-02T10:00:00Z",
+                        "actions":[]
+                    }]""".trimIndent(),
+                    status = HttpStatusCode.OK,
+                    headers = jsonHeaders,
+                )
+                "/v2/project/project-1" -> respond(
+                    content = """{"id":"project-1","slug":"ryntra","title":"Ryntra"}""",
+                    status = HttpStatusCode.OK,
+                    headers = jsonHeaders,
+                )
+                "/v2/version/version-1" -> respond(
+                    content = """{
+                        "id":"version-1",
+                        "project_id":"project-1",
+                        "name":"Ryntra 3.0",
+                        "version_number":"3.0.0",
+                        "version_type":"release",
+                        "game_versions":[],
+                        "loaders":[],
+                        "downloads":0,
+                        "dependencies":[],
+                        "files":[]
+                    }""".trimIndent(),
+                    status = HttpStatusCode.OK,
+                    headers = jsonHeaders,
+                )
+                else -> respond("{}", status = HttpStatusCode.NotFound, headers = jsonHeaders)
+            }
+        }
+        val api = ModrinthApi(testClient(engine))
+
+        val notification = api.getNotifications("user-1", "mrp_test").single()
+
+        assertEquals("Ryntra released 3.0.0", notification.title)
+        assertEquals("Download 3.0.0 for Ryntra", notification.text)
+        api.close()
+    }
+
+    @Test
     fun projectUpdateUsesPatch() = runTest {
         val engine = MockEngine { request ->
             assertEquals(HttpMethod.Patch, request.method)

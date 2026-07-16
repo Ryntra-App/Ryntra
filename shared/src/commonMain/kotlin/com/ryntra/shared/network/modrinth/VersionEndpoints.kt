@@ -24,6 +24,9 @@ import kotlinx.serialization.encodeToString
 internal class VersionEndpoints(
     private val client: HttpClient,
 ) {
+    suspend fun get(versionId: String, token: String): ProjectVersion =
+        client.get("version/$versionId") { authorize(token) }.decode()
+
     suspend fun getForProject(projectIdOrSlug: String, token: String): List<ProjectVersion> =
         client.get("project/$projectIdOrSlug/version") { authorize(token) }.decode()
 

@@ -16,6 +16,7 @@ import com.ryntra.shared.model.VersionUpdate
 import com.ryntra.shared.network.modrinth.AccountEndpoints
 import com.ryntra.shared.network.modrinth.InsightEndpoints
 import com.ryntra.shared.network.modrinth.NotificationEndpoints
+import com.ryntra.shared.network.modrinth.NotificationContentResolver
 import com.ryntra.shared.network.modrinth.ProjectEndpoints
 import com.ryntra.shared.network.modrinth.TeamOrganizationEndpoints
 import com.ryntra.shared.network.modrinth.VersionEndpoints
@@ -30,6 +31,7 @@ class ModrinthApi(
     private val teams = TeamOrganizationEndpoints(httpClient)
     private val insights = InsightEndpoints(httpClient)
     private val notifications = NotificationEndpoints(httpClient)
+    private val notificationContent = NotificationContentResolver(projects, versions)
 
     suspend fun getCurrentAccount(token: String): Account = accounts.getCurrent(token)
 
@@ -139,7 +141,7 @@ class ModrinthApi(
     suspend fun getPayoutBalance(token: String): PayoutBalanceResponse = insights.getPayoutBalance(token)
 
     suspend fun getNotifications(userId: String, token: String): List<ModrinthNotification> =
-        notifications.getForUser(userId, token)
+        notificationContent.resolve(notifications.getForUser(userId, token), token)
 
     suspend fun markNotificationsRead(notificationIds: List<String>, token: String) =
         notifications.markRead(notificationIds, token)
