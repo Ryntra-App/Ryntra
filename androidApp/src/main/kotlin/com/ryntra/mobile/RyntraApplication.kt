@@ -4,7 +4,9 @@ import android.app.Application
 import android.content.Context
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
+import coil3.bitmapFactoryMaxParallelism
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
+import coil3.size.Precision
 import coil3.svg.SvgDecoder
 import com.ryntra.mobile.preferences.AppLocale
 import com.ryntra.mobile.preferences.RyntraPreferencesStore
@@ -29,6 +31,8 @@ class RyntraApplication : Application(), SingletonImageLoader.Factory {
      */
     override fun newImageLoader(context: Context): ImageLoader =
         ImageLoader.Builder(context)
+            .precision(Precision.INEXACT)
+            .bitmapFactoryMaxParallelism(2)
             .components {
                 add(OkHttpNetworkFetcherFactory(OkHttpClient.Builder().build()))
                 add(SvgDecoder.Factory())
