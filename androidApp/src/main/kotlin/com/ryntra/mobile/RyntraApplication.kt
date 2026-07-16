@@ -13,10 +13,6 @@ import com.ryntra.mobile.notifications.instant.FirebaseBootstrap
 import okhttp3.OkHttpClient
 
 class RyntraApplication : Application(), SingletonImageLoader.Factory {
-    override fun attachBaseContext(base: Context) {
-        super.attachBaseContext(AppLocale.wrap(base))
-    }
-
     override fun onCreate() {
         super.onCreate()
         val preferences = RyntraPreferencesStore(this).preferences.value
