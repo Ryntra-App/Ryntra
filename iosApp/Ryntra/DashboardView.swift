@@ -82,7 +82,9 @@ struct DashboardView: View {
         .animation(RyntraMotion.resolved(.navigation, reduceMotion: reduceMotion), value: isProfileVisible)
         .animation(RyntraMotion.resolved(.navigation, reduceMotion: reduceMotion), value: isNotificationsVisible)
         .onAppear { presentedError = errorMessage }
+        .onAppear { openPendingNotificationProject() }
         .onChange(of: errorMessage) { presentedError = $0 }
+        .onChange(of: model.pendingNotificationProjectReference) { _ in openPendingNotificationProject() }
         .alert("Could not refresh", isPresented: errorBinding) {
             Button("Retry") { model.refresh() }
         } message: {
@@ -209,6 +211,12 @@ struct DashboardView: View {
                 presentedError = error.localizedDescription
             }
         }
+    }
+
+    private func openPendingNotificationProject() {
+        guard let reference = model.pendingNotificationProjectReference else { return }
+        model.consumeNotificationProjectReference()
+        openNotificationProject(reference)
     }
 }
 

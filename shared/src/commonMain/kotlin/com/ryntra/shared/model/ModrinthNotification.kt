@@ -33,8 +33,12 @@ data class ModrinthNotificationLink(
         private val projectRoutes = setOf("mod", "plugin", "datapack", "shader", "resourcepack", "project")
 
         fun parse(link: String): ModrinthNotificationLink? {
-            val path = link
-                .substringAfter("modrinth.com/", link)
+            val route = when {
+                "modrinth.com/" in link -> link.substringAfter("modrinth.com/")
+                link.startsWith("ryntra://modrinth/") -> link.substringAfter("ryntra://modrinth/")
+                else -> link
+            }
+            val path = route
                 .substringBefore('?')
                 .substringBefore('#')
                 .trim('/')

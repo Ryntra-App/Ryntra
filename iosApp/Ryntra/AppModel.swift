@@ -29,6 +29,9 @@ final class AppModel: ObservableObject {
     @Published private(set) var isNotificationsLoading = false
     @Published private(set) var notificationsError: String?
     @Published private(set) var locallyReadNotificationIDs: Set<String> = []
+    @Published private(set) var hasLoadedNotifications = false
+    @Published private(set) var cachedUnreadNotificationCount = UserDefaults.standard.integer(forKey: "cachedUnreadNotificationCount")
+    @Published private(set) var pendingNotificationProjectReference: String?
     @Published private(set) var instantNotifications = InstantNotificationStatus()
 
     private let controller = AppController()
@@ -41,7 +44,8 @@ final class AppModel: ObservableObject {
     private var notificationAccountID: String?
 
     var unreadNotificationCount: Int {
-        notifications.filter { !$0.read && !locallyReadNotificationIDs.contains($0.id) }.count
+        if !hasLoadedNotifications { return cachedUnreadNotificationCount }
+        return notifications.filter { !$0.read && !locallyReadNotificationIDs.contains($0.id) }.count
     }
 
     var currentAccountID: String? {
@@ -107,6 +111,22 @@ final class AppModel: ObservableObject {
         }
     }
 
+    func handleOpenURL(_ url: URL) {
+        if url.scheme == "ryntra", url.host == "modrinth" {
+            let segments = url.pathComponents.filter { $0 != "/" }
+            let projectRoutes = Set(["mod", "plugin", "datapack", "shader", "resourcepack", "project"])
+            if segments.count >= 2, projectRoutes.contains(segments[0]) {
+                pendingNotificationProjectReference = segments[1]
+                return
+            }
+        }
+        handleOAuthCallback(url)
+    }
+
+    func consumeNotificationProjectReference() {
+        pendingNotificationProjectReference = nil
+    }
+
     func refresh() {
         controller.refresh()
     }
@@ -156,6 +176,8 @@ final class AppModel: ObservableObject {
             notifications = try await controller.loadNotifications()
             let currentIDs = Set(notifications.map(\.id))
             locallyReadNotificationIDs.formIntersection(currentIDs)
+            hasLoadedNotifications = true
+            persistUnreadNotificationCount()
         } catch {
             notificationsError = error.localizedDescription
         }
@@ -178,6 +200,7 @@ final class AppModel: ObservableObject {
         do {
             try await controller.markNotificationsRead(notificationIds: ids)
             locallyReadNotificationIDs.formUnion(ids)
+            persistUnreadNotificationCount()
             notificationsError = nil
         } catch {
             notificationsError = error.localizedDescription
@@ -470,11 +493,21 @@ final class AppModel: ObservableObject {
         activeAnalyticsKey = nil
         isAnalyticsLoading = false
         notifications = []
+        hasLoadedNotifications = false
+        cachedUnreadNotificationCount = 0
+        UserDefaults.standard.removeObject(forKey: "cachedUnreadNotificationCount")
         notificationsError = nil
         locallyReadNotificationIDs = []
         notificationAccountID = nil
+        pendingNotificationProjectReference = nil
         keychain.clear()
         controller.signOut()
+    }
+
+    private func persistUnreadNotificationCount() {
+        let count = notifications.filter { !$0.read && !locallyReadNotificationIDs.contains($0.id) }.count
+        cachedUnreadNotificationCount = count
+        UserDefaults.standard.set(count, forKey: "cachedUnreadNotificationCount")
     }
 
     private func performProjectAction(

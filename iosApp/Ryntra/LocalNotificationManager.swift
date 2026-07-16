@@ -96,6 +96,10 @@ final class LocalNotificationManager {
 
         let knownIDs = Set(defaults.stringArray(forKey: knownIDsKey) ?? [])
         let newUnread = notifications.filter { !$0.read && !knownIDs.contains($0.id) }.prefix(5)
+        if !newUnread.isEmpty {
+            let cachedCount = defaults.integer(forKey: "cachedUnreadNotificationCount")
+            defaults.set(cachedCount + newUnread.count, forKey: "cachedUnreadNotificationCount")
+        }
         for notification in newUnread {
             let localized = notification.localizedContent
             let content = UNMutableNotificationContent()
@@ -157,8 +161,11 @@ final class RyntraAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificati
     ) async {
         let userInfo = response.notification.request.content.userInfo
         guard let link = (userInfo["modrinthLink"] ?? userInfo["modrinth_link"]) as? String else { return }
-        let rawURL = link.hasPrefix("http") ? link : "https://modrinth.com/\(link.trimmingCharacters(in: CharacterSet(charactersIn: "/")))"
-        guard let url = URL(string: rawURL) else { return }
+        let path = link
+            .replacingOccurrences(of: "https://modrinth.com/", with: "")
+            .replacingOccurrences(of: "http://modrinth.com/", with: "")
+            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        guard let url = URL(string: "ryntra://modrinth/\(path)") else { return }
         await UIApplication.shared.open(url)
     }
 }

@@ -9,6 +9,7 @@ import com.google.firebase.messaging.RemoteMessage
 import com.ryntra.mobile.MainActivity
 import com.ryntra.mobile.R
 import com.ryntra.mobile.notifications.NotificationChannels
+import com.ryntra.mobile.notifications.NotificationBadgeStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -32,9 +33,11 @@ class RyntraMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         val title = message.notification?.title ?: message.data["title"] ?: getString(R.string.app_name)
         val body = message.notification?.body ?: message.data["body"] ?: return
+        NotificationBadgeStore(this).increment()
         NotificationChannels.create(this)
         val launchIntent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra(MainActivity.EXTRA_DEEP_LINK, message.data["deep_link"])
         }
         val pendingIntent = PendingIntent.getActivity(
             this,

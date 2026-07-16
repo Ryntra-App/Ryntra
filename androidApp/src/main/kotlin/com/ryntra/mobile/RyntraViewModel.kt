@@ -14,6 +14,7 @@ import com.ryntra.mobile.preferences.RyntraPreferences
 import com.ryntra.mobile.preferences.RyntraPreferencesStore
 import com.ryntra.mobile.preferences.ThemeStyle
 import com.ryntra.mobile.notifications.NotificationScheduler
+import com.ryntra.mobile.notifications.NotificationBadgeStore
 import com.ryntra.mobile.notifications.instant.InstantCallbackResult
 import com.ryntra.mobile.notifications.instant.InstantNotificationCoordinator
 import com.ryntra.mobile.security.SecureTokenStore
@@ -51,6 +52,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     private val preferencesStore = RyntraPreferencesStore(application)
     private val oauthCoordinator = OAuthCoordinator(application)
     private val instantNotificationCoordinator = InstantNotificationCoordinator(application)
+    private val notificationBadgeStore = NotificationBadgeStore(application)
     private val controller = AppController()
     private val mutableOAuthError = MutableStateFlow<String?>(null)
     private val mutableProjectDetail = MutableStateFlow<ProjectDetailState?>(null)
@@ -60,7 +62,9 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     private val mutableProjectAction = MutableStateFlow(ProjectActionState())
     private val mutableMemberSearch = MutableStateFlow(MemberSearchState())
     private val mutableAnalytics = MutableStateFlow(AnalyticsState())
-    private val mutableNotifications = MutableStateFlow(NotificationState())
+    private val mutableNotifications = MutableStateFlow(
+        NotificationState(cachedUnreadCount = notificationBadgeStore.readCount()),
+    )
     private val mutableInstantNotifications = MutableStateFlow(
         InstantNotificationState(
             isAvailable = instantNotificationCoordinator.isAvailable,
@@ -75,6 +79,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     private var analyticsJob: Job? = null
     private var notificationsJob: Job? = null
     private var notificationAccountId: String? = null
+    private var pendingNotificationProjectReference: String? = null
 
     val state: StateFlow<AppState> = controller.state
     val oauthError: StateFlow<String?> = mutableOAuthError.asStateFlow()
@@ -105,6 +110,10 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
                     if (notificationAccountId != currentState.dashboard.account.id) {
                         notificationAccountId = currentState.dashboard.account.id
                         refreshNotifications()
+                    }
+                    pendingNotificationProjectReference?.let { reference ->
+                        pendingNotificationProjectReference = null
+                        openNotificationProject(reference)
                     }
                 } else if (currentState is AppState.Failed && currentState.isAuthenticationFailure) {
                     tokenStore.clear()
@@ -234,7 +243,11 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
         mutableNotifications.value = mutableNotifications.value.copy(isLoading = true, errorMessage = null)
         notificationsJob = viewModelScope.launch {
             suspendCatching { controller.loadNotifications() }.fold(
-                onSuccess = { items -> mutableNotifications.value = NotificationState(items = items) },
+                onSuccess = { items ->
+                    val unreadCount = items.count { !it.read }
+                    notificationBadgeStore.replace(unreadCount)
+                    mutableNotifications.value = NotificationState(items = items, hasLoaded = true)
+                },
                 onFailure = { error ->
                     mutableNotifications.value = mutableNotifications.value.copy(
                         isLoading = false,
@@ -251,12 +264,15 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             suspendCatching { controller.markNotificationsRead(ids) }.fold(
                 onSuccess = {
-                    mutableNotifications.value = mutableNotifications.value.copy(
+                    val updated = mutableNotifications.value.copy(
                         items = mutableNotifications.value.items.map { item ->
                             if (item.id in ids) item.copy(read = true) else item
                         },
+                        hasLoaded = true,
                         errorMessage = null,
                     )
+                    mutableNotifications.value = updated
+                    notificationBadgeStore.replace(updated.unreadCount)
                 },
                 onFailure = { error ->
                     mutableNotifications.value = mutableNotifications.value.copy(
@@ -355,6 +371,10 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
 
     fun openNotificationProject(projectReference: String) {
         if (projectReference.isBlank()) return
+        if (currentDashboard() == null) {
+            pendingNotificationProjectReference = projectReference
+            return
+        }
         val managedProject = currentDashboard()?.projects?.firstOrNull { project ->
             project.id == projectReference || project.slug == projectReference
         }
@@ -803,7 +823,9 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
         mutableMemberSearch.value = MemberSearchState()
         mutableAnalytics.value = AnalyticsState()
         mutableNotifications.value = NotificationState()
+        notificationBadgeStore.clear()
         notificationAccountId = null
+        pendingNotificationProjectReference = null
         oauthCoordinator.clear()
         tokenStore.clear()
         projectLoadJob?.cancel()
@@ -899,10 +921,12 @@ data class AnalyticsState(
 
 data class NotificationState(
     val items: List<ModrinthNotification> = emptyList(),
+    val cachedUnreadCount: Int = 0,
+    val hasLoaded: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
 ) {
-    val unreadCount: Int get() = items.count { !it.read }
+    val unreadCount: Int get() = if (hasLoaded) items.count { !it.read } else cachedUnreadCount
 }
 
 data class InstantNotificationState(

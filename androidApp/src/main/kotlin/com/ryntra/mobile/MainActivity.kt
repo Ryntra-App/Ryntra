@@ -9,6 +9,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.ryntra.mobile.preferences.AppLocale
 import com.ryntra.mobile.ui.RyntraApp
+import com.ryntra.shared.model.ModrinthNotificationLink
 
 /**
  * Must be an [AppCompatActivity] so [androidx.appcompat.app.AppCompatDelegate.setApplicationLocales]
@@ -29,7 +30,7 @@ class MainActivity : AppCompatActivity() {
             RyntraApp(viewModel)
         }
         window.decorView.post(::preferHighestRefreshRate)
-        handleOAuthIntent(intent)
+        handleAppIntent(intent)
     }
 
     override fun onResume() {
@@ -40,13 +41,19 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        handleOAuthIntent(intent)
+        handleAppIntent(intent)
     }
 
-    private fun handleOAuthIntent(intent: Intent?) {
-        val callbackUri = intent?.data ?: return
-        viewModel.handleOAuthCallback(callbackUri)
-        setIntent(Intent(intent).setData(null))
+    private fun handleAppIntent(intent: Intent?) {
+        intent ?: return
+        intent.data?.let(viewModel::handleOAuthCallback)
+        intent.getStringExtra(EXTRA_DEEP_LINK)
+            ?.let(ModrinthNotificationLink::parse)
+            ?.projectIdOrSlug
+            ?.let(viewModel::openNotificationProject)
+        val sanitizedIntent = Intent(intent).setData(null)
+        sanitizedIntent.removeExtra(EXTRA_DEEP_LINK)
+        setIntent(sanitizedIntent)
     }
 
     private fun preferHighestRefreshRate() {
@@ -69,5 +76,9 @@ class MainActivity : AppCompatActivity() {
             preferredDisplayModeId = preferredMode.modeId
             preferredRefreshRate = preferredMode.refreshRate
         }
+    }
+
+    companion object {
+        const val EXTRA_DEEP_LINK = "deep_link"
     }
 }

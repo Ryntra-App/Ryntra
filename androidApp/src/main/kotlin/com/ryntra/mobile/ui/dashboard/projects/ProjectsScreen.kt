@@ -1,7 +1,6 @@
 package com.ryntra.mobile.ui.dashboard.projects
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -51,8 +50,6 @@ fun ProjectsScreen(
             }
             .sortedForDisplay(sortMode, pinnedFavoriteIds)
     }
-    val visibleProjects = filteredProjects.map { it.toProjectRowModel() }
-
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
@@ -83,7 +80,7 @@ fun ProjectsScreen(
                 onSelect = onSortModeChange,
             )
         }
-        if (visibleProjects.isEmpty()) {
+        if (filteredProjects.isEmpty()) {
             item(key = "projects-empty", contentType = "empty") {
                 RyntraEmptyState(
                     title = stringResource(if (projects.isEmpty()) R.string.projects_empty else R.string.projects_no_matches),
@@ -95,16 +92,14 @@ fun ProjectsScreen(
                 )
             }
         } else {
-            items(visibleProjects, key = { it.project.id }, contentType = { "project" }) { model ->
-                Box(modifier = Modifier.animateItem()) {
-                    val projectId = model.project.id
-                    ProjectBannerCard(
-                        model = model,
-                        isFavorite = projectId in favoriteProjectIds,
-                        onFavoriteClick = { onToggleFavoriteProject(projectId) },
-                        onClick = { onProjectClick(model.project) },
-                    )
-                }
+            items(filteredProjects, key = Project::id, contentType = { "project" }) { project ->
+                val projectId = project.id
+                ProjectBannerCard(
+                    model = project.toProjectRowModel(),
+                    isFavorite = projectId in favoriteProjectIds,
+                    onFavoriteClick = { onToggleFavoriteProject(projectId) },
+                    onClick = { onProjectClick(project) },
+                )
             }
         }
     }

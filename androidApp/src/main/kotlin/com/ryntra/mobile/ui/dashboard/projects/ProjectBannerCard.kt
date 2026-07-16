@@ -21,6 +21,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -160,7 +162,7 @@ internal fun ProjectBannerCard(
                     .background(favoriteContainer),
             ) {
                 Icon(
-                    imageVector = Lucide.Star,
+                    imageVector = if (isFavorite) Icons.Filled.Star else Lucide.Star,
                     contentDescription = stringResource(
                         if (isFavorite) R.string.projects_remove_favorite else R.string.projects_add_favorite,
                     ),

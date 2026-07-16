@@ -16,6 +16,7 @@ class ModrinthNotificationLinkTest {
     @Test
     fun parsesRelativeProjectLinks() {
         assertEquals("fabric-api", ModrinthNotificationLink.parse("/project/fabric-api?tab=versions")?.projectIdOrSlug)
+        assertEquals("fabric-api", ModrinthNotificationLink.parse("ryntra://modrinth/project/fabric-api")?.projectIdOrSlug)
     }
 
     @Test

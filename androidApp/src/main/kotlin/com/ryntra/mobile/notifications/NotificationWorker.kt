@@ -5,12 +5,12 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.ryntra.mobile.MainActivity
 import com.ryntra.mobile.R
 import com.ryntra.mobile.preferences.AppLocale
 import com.ryntra.mobile.security.SecureTokenStore
@@ -52,14 +52,17 @@ class NotificationWorker(
         val knownIds = store.knownIds()
         val newUnread = notifications.filter { !it.read && it.id !in knownIds }
         if (canPostNotifications()) newUnread.take(MAX_PER_RUN).forEach(::showNotification)
+        repeat(newUnread.size) { NotificationBadgeStore(applicationContext).increment() }
         store.updateKnownIds((currentIds + knownIds).distinct())
     }
 
     private fun showNotification(notification: ModrinthNotification) {
         val localizedContext = AppLocale.wrap(applicationContext)
         val text = localizedContext.notificationText(notification)
-        val target = notification.link.toModrinthUrl()
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(target))
+        val intent = Intent(applicationContext, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra(MainActivity.EXTRA_DEEP_LINK, notification.link)
+        }
         val pendingIntent = PendingIntent.getActivity(
             applicationContext,
             notification.id.hashCode(),
@@ -82,11 +85,6 @@ class NotificationWorker(
         ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.POST_NOTIFICATIONS) ==
             PackageManager.PERMISSION_GRANTED &&
             NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()
-
-    private fun String.toModrinthUrl(): String = when {
-        startsWith("https://") || startsWith("http://") -> this
-        else -> "https://modrinth.com/${trimStart('/')}"
-    }
 
     private companion object {
         const val MAX_PER_RUN = 5
