@@ -16,10 +16,12 @@ import io.ktor.http.isSuccess
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-class NotificationRelayClient(
+class NotificationRelayClient internal constructor(
     baseUrl: String,
-    private val httpClient: HttpClient = createPlatformHttpClient(),
+    private val httpClient: HttpClient,
 ) {
+    constructor(baseUrl: String) : this(baseUrl, createPlatformHttpClient())
+
     private val endpoint = baseUrl.trim().removeSuffix("/")
 
     init {

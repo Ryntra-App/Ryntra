@@ -2,8 +2,21 @@ import Foundation
 import Security
 
 struct KeychainTokenStore {
-    private let service = "com.ryntra.mobile.session"
-    private let account = "modrinth-access-token"
+    private let storage = KeychainValueStore(
+        service: "com.ryntra.mobile.session",
+        account: "modrinth-access-token"
+    )
+
+    func read() -> String? { storage.read() }
+
+    func write(_ token: String) { storage.write(token) }
+
+    func clear() { storage.clear() }
+}
+
+struct KeychainValueStore {
+    let service: String
+    let account: String
 
     func read() -> String? {
         var query = baseQuery
@@ -18,10 +31,10 @@ struct KeychainTokenStore {
         return String(data: data, encoding: .utf8)
     }
 
-    func write(_ token: String) {
+    func write(_ value: String) {
         clear()
         var query = baseQuery
-        query[kSecValueData as String] = Data(token.utf8)
+        query[kSecValueData as String] = Data(value.utf8)
         query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         SecItemAdd(query as CFDictionary, nil)
     }

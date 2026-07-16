@@ -27,6 +27,11 @@ struct RyntraApp: App {
                 .environment(\.locale, appLanguage.locale ?? Locale.current)
                 .onAppear { RyntraAppLanguage.apply(storedAppLanguage) }
                 .onOpenURL(perform: model.handleOAuthCallback)
+                .task {
+                    appDelegate.onRemoteNotificationToken = { token in
+                        Task { await model.updateInstantNotificationToken(token) }
+                    }
+                }
         }
     }
 }

@@ -1,5 +1,6 @@
 import Foundation
 import RyntraShared
+import UIKit
 
 @MainActor
 final class AppModel: ObservableObject {
@@ -28,10 +29,12 @@ final class AppModel: ObservableObject {
     @Published private(set) var isNotificationsLoading = false
     @Published private(set) var notificationsError: String?
     @Published private(set) var locallyReadNotificationIDs: Set<String> = []
+    @Published private(set) var instantNotifications = InstantNotificationStatus()
 
     private let controller = AppController()
     private let keychain = KeychainTokenStore()
     private let oauthCoordinator = OAuthCoordinator()
+    private let instantNotificationCoordinator = InstantNotificationCoordinator()
     private var observation: Observation?
     private var pendingToken: String?
     private var activeAnalyticsKey: String?
@@ -55,6 +58,7 @@ final class AppModel: ObservableObject {
     }
 
     init() {
+        instantNotifications.isConnected = instantNotificationCoordinator.isConnected
         observation = controller.observe { [weak self] sharedState in
             DispatchQueue.main.async {
                 self?.receive(sharedState)
@@ -78,6 +82,17 @@ final class AppModel: ObservableObject {
     }
 
     func handleOAuthCallback(_ url: URL) {
+        switch instantNotificationCoordinator.consumeCallback(url) {
+        case .success:
+            instantNotifications = InstantNotificationStatus(isConnected: true)
+            return
+        case .failure(let message):
+            instantNotifications.isLoading = false
+            instantNotifications.errorMessage = message
+            return
+        case .ignored:
+            break
+        }
         switch oauthCoordinator.consumeCallback(url) {
         case .ignored:
             break
@@ -90,6 +105,37 @@ final class AppModel: ObservableObject {
 
     func refresh() {
         controller.refresh()
+    }
+
+    func startInstantNotifications() async {
+        guard !instantNotifications.isLoading else { return }
+        instantNotifications.isLoading = true
+        instantNotifications.errorMessage = nil
+        do {
+            let url = try await instantNotificationCoordinator.createAuthorizationURL()
+            instantNotifications.isLoading = false
+            await UIApplication.shared.open(url)
+        } catch {
+            instantNotifications.isLoading = false
+            instantNotifications.errorMessage = error.localizedDescription
+        }
+    }
+
+    func disconnectInstantNotifications() async {
+        guard !instantNotifications.isLoading else { return }
+        instantNotifications.isLoading = true
+        instantNotifications.errorMessage = nil
+        do {
+            try await instantNotificationCoordinator.disconnect()
+            instantNotifications = InstantNotificationStatus()
+        } catch {
+            instantNotifications.isLoading = false
+            instantNotifications.errorMessage = error.localizedDescription
+        }
+    }
+
+    func updateInstantNotificationToken(_ token: String) async {
+        await instantNotificationCoordinator.updatePushToken(token)
     }
 
     func refreshNotifications() async {
@@ -464,6 +510,7 @@ final class AppModel: ObservableObject {
 
     deinit {
         observation?.cancel()
+        instantNotificationCoordinator.close()
         controller.close()
     }
 }

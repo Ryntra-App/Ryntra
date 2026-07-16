@@ -233,6 +233,14 @@
 "Retry" = "Повторить";
 "Local background checks" = "Локальная фоновая проверка";
 "Private on-device checks scheduled by iOS. Delivery time is not guaranteed." = "Приватная проверка на устройстве по расписанию iOS. Точное время доставки не гарантируется.";
+"Enable instant notifications" = "Включить мгновенные уведомления";
+"Disconnect instant notifications" = "Отключить мгновенные уведомления";
+"Instant delivery uses a separate read-only Modrinth authorization and can be disconnected at any time." = "Для мгновенной доставки используется отдельная авторизация Modrinth только для чтения. Её можно отключить в любой момент.";
+"Notification permission was not granted." = "Разрешение на уведомления не выдано.";
+"APNs registration timed out. Try again." = "Регистрация APNs заняла слишком много времени. Попробуйте снова.";
+"Instant notification authorization expired. Try again." = "Авторизация мгновенных уведомлений истекла. Попробуйте снова.";
+"Instant notification authorization was cancelled." = "Авторизация мгновенных уведомлений отменена.";
+"The notification service returned an invalid response." = "Сервис уведомлений вернул некорректный ответ.";
 "DonationAlerts" = "DonationAlerts";
 "Support the author" = "Поддержать автора";
 "%@ address copied." = "Адрес %@ скопирован.";

@@ -119,6 +119,8 @@ final class LocalNotificationManager {
 }
 
 final class RyntraAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    var onRemoteNotificationToken: ((String) -> Void)?
+
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
@@ -127,6 +129,18 @@ final class RyntraAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificati
         LocalNotificationManager.shared.registerBackgroundTask()
         LocalNotificationManager.shared.restoreScheduleIfNeeded()
         return true
+    }
+
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        Task { @MainActor in
+            RemoteNotificationRegistration.shared.didRegister(deviceToken: deviceToken)
+            let token = deviceToken.map { String(format: "%02x", $0) }.joined()
+            onRemoteNotificationToken?(token)
+        }
+    }
+
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        Task { @MainActor in RemoteNotificationRegistration.shared.didFail(error: error) }
     }
 
     func userNotificationCenter(
@@ -140,7 +154,8 @@ final class RyntraAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificati
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
     ) async {
-        guard let link = response.notification.request.content.userInfo["modrinthLink"] as? String else { return }
+        let userInfo = response.notification.request.content.userInfo
+        guard let link = (userInfo["modrinthLink"] ?? userInfo["modrinth_link"]) as? String else { return }
         let rawURL = link.hasPrefix("http") ? link : "https://modrinth.com/\(link.trimmingCharacters(in: CharacterSet(charactersIn: "/")))"
         guard let url = URL(string: rawURL) else { return }
         await UIApplication.shared.open(url)

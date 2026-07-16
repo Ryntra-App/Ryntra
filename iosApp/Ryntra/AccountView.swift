@@ -225,13 +225,47 @@ struct AccountView: View {
                 }
                 .disabled(isChangingNotifications)
                 .tint(Color.ryntraGreen)
+                if model.instantNotifications.isConnected {
+                    Button(role: .destructive) {
+                        Task { await model.disconnectInstantNotifications() }
+                    } label: {
+                        Label(
+                            NSLocalizedString("Disconnect instant notifications", comment: "Notification setting"),
+                            systemImage: "bell.slash"
+                        )
+                    }
+                    .disabled(model.instantNotifications.isLoading)
+                } else {
+                    Button {
+                        Task { await model.startInstantNotifications() }
+                    } label: {
+                        if model.instantNotifications.isLoading {
+                            ProgressView()
+                        } else {
+                            Label(
+                                NSLocalizedString("Enable instant notifications", comment: "Notification setting"),
+                                systemImage: "bell.badge"
+                            )
+                        }
+                    }
+                    .disabled(model.instantNotifications.isLoading)
+                }
             } header: {
                 RyntraSectionLabel(text: NSLocalizedString("Notifications", comment: "Settings"))
             } footer: {
-                Text(NSLocalizedString(
-                    "Private on-device checks scheduled by iOS. Delivery time is not guaranteed.",
-                    comment: "Notification setting hint"
-                ))
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(NSLocalizedString(
+                        "Private on-device checks scheduled by iOS. Delivery time is not guaranteed.",
+                        comment: "Notification setting hint"
+                    ))
+                    Text(NSLocalizedString(
+                        "Instant delivery uses a separate read-only Modrinth authorization and can be disconnected at any time.",
+                        comment: "Notification setting hint"
+                    ))
+                    if let instantError = model.instantNotifications.errorMessage {
+                        Text(instantError).foregroundStyle(.red)
+                    }
+                }
             }
             .themedListRowBackground(isPlatformNative: isPlatformNative)
 
