@@ -43,6 +43,7 @@ import com.ryntra.mobile.R
 import com.ryntra.mobile.MemberSearchState
 import com.ryntra.mobile.AnalyticsState
 import com.ryntra.mobile.ProfileUpdateState
+import com.ryntra.mobile.NotificationState
 import com.ryntra.mobile.ProjectActionState
 import com.ryntra.mobile.ProjectDetailState
 import com.ryntra.mobile.preferences.AppLanguage
@@ -55,6 +56,7 @@ import com.ryntra.mobile.ui.components.RyntraTabBar
 import com.ryntra.mobile.ui.components.RyntraTopBar
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.mobile.ui.dashboard.account.AccountScreen
+import com.ryntra.mobile.ui.dashboard.notifications.NotificationsScreen
 import com.ryntra.mobile.ui.dashboard.analytics.AnalyticsScreen
 import com.ryntra.mobile.ui.dashboard.organizations.OrganizationDetailScreen
 import com.ryntra.mobile.ui.dashboard.organizations.OrganizationsScreen
@@ -88,6 +90,7 @@ private enum class DashboardLayer {
     Profile,
     Project,
     Organization,
+    Notifications,
 }
 
 @Composable
@@ -111,6 +114,7 @@ fun DashboardScreen(
     projectAction: ProjectActionState = ProjectActionState(),
     memberSearch: MemberSearchState = MemberSearchState(),
     analytics: AnalyticsState = AnalyticsState(),
+    notifications: NotificationState = NotificationState(),
     preferences: RyntraPreferences = RyntraPreferences(),
     onLoadAnalytics: (Int) -> Unit = {},
     onChangeProjectIcon: (String, ProjectFileUpload) -> Unit = { _, _ -> },
@@ -137,6 +141,9 @@ fun DashboardScreen(
     onGlassQualityChange: (GlassQuality) -> Unit = {},
     onSortModeChange: (ProjectSortMode) -> Unit = {},
     onToggleFavoriteProject: (String) -> Unit = {},
+    onLocalNotificationsChange: (Boolean) -> Unit = {},
+    onRefreshNotifications: () -> Unit = {},
+    onMarkNotificationsRead: (List<String>) -> Unit = {},
     onResetAppearance: () -> Unit = {},
     onExportPreferences: (String) -> String = { "" },
     onImportPreferences: (String) -> Result<Unit> = { Result.failure(IllegalArgumentException("Import unavailable.")) },
@@ -144,6 +151,7 @@ fun DashboardScreen(
 ) {
     var destination by rememberSaveable { mutableStateOf(DashboardDestination.Overview) }
     var isProfileVisible by rememberSaveable { mutableStateOf(false) }
+    var isNotificationsVisible by rememberSaveable { mutableStateOf(false) }
     var visibleError by remember { mutableStateOf<String?>(null) }
     var retainedProjectDetail by remember { mutableStateOf<ProjectDetailState?>(null) }
     var retainedOrganizationDetail by remember { mutableStateOf<OrganizationDetailState?>(null) }
@@ -153,11 +161,12 @@ fun DashboardScreen(
     val motion = RyntraDesign.motion
     val isPlatformNative = RyntraDesign.isPlatformNative
     val detailTitle = projectDetail?.project?.title ?: organizationDetail?.organization?.name
-    val isDetailVisible = isProfileVisible || projectDetail != null || organizationDetail != null
+    val isDetailVisible = isProfileVisible || isNotificationsVisible || projectDetail != null || organizationDetail != null
     val contentLayer = when {
         projectDetail != null -> DashboardLayer.Project
         organizationDetail != null -> DashboardLayer.Organization
         isProfileVisible -> DashboardLayer.Profile
+        isNotificationsVisible -> DashboardLayer.Notifications
         else -> DashboardLayer.Tabs
     }
 
@@ -181,11 +190,12 @@ fun DashboardScreen(
     val tabs = remember(destinationLabels) {
         destinations.mapIndexed { index, item -> RyntraTab(destinationLabels[index], item.icon) }
     }
-    BackHandler(enabled = isProfileVisible || projectDetail != null || organizationDetail != null) {
+    BackHandler(enabled = isProfileVisible || isNotificationsVisible || projectDetail != null || organizationDetail != null) {
         when {
             projectDetail != null -> onCloseProject()
             organizationDetail != null -> onCloseOrganization()
             isProfileVisible -> isProfileVisible = false
+            isNotificationsVisible -> isNotificationsVisible = false
         }
     }
 
@@ -300,10 +310,16 @@ fun DashboardScreen(
                         onShowFavoriteProjectsChange = onShowFavoriteProjectsChange,
                         onReduceMotionChange = onReduceMotionChange,
                         onGlassQualityChange = onGlassQualityChange,
+                        onLocalNotificationsChange = onLocalNotificationsChange,
                         onResetAppearance = onResetAppearance,
                         onExportPreferences = { onExportPreferences(dashboard.account.username) },
                         onImportPreferences = onImportPreferences,
                         onSignOut = onSignOut,
+                    )
+                    DashboardLayer.Notifications -> NotificationsScreen(
+                        state = notifications,
+                        onRefresh = onRefreshNotifications,
+                        onMarkRead = onMarkNotificationsRead,
                     )
                     DashboardLayer.Tabs -> AnimatedContent(
                         targetState = destination,
@@ -349,10 +365,10 @@ fun DashboardScreen(
                 }
             }
             RyntraTopBar(
-                title = detailTitle ?: if (isProfileVisible) {
-                    stringResource(R.string.nav_profile)
-                } else {
-                    destinationLabels[destination.ordinal]
+                title = detailTitle ?: when {
+                    isProfileVisible -> stringResource(R.string.nav_profile)
+                    isNotificationsVisible -> stringResource(R.string.notifications_title)
+                    else -> destinationLabels[destination.ordinal]
                 },
                 avatarUrl = dashboard.account.avatarUrl,
                 avatarDescription = stringResource(R.string.nav_open_account, dashboard.account.username),
@@ -364,8 +380,19 @@ fun DashboardScreen(
                     onCloseProject()
                     onCloseOrganization()
                     isProfileVisible = false
+                    isNotificationsVisible = false
                 },
                 showAvatar = !isDetailVisible,
+                onNotificationsClick = if (!isDetailVisible) {
+                    {
+                        isNotificationsVisible = true
+                        onRefreshNotifications()
+                    }
+                } else {
+                    null
+                },
+                unreadNotificationCount = notifications.unreadCount,
+                notificationsDescription = stringResource(R.string.notifications_title),
                 modifier = Modifier.align(Alignment.TopCenter),
             )
             if (!isDetailVisible) {

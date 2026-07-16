@@ -2,6 +2,8 @@ package com.ryntra.mobile.ui.dashboard.account
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import android.Manifest
+import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -64,6 +66,7 @@ fun AccountScreen(
     onShowFavoriteProjectsChange: (Boolean) -> Unit,
     onReduceMotionChange: (Boolean) -> Unit,
     onGlassQualityChange: (GlassQuality) -> Unit,
+    onLocalNotificationsChange: (Boolean) -> Unit,
     onResetAppearance: () -> Unit,
     onExportPreferences: () -> String,
     onImportPreferences: (String) -> Result<Unit>,
@@ -83,6 +86,7 @@ fun AccountScreen(
     val accountIdCopied = stringResource(R.string.settings_account_id_copied)
     val appearanceReset = stringResource(R.string.settings_appearance_reset)
     val imageCacheCleared = stringResource(R.string.settings_image_cache_cleared)
+    val notificationPermissionDenied = stringResource(R.string.notifications_permission_denied)
     val authorUrl = stringResource(R.string.settings_author_url)
 
     fun showNotice(message: String) {
@@ -120,6 +124,12 @@ fun AccountScreen(
             }
             showNotice(if (result.isSuccess) settingsImported else settingsImportFailed)
         }
+    }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+    ) { isGranted ->
+        onLocalNotificationsChange(isGranted)
+        if (!isGranted) showNotice(notificationPermissionDenied)
     }
 
     LaunchedEffect(notice) {
@@ -197,6 +207,19 @@ fun AccountScreen(
                 onResetAppearance = {
                     onResetAppearance()
                     showNotice(appearanceReset)
+                },
+                modifier = Modifier.padding(top = 26.dp),
+            )
+        }
+        item(key = "profile-notifications", contentType = "settings-group") {
+            NotificationSettingsSection(
+                isEnabled = preferences.localNotificationsEnabled,
+                onEnabledChange = { isEnabled ->
+                    if (isEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        onLocalNotificationsChange(isEnabled)
+                    }
                 },
                 modifier = Modifier.padding(top = 26.dp),
             )

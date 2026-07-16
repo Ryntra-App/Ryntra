@@ -374,4 +374,18 @@
     <string name="project_edit_image_unreadable">Не удалось прочитать изображение.</string>
     <string name="project_edit_icon_too_large">Иконка проекта должна быть не больше 256 КиБ.</string>
     <string name="project_markdown_preview_empty">Нечего показывать</string>
+    <string name="notifications_title">Уведомления</string>
+    <string name="notifications_unread_count">Непрочитанных: %1$d</string>
+    <string name="notifications_source_hint">Из вашего аккаунта Modrinth</string>
+    <string name="notifications_refresh">Обновить уведомления</string>
+    <string name="notifications_mark_all_read">Отметить всё прочитанным</string>
+    <string name="notifications_empty">Новых уведомлений нет</string>
+    <string name="notifications_load_failed">Не удалось загрузить уведомления</string>
+    <string name="notifications_settings_title">Уведомления</string>
+    <string name="notifications_local_title">Локальная фоновая проверка</string>
+    <string name="notifications_local_hint">Приватная проверка на устройстве примерно каждые 15 минут; Android может задерживать её ради батареи.</string>
+    <string name="notifications_permission_denied">Разрешение на уведомления не выдано.</string>
+    <string name="notifications_channel_name">Обновления Modrinth</string>
+    <string name="notifications_channel_description">Статусы проектов, приглашения, релизы и сообщения модераторов</string>
+    <string name="common_retry">Повторить</string>
 </resources>

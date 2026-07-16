@@ -8,6 +8,7 @@ import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.svg.SvgDecoder
 import com.ryntra.mobile.preferences.AppLocale
 import com.ryntra.mobile.preferences.RyntraPreferencesStore
+import com.ryntra.mobile.notifications.NotificationScheduler
 import okhttp3.OkHttpClient
 
 class RyntraApplication : Application(), SingletonImageLoader.Factory {
@@ -17,8 +18,11 @@ class RyntraApplication : Application(), SingletonImageLoader.Factory {
 
     override fun onCreate() {
         super.onCreate()
-        val language = RyntraPreferencesStore(this).preferences.value.appLanguage
-        AppLocale.apply(language)
+        val preferences = RyntraPreferencesStore(this).preferences.value
+        AppLocale.apply(preferences.appLanguage)
+        if (preferences.localNotificationsEnabled) {
+            NotificationScheduler.enable(this)
+        }
     }
 
     /**

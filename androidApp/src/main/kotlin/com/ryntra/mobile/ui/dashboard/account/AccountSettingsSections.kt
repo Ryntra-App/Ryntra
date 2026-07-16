@@ -23,6 +23,7 @@ import com.composables.icons.lucide.Sparkles
 import com.composables.icons.lucide.Star
 import com.composables.icons.lucide.Upload
 import com.composables.icons.lucide.Wallet
+import com.composables.icons.lucide.Bell
 import com.ryntra.mobile.preferences.AppLanguage
 import com.ryntra.mobile.preferences.GlassQuality
 import com.ryntra.mobile.preferences.AppearanceMode
@@ -181,6 +182,28 @@ internal fun LocalDataSettingsSection(
             title = stringResource(R.string.settings_clear_images),
             subtitle = stringResource(R.string.settings_clear_images_hint),
             onClick = onClearImageCache,
+        )
+    }
+}
+
+@Composable
+internal fun NotificationSettingsSection(
+    isEnabled: Boolean,
+    onEnabledChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    SettingsGroup(title = stringResource(R.string.notifications_settings_title), modifier = modifier) {
+        SettingsRow(
+            icon = Lucide.Bell,
+            title = stringResource(R.string.notifications_local_title),
+            subtitle = stringResource(R.string.notifications_local_hint),
+            trailing = {
+                RyntraSwitch(
+                    checked = isEnabled,
+                    onCheckedChange = onEnabledChange,
+                    contentDescription = stringResource(R.string.notifications_local_title),
+                )
+            },
         )
     }
 }

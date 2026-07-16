@@ -20,6 +20,7 @@ data class RyntraPreferences(
     val glassQuality: GlassQuality = GlassQuality.Balanced,
     val projectSortMode: ProjectSortMode = ProjectSortMode.Popularity,
     val favoriteProjectIds: Set<String> = emptySet(),
+    val localNotificationsEnabled: Boolean = false,
 )
 
 enum class ThemeStyle(val label: String) {
@@ -67,6 +68,8 @@ class RyntraPreferencesStore(context: Context) {
 
     fun setProjectSortMode(mode: ProjectSortMode) = update { copy(projectSortMode = mode) }
 
+    fun setLocalNotificationsEnabled(isEnabled: Boolean) = update { copy(localNotificationsEnabled = isEnabled) }
+
     fun toggleFavoriteProject(projectId: String) {
         if (projectId.isBlank()) {
             Log.w(TAG, "toggleFavoriteProject ignored: blank id")
@@ -106,6 +109,7 @@ class RyntraPreferencesStore(context: Context) {
             .put(KEY_GLASS_QUALITY, current.glassQuality.name.lowercase())
             .put("projectSortMode", current.projectSortMode.name.lowercase())
             .put("favoriteProjectIds", JSONArray(current.favoriteProjectIds.sorted()))
+            .put(KEY_LOCAL_NOTIFICATIONS, current.localNotificationsEnabled)
 
         return JSONObject()
             .put("app", "Ryntra")
@@ -134,6 +138,8 @@ class RyntraPreferencesStore(context: Context) {
             glassQuality = imported.optionalEnum<GlassQuality>(KEY_GLASS_QUALITY) ?: current.glassQuality,
             projectSortMode = imported.optionalEnum<ProjectSortMode>("projectSortMode") ?: current.projectSortMode,
             favoriteProjectIds = favorites,
+            localNotificationsEnabled = imported.optionalBoolean(KEY_LOCAL_NOTIFICATIONS)
+                ?: current.localNotificationsEnabled,
         )
         persist(next)
     }
@@ -154,6 +160,7 @@ class RyntraPreferencesStore(context: Context) {
             .putString(KEY_GLASS_QUALITY, value.glassQuality.name)
             .putString(KEY_PROJECT_SORT_MODE, value.projectSortMode.name)
             .putString(KEY_FAVORITE_PROJECT_IDS_JSON, favoritesJson)
+            .putBoolean(KEY_LOCAL_NOTIFICATIONS, value.localNotificationsEnabled)
             .remove(KEY_FAVORITE_PROJECT_IDS)
             .commit()
         if (!written) {
@@ -171,6 +178,7 @@ class RyntraPreferencesStore(context: Context) {
         glassQuality = storage.enumValue(KEY_GLASS_QUALITY, GlassQuality.Balanced),
         projectSortMode = storage.enumValue(KEY_PROJECT_SORT_MODE, ProjectSortMode.Popularity),
         favoriteProjectIds = readFavoriteProjectIds(),
+        localNotificationsEnabled = storage.getBoolean(KEY_LOCAL_NOTIFICATIONS, false),
     )
 
     private fun readFavoriteProjectIds(): Set<String> {
@@ -216,5 +224,6 @@ class RyntraPreferencesStore(context: Context) {
         const val KEY_PROJECT_SORT_MODE = "projectSortMode"
         const val KEY_FAVORITE_PROJECT_IDS = "favoriteProjectIds"
         const val KEY_FAVORITE_PROJECT_IDS_JSON = "favoriteProjectIdsJson"
+        const val KEY_LOCAL_NOTIFICATIONS = "localNotificationsEnabled"
     }
 }

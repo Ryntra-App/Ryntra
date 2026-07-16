@@ -52,6 +52,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.composables.icons.lucide.Bell
+import com.composables.icons.lucide.Lucide
 import com.ryntra.mobile.preferences.GlassQuality
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import dev.chrisbanes.haze.ExperimentalHazeApi
@@ -79,6 +81,9 @@ fun RyntraTopBar(
     navigationDescription: String? = null,
     onNavigationClick: () -> Unit = {},
     showAvatar: Boolean = true,
+    onNotificationsClick: (() -> Unit)? = null,
+    unreadNotificationCount: Int = 0,
+    notificationsDescription: String = "",
 ) {
     if (RyntraDesign.isPlatformNative) {
         PlatformTopBar(
@@ -91,6 +96,9 @@ fun RyntraTopBar(
             navigationDescription = navigationDescription,
             onNavigationClick = onNavigationClick,
             showAvatar = showAvatar,
+            onNotificationsClick = onNotificationsClick,
+            unreadNotificationCount = unreadNotificationCount,
+            notificationsDescription = notificationsDescription,
             modifier = modifier,
         )
         return
@@ -140,6 +148,14 @@ fun RyntraTopBar(
                 modifier = Modifier.padding(end = 12.dp).size(19.dp),
             )
         }
+        if (onNotificationsClick != null) {
+            NotificationBell(
+                unreadCount = unreadNotificationCount,
+                onClick = onNotificationsClick,
+                tint = colors.labelSecondary,
+                contentDescription = notificationsDescription,
+            )
+        }
         if (showAvatar) {
             AsyncImage(
                 model = avatarUrl,
@@ -169,6 +185,9 @@ private fun PlatformTopBar(
     navigationDescription: String?,
     onNavigationClick: () -> Unit,
     showAvatar: Boolean,
+    onNotificationsClick: (() -> Unit)?,
+    unreadNotificationCount: Int,
+    notificationsDescription: String,
     modifier: Modifier,
 ) {
     TopAppBar(
@@ -197,6 +216,14 @@ private fun PlatformTopBar(
                         .size(18.dp),
                 )
             }
+            if (onNotificationsClick != null) {
+                NotificationBell(
+                    unreadCount = unreadNotificationCount,
+                    onClick = onNotificationsClick,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    contentDescription = notificationsDescription,
+                )
+            }
             if (showAvatar) {
                 IconButton(onClick = onAvatarClick) {
                     AsyncImage(
@@ -217,6 +244,36 @@ private fun PlatformTopBar(
         ),
         modifier = modifier,
     )
+}
+
+@Composable
+private fun NotificationBell(
+    unreadCount: Int,
+    onClick: () -> Unit,
+    tint: Color,
+    contentDescription: String,
+) {
+    Box(modifier = Modifier.size(44.dp), contentAlignment = Alignment.Center) {
+        IconButton(onClick = onClick) {
+            Icon(Lucide.Bell, contentDescription = contentDescription, tint = tint, modifier = Modifier.size(22.dp))
+        }
+        if (unreadCount > 0) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(if (unreadCount > 9) 18.dp else 15.dp)
+                    .background(RyntraDesign.colors.accent, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = if (unreadCount > 9) "9+" else unreadCount.toString(),
+                    color = Color.Black,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+    }
 }
 
 @Composable

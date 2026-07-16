@@ -26,6 +26,7 @@ fun RyntraApp(viewModel: RyntraViewModel) {
     val projectAction by viewModel.projectAction.collectAsStateWithLifecycle()
     val memberSearch by viewModel.memberSearch.collectAsStateWithLifecycle()
     val analytics by viewModel.analytics.collectAsStateWithLifecycle()
+    val notifications by viewModel.notifications.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val startOAuth = {
         CustomTabsIntent.Builder()
@@ -64,6 +65,7 @@ fun RyntraApp(viewModel: RyntraViewModel) {
                         projectAction = projectAction,
                         memberSearch = memberSearch,
                         analytics = analytics,
+                        notifications = notifications,
                         preferences = preferences,
                         onProjectClick = viewModel::openProject,
                         onCloseProject = viewModel::closeProject,
@@ -109,6 +111,9 @@ fun RyntraApp(viewModel: RyntraViewModel) {
                         onGlassQualityChange = viewModel::setGlassQuality,
                         onSortModeChange = viewModel::setProjectSortMode,
                         onToggleFavoriteProject = viewModel::toggleFavoriteProject,
+                        onLocalNotificationsChange = viewModel::setLocalNotificationsEnabled,
+                        onRefreshNotifications = viewModel::refreshNotifications,
+                        onMarkNotificationsRead = viewModel::markNotificationsRead,
                         onResetAppearance = viewModel::resetAppearance,
                         onExportPreferences = viewModel::exportPreferences,
                         onImportPreferences = viewModel::importPreferences,

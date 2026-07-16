@@ -13,10 +13,12 @@ import com.ryntra.mobile.preferences.AppearanceMode
 import com.ryntra.mobile.preferences.RyntraPreferences
 import com.ryntra.mobile.preferences.RyntraPreferencesStore
 import com.ryntra.mobile.preferences.ThemeStyle
+import com.ryntra.mobile.notifications.NotificationScheduler
 import com.ryntra.mobile.security.SecureTokenStore
 import com.ryntra.shared.app.AppController
 import com.ryntra.shared.app.AppState
 import com.ryntra.shared.model.Organization
+import com.ryntra.shared.model.ModrinthNotification
 import com.ryntra.shared.model.Account
 import com.ryntra.shared.model.AnalyticsQuery
 import com.ryntra.shared.model.AnalyticsReport
@@ -55,12 +57,15 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     private val mutableProjectAction = MutableStateFlow(ProjectActionState())
     private val mutableMemberSearch = MutableStateFlow(MemberSearchState())
     private val mutableAnalytics = MutableStateFlow(AnalyticsState())
+    private val mutableNotifications = MutableStateFlow(NotificationState())
     private var pendingToken: String? = null
     private var projectLoadJob: Job? = null
     private var organizationLoadJob: Job? = null
     private var projectActionJob: Job? = null
     private var memberSearchJob: Job? = null
     private var analyticsJob: Job? = null
+    private var notificationsJob: Job? = null
+    private var notificationAccountId: String? = null
 
     val state: StateFlow<AppState> = controller.state
     val oauthError: StateFlow<String?> = mutableOAuthError.asStateFlow()
@@ -71,6 +76,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     val projectAction: StateFlow<ProjectActionState> = mutableProjectAction.asStateFlow()
     val memberSearch: StateFlow<MemberSearchState> = mutableMemberSearch.asStateFlow()
     val analytics: StateFlow<AnalyticsState> = mutableAnalytics.asStateFlow()
+    val notifications: StateFlow<NotificationState> = mutableNotifications.asStateFlow()
     val preferences: StateFlow<RyntraPreferences> = preferencesStore.preferences
 
     init {
@@ -83,6 +89,10 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
                 if (currentState is AppState.Ready) {
                     pendingToken?.let(tokenStore::write)
                     pendingToken = null
+                    if (notificationAccountId != currentState.dashboard.account.id) {
+                        notificationAccountId = currentState.dashboard.account.id
+                        refreshNotifications()
+                    }
                 } else if (currentState is AppState.Failed && currentState.isAuthenticationFailure) {
                     tokenStore.clear()
                     pendingToken = null
@@ -129,7 +139,52 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
 
     fun setProjectSortMode(mode: ProjectSortMode) = preferencesStore.setProjectSortMode(mode)
 
+    fun setLocalNotificationsEnabled(isEnabled: Boolean) {
+        preferencesStore.setLocalNotificationsEnabled(isEnabled)
+        if (isEnabled) NotificationScheduler.enable(getApplication())
+        else NotificationScheduler.disable(getApplication())
+    }
+
     fun toggleFavoriteProject(projectId: String) = preferencesStore.toggleFavoriteProject(projectId)
+
+    fun refreshNotifications() {
+        if (state.value !is AppState.Ready) return
+        notificationsJob?.cancel()
+        mutableNotifications.value = mutableNotifications.value.copy(isLoading = true, errorMessage = null)
+        notificationsJob = viewModelScope.launch {
+            suspendCatching { controller.loadNotifications() }.fold(
+                onSuccess = { items -> mutableNotifications.value = NotificationState(items = items) },
+                onFailure = { error ->
+                    mutableNotifications.value = mutableNotifications.value.copy(
+                        isLoading = false,
+                        errorMessage = error.message ?: "Unable to load notifications.",
+                    )
+                },
+            )
+        }
+    }
+
+    fun markNotificationsRead(notificationIds: List<String>) {
+        val ids = notificationIds.filter(String::isNotBlank).distinct()
+        if (ids.isEmpty()) return
+        viewModelScope.launch {
+            suspendCatching { controller.markNotificationsRead(ids) }.fold(
+                onSuccess = {
+                    mutableNotifications.value = mutableNotifications.value.copy(
+                        items = mutableNotifications.value.items.map { item ->
+                            if (item.id in ids) item.copy(read = true) else item
+                        },
+                        errorMessage = null,
+                    )
+                },
+                onFailure = { error ->
+                    mutableNotifications.value = mutableNotifications.value.copy(
+                        errorMessage = error.message ?: "Unable to update notifications.",
+                    )
+                },
+            )
+        }
+    }
 
     fun resetAppearance() = preferencesStore.resetAppearance()
 
@@ -139,6 +194,11 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     fun importPreferences(rawJson: String): Result<Unit> =
         preferencesStore.importJson(rawJson).onSuccess {
             AppLocale.apply(preferencesStore.preferences.value.appLanguage)
+            if (preferencesStore.preferences.value.localNotificationsEnabled) {
+                NotificationScheduler.enable(getApplication())
+            } else {
+                NotificationScheduler.disable(getApplication())
+            }
         }
 
     fun loadAnalytics(rangeDays: Int, force: Boolean = false) {
@@ -616,12 +676,15 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
         mutableProjectAction.value = ProjectActionState()
         mutableMemberSearch.value = MemberSearchState()
         mutableAnalytics.value = AnalyticsState()
+        mutableNotifications.value = NotificationState()
+        notificationAccountId = null
         oauthCoordinator.clear()
         tokenStore.clear()
         projectLoadJob?.cancel()
         projectActionJob?.cancel()
         memberSearchJob?.cancel()
         analyticsJob?.cancel()
+        notificationsJob?.cancel()
         organizationLoadJob?.cancel()
         projectLoadJob = null
         organizationLoadJob = null
@@ -705,3 +768,11 @@ data class AnalyticsState(
     val errorMessage: String? = null,
     val walletErrorMessage: String? = null,
 )
+
+data class NotificationState(
+    val items: List<ModrinthNotification> = emptyList(),
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+) {
+    val unreadCount: Int get() = items.count { !it.read }
+}

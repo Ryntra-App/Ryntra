@@ -370,4 +370,18 @@
     <string name="project_edit_image_unreadable">Unable to read that image.</string>
     <string name="project_edit_icon_too_large">Project icons must be 256 KiB or smaller.</string>
     <string name="project_markdown_preview_empty">Nothing to preview</string>
+    <string name="notifications_title">Notifications</string>
+    <string name="notifications_unread_count">%1$d unread</string>
+    <string name="notifications_source_hint">From your Modrinth account</string>
+    <string name="notifications_refresh">Refresh notifications</string>
+    <string name="notifications_mark_all_read">Mark all as read</string>
+    <string name="notifications_empty">You are all caught up</string>
+    <string name="notifications_load_failed">Could not load notifications</string>
+    <string name="notifications_settings_title">Notifications</string>
+    <string name="notifications_local_title">Local background checks</string>
+    <string name="notifications_local_hint">Private on-device checks about every 15 minutes; Android may delay them to save battery.</string>
+    <string name="notifications_permission_denied">Notification permission was not granted.</string>
+    <string name="notifications_channel_name">Modrinth updates</string>
+    <string name="notifications_channel_description">Project status, team invites, releases, and moderator messages</string>
+    <string name="common_retry">Retry</string>
 </resources>
