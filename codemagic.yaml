@@ -27,7 +27,7 @@ workflows:
             -scheme Ryntra \
             -configuration Debug \
             -destination "generic/platform=iOS Simulator" \
-            RYNTRA_NOTIFICATION_BACKEND_URL="${RYNTRA_NOTIFICATION_BACKEND_URL:-https://rinthy-auth.vercel.app}" \
+            RYNTRA_BACKEND_URL="${RYNTRA_BACKEND_URL:-https://authrinthy.sawiq.org}" \
             CODE_SIGNING_ALLOWED=NO \
             build
     artifacts:
@@ -49,7 +49,7 @@ workflows:
             -configuration Release \
             -destination "generic/platform=iOS" \
             -derivedDataPath "$CM_BUILD_DIR/build/ios/DerivedData" \
-            RYNTRA_NOTIFICATION_BACKEND_URL="${RYNTRA_NOTIFICATION_BACKEND_URL:-https://rinthy-auth.vercel.app}" \
+            RYNTRA_BACKEND_URL="${RYNTRA_BACKEND_URL:-https://authrinthy.sawiq.org}" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             build

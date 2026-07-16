@@ -129,8 +129,8 @@ final class InstantNotificationCoordinator {
     }
 
     private static var backendURL: URL {
-        let configured = Bundle.main.object(forInfoDictionaryKey: "RyntraNotificationBackendURL") as? String
-        return URL(string: configured ?? "") ?? URL(string: "https://rinthy-auth.vercel.app")!
+        let configured = Bundle.main.object(forInfoDictionaryKey: "RyntraBackendURL") as? String
+        return URL(string: configured ?? "") ?? URL(string: "https://authrinthy.sawiq.org")!
     }
 
     enum CoordinatorError: LocalizedError {

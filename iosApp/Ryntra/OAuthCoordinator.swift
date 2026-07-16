@@ -15,8 +15,10 @@ final class OAuthCoordinator {
         let state = randomState()
         defaults.set(state, forKey: stateKey)
 
-        // The auth deployment still uses its original hostname and callback scheme.
-        var components = URLComponents(string: "https://rinthy-auth.vercel.app/api/modrinth/start")
+        var components = URLComponents(
+            url: Self.backendURL.appendingPathComponent("api/modrinth/start"),
+            resolvingAgainstBaseURL: false
+        )
         components?.queryItems = [URLQueryItem(name: "state", value: state)]
         return components?.url
     }
@@ -72,6 +74,11 @@ final class OAuthCoordinator {
     }
 
     private static let callbackSchemes: Set<String> = ["ryntra", "rinthy"]
+
+    private static var backendURL: URL {
+        let configured = Bundle.main.object(forInfoDictionaryKey: "RyntraBackendURL") as? String
+        return URL(string: configured ?? "") ?? URL(string: "https://authrinthy.sawiq.org")!
+    }
 }
 
 private extension URLComponents {

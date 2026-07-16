@@ -12,7 +12,7 @@ import java.security.SecureRandom
 internal class InstantNotificationCoordinator(context: Context) {
     private val appContext = context.applicationContext
     private val store = InstantNotificationStore(appContext)
-    private val relay = NotificationRelayClient(BuildConfig.NOTIFICATION_BACKEND_URL)
+    private val relay = NotificationRelayClient(BuildConfig.BACKEND_URL)
     private val secureRandom = SecureRandom()
 
     val isAvailable: Boolean

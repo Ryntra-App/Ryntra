@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.core.content.edit
 import androidx.core.net.toUri
+import com.ryntra.mobile.BuildConfig
 import java.security.MessageDigest
 import java.security.SecureRandom
 
@@ -14,7 +15,7 @@ class OAuthCoordinator(context: Context) {
     fun createAuthorizationUri(): Uri {
         val state = ByteArray(32).also(secureRandom::nextBytes).toHex()
         preferences.edit { putString(STATE_KEY, state) }
-        return OAUTH_START_URL.toUri()
+        return "${BuildConfig.BACKEND_URL}/api/modrinth/start".toUri()
             .buildUpon()
             .appendQueryParameter("state", state)
             .build()
@@ -62,8 +63,6 @@ class OAuthCoordinator(context: Context) {
     private companion object {
         const val PREFERENCES_NAME = "oauth_session"
         const val STATE_KEY = "expected_state"
-        // The auth deployment still uses its original hostname and callback scheme.
-        const val OAUTH_START_URL = "https://rinthy-auth.vercel.app/api/modrinth/start"
         val CALLBACK_SCHEMES = setOf("ryntra", "rinthy")
         const val CALLBACK_HOST = "auth"
         const val CALLBACK_PATH = "/callback"

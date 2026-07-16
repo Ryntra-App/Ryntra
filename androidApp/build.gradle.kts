@@ -24,8 +24,8 @@ android {
         versionName = "3.0.0-alpha01"
         buildConfigField(
             "String",
-            "NOTIFICATION_BACKEND_URL",
-            configurationValue("RYNTRA_NOTIFICATION_BACKEND_URL", "https://rinthy-auth.vercel.app").asBuildConfigString(),
+            "BACKEND_URL",
+            configurationValue("RYNTRA_BACKEND_URL", "https://authrinthy.sawiq.org").asBuildConfigString(),
         )
         buildConfigField("String", "FIREBASE_API_KEY", configurationValue("RYNTRA_FIREBASE_API_KEY").asBuildConfigString())
         buildConfigField(
