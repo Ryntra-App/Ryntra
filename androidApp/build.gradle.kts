@@ -27,14 +27,29 @@ android {
             "BACKEND_URL",
             configurationValue("RYNTRA_BACKEND_URL", "https://authrinthy.sawiq.org").asBuildConfigString(),
         )
-        buildConfigField("String", "FIREBASE_API_KEY", configurationValue("RYNTRA_FIREBASE_API_KEY").asBuildConfigString())
+        buildConfigField(
+            "String",
+            "FIREBASE_API_KEY",
+            configurationValue("RYNTRA_FIREBASE_API_KEY", "AIzaSyCRwUOEsU9MtSFndV7M_UiBH2ogGdAjcCo").asBuildConfigString(),
+        )
         buildConfigField(
             "String",
             "FIREBASE_APPLICATION_ID",
-            configurationValue("RYNTRA_FIREBASE_APPLICATION_ID").asBuildConfigString(),
+            configurationValue(
+                "RYNTRA_FIREBASE_APPLICATION_ID",
+                "1:788775992736:android:aebde0b3b557d613d5f8c5",
+            ).asBuildConfigString(),
         )
-        buildConfigField("String", "FIREBASE_PROJECT_ID", configurationValue("RYNTRA_FIREBASE_PROJECT_ID").asBuildConfigString())
-        buildConfigField("String", "FIREBASE_SENDER_ID", configurationValue("RYNTRA_FIREBASE_SENDER_ID").asBuildConfigString())
+        buildConfigField(
+            "String",
+            "FIREBASE_PROJECT_ID",
+            configurationValue("RYNTRA_FIREBASE_PROJECT_ID", "ryntra-mobile").asBuildConfigString(),
+        )
+        buildConfigField(
+            "String",
+            "FIREBASE_SENDER_ID",
+            configurationValue("RYNTRA_FIREBASE_SENDER_ID", "788775992736").asBuildConfigString(),
+        )
     }
 
     buildFeatures {
