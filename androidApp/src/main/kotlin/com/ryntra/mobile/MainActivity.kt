@@ -29,13 +29,7 @@ class MainActivity : AppCompatActivity() {
         setContent {
             RyntraApp(viewModel)
         }
-        window.decorView.post(::preferHighestRefreshRate)
         handleAppIntent(intent)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        window.decorView.post(::preferHighestRefreshRate)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -54,28 +48,6 @@ class MainActivity : AppCompatActivity() {
         val sanitizedIntent = Intent(intent).setData(null)
         sanitizedIntent.removeExtra(EXTRA_DEEP_LINK)
         setIntent(sanitizedIntent)
-    }
-
-    private fun preferHighestRefreshRate() {
-        val display = window.decorView.display ?: return
-        val currentMode = display.mode
-        val preferredMode = display.supportedModes
-            .asSequence()
-            .filter { mode ->
-                mode.physicalWidth == currentMode.physicalWidth &&
-                    mode.physicalHeight == currentMode.physicalHeight
-            }
-            .maxByOrNull { it.refreshRate }
-            ?: return
-        if (
-            window.attributes.preferredDisplayModeId == preferredMode.modeId &&
-            window.attributes.preferredRefreshRate == preferredMode.refreshRate
-        ) return
-
-        window.attributes = window.attributes.apply {
-            preferredDisplayModeId = preferredMode.modeId
-            preferredRefreshRate = preferredMode.refreshRate
-        }
     }
 
     companion object {

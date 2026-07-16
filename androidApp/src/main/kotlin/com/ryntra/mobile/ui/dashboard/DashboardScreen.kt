@@ -28,10 +28,12 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.preferredFrameRate
 import com.composables.icons.lucide.ArrowLeft
 import com.composables.icons.lucide.ChartNoAxesColumnIncreasing
 import com.composables.icons.lucide.LayoutGrid
@@ -207,6 +209,7 @@ fun DashboardScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .preferredFrameRate(FrameRateCategory.High)
             .background(colors.background),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
