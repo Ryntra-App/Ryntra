@@ -163,6 +163,9 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     fun setAppLanguage(language: AppLanguage) {
         preferencesStore.setAppLanguage(language)
         AppLocale.apply(language)
+        if (instantNotificationCoordinator.isConnected) {
+            viewModelScope.launch { suspendCatching { instantNotificationCoordinator.updateLocale() } }
+        }
     }
 
     fun setReduceMotion(isEnabled: Boolean) = preferencesStore.setReduceMotion(isEnabled)

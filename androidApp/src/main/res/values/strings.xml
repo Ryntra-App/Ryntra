@@ -391,6 +391,19 @@
     <string name="notifications_instant_unavailable">Not configured in this build. Local checks still work.</string>
     <string name="notifications_channel_name">Modrinth updates</string>
     <string name="notifications_channel_description">Project status, team invites, releases, and moderator messages</string>
+    <!-- Notification content: translators can add a locale by defining these keys in values-xx/strings.xml. -->
+    <string name="notification_content_project_update_title">Project update</string>
+    <string name="notification_content_project_update_version">Version %1$s is available for %2$s.</string>
+    <string name="notification_content_project_update_project">%1$s has a new update on Modrinth.</string>
+    <string name="notification_content_project_update_generic">A project you follow has a new update on Modrinth.</string>
+    <string name="notification_content_team_invite_title">Team invitation</string>
+    <string name="notification_content_team_invite_body">You received a new team invitation on Modrinth.</string>
+    <string name="notification_content_status_title">Project status changed</string>
+    <string name="notification_content_status_project">The status of %1$s changed on Modrinth.</string>
+    <string name="notification_content_status_generic">The status of one of your projects changed on Modrinth.</string>
+    <string name="notification_content_moderator_title">Moderator message</string>
+    <string name="notification_content_moderator_project">Modrinth sent new feedback about %1$s.</string>
+    <string name="notification_content_moderator_generic">Modrinth sent new feedback about one of your projects.</string>
     <string name="common_retry">Retry</string>
     <string name="support_title">Support the author</string>
     <string name="support_donation_alerts">DonationAlerts</string>

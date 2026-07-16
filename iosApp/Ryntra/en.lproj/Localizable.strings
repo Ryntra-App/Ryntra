@@ -206,6 +206,19 @@
 "APNs registration timed out. Try again." = "APNs registration timed out. Try again.";
 "Instant notification authorization expired. Try again." = "Server notification authorization expired. Try again.";
 "Instant notification authorization was cancelled." = "Server notification authorization was cancelled.";
+/* Notification content. Translators should keep %@ placeholders unchanged. */
+"Project update" = "Project update";
+"For %@, version %@ is available." = "For %@, version %@ is available.";
+"%@ has a new update on Modrinth." = "%@ has a new update on Modrinth.";
+"A project you follow has a new update on Modrinth." = "A project you follow has a new update on Modrinth.";
+"Team invitation" = "Team invitation";
+"You received a new team invitation on Modrinth." = "You received a new team invitation on Modrinth.";
+"Project status changed" = "Project status changed";
+"The status of %@ changed on Modrinth." = "The status of %@ changed on Modrinth.";
+"The status of one of your projects changed on Modrinth." = "The status of one of your projects changed on Modrinth.";
+"Moderator message" = "Moderator message";
+"Modrinth sent new feedback about %@." = "Modrinth sent new feedback about %@.";
+"Modrinth sent new feedback about one of your projects." = "Modrinth sent new feedback about one of your projects.";
 "The notification service returned an invalid response." = "The notification service returned an invalid response.";
 "DonationAlerts" = "DonationAlerts";
 "Support the author" = "Support the author";

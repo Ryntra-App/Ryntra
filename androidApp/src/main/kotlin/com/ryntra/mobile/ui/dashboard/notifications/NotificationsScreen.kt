@@ -46,6 +46,7 @@ import com.composables.icons.lucide.Rocket
 import com.composables.icons.lucide.UserPlus
 import com.ryntra.mobile.NotificationState
 import com.ryntra.mobile.R
+import com.ryntra.mobile.notifications.notificationText
 import com.ryntra.mobile.ui.components.RyntraProgressIndicator
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.shared.model.ModrinthNotification
@@ -156,6 +157,7 @@ fun NotificationsScreen(
 private fun NotificationRow(notification: ModrinthNotification, onClick: () -> Unit) {
     val colors = RyntraDesign.colors
     val context = LocalContext.current
+    val localizedText = context.notificationText(notification)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -182,14 +184,14 @@ private fun NotificationRow(notification: ModrinthNotification, onClick: () -> U
         }
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = notification.title.removeMarkdownEmphasis(),
+                text = localizedText.title,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = if (notification.read) FontWeight.Medium else FontWeight.Bold,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = notification.text.removeMarkdownEmphasis(),
+                text = localizedText.body,
                 style = MaterialTheme.typography.bodyMedium,
                 color = colors.labelSecondary,
                 maxLines = 4,
@@ -252,8 +254,6 @@ private val ModrinthNotificationKind.icon
         ModrinthNotificationKind.ModeratorMessage -> Lucide.MessageSquareText
         ModrinthNotificationKind.Unknown -> Lucide.Bell
     }
-
-private fun String.removeMarkdownEmphasis(): String = replace("**", "").replace("__", "")
 
 private fun String.toLocalNotificationTime(context: Context): String = runCatching {
     val timestamp = Instant.parse(this).toEpochMilli()

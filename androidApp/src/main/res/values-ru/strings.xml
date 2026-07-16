@@ -395,6 +395,19 @@
     <string name="notifications_instant_unavailable">Не настроено в этой сборке. Локальная проверка продолжает работать.</string>
     <string name="notifications_channel_name">Обновления Modrinth</string>
     <string name="notifications_channel_description">Статусы проектов, приглашения, релизы и сообщения модераторов</string>
+    <!-- Текст уведомлений: новый язык добавляет эти же ключи в values-xx/strings.xml. -->
+    <string name="notification_content_project_update_title">Обновление проекта</string>
+    <string name="notification_content_project_update_version">Для %2$s доступна версия %1$s.</string>
+    <string name="notification_content_project_update_project">Для %1$s вышло обновление на Modrinth.</string>
+    <string name="notification_content_project_update_generic">Для проекта, на который вы подписаны, вышло обновление на Modrinth.</string>
+    <string name="notification_content_team_invite_title">Приглашение в команду</string>
+    <string name="notification_content_team_invite_body">Вы получили новое приглашение в команду на Modrinth.</string>
+    <string name="notification_content_status_title">Статус проекта изменён</string>
+    <string name="notification_content_status_project">Статус проекта %1$s изменился на Modrinth.</string>
+    <string name="notification_content_status_generic">Статус одного из ваших проектов изменился на Modrinth.</string>
+    <string name="notification_content_moderator_title">Сообщение модератора</string>
+    <string name="notification_content_moderator_project">Modrinth прислал новый отзыв о проекте %1$s.</string>
+    <string name="notification_content_moderator_generic">Modrinth прислал новый отзыв об одном из ваших проектов.</string>
     <string name="common_retry">Повторить</string>
     <string name="support_title">Поддержать автора</string>
     <string name="support_donation_alerts">DonationAlerts</string>

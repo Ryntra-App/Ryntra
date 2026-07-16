@@ -26,6 +26,7 @@ class NotificationRelayClientTest {
             assertEquals(null, request.headers["X-Installation-Secret"])
             assertTrue(request.bodyText().contains("\"platform\":\"android\""))
             assertTrue(request.bodyText().contains("\"pushToken\":\"fcm-token-value-that-is-long-enough\""))
+            assertTrue(request.bodyText().contains("\"locale\":\"en\""))
             respond(
                 """{"installationSecret":"device-secret","isCreated":true}""",
                 HttpStatusCode.Created,

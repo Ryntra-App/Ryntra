@@ -77,6 +77,19 @@ final class InstantNotificationCoordinator {
             installationId: store.installationID,
             platform: "ios",
             pushToken: pushToken,
+            locale: currentLocale,
+            secret: secret
+        )
+    }
+
+    func updateLocale() async {
+        guard let secret = store.secret,
+              let pushToken = try? await RemoteNotificationRegistration.shared.requestToken() else { return }
+        _ = try? await relay.registerInstallation(
+            installationId: store.installationID,
+            platform: "ios",
+            pushToken: pushToken,
+            locale: currentLocale,
             secret: secret
         )
     }
@@ -90,6 +103,7 @@ final class InstantNotificationCoordinator {
                     installationId: store.installationID,
                     platform: "ios",
                     pushToken: pushToken,
+                    locale: currentLocale,
                     secret: secret
                 )
                 return (store.installationID, secret)
@@ -103,6 +117,7 @@ final class InstantNotificationCoordinator {
             installationId: installationID,
             platform: "ios",
             pushToken: pushToken,
+            locale: currentLocale,
             secret: nil
         )
         guard let secret = registration.installationSecret, !secret.isEmpty else {
@@ -126,6 +141,11 @@ final class InstantNotificationCoordinator {
         let right = Array(returned.utf8)
         guard left.count == right.count else { return false }
         return zip(left, right).reduce(UInt8(0)) { $0 | ($1.0 ^ $1.1) } == 0
+    }
+
+    private var currentLocale: String {
+        let selected = UserDefaults.standard.string(forKey: "appLanguage") ?? "system"
+        return selected == "system" ? Locale.current.identifier : selected
     }
 
     private static var backendURL: URL {

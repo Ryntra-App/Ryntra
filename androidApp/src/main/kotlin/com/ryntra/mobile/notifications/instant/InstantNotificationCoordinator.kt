@@ -8,6 +8,7 @@ import com.ryntra.shared.network.ApiException
 import com.ryntra.shared.network.NotificationRelayClient
 import java.security.MessageDigest
 import java.security.SecureRandom
+import java.util.Locale
 
 internal class InstantNotificationCoordinator(context: Context) {
     private val appContext = context.applicationContext
@@ -48,7 +49,13 @@ internal class InstantNotificationCoordinator(context: Context) {
 
     suspend fun updatePushToken(pushToken: String) {
         val secret = store.readSecret() ?: return
-        relay.registerInstallation(store.installationId, PLATFORM, pushToken, secret)
+        relay.registerInstallation(store.installationId, PLATFORM, pushToken, currentLocale(), secret)
+    }
+
+    suspend fun updateLocale() {
+        val secret = store.readSecret() ?: return
+        val pushToken = FirebaseBootstrap.token(appContext)
+        relay.registerInstallation(store.installationId, PLATFORM, pushToken, currentLocale(), secret)
     }
 
     suspend fun disconnect() {
@@ -63,7 +70,7 @@ internal class InstantNotificationCoordinator(context: Context) {
         val existingSecret = store.readSecret()
         if (existingSecret != null) {
             return try {
-                relay.registerInstallation(store.installationId, PLATFORM, pushToken, existingSecret)
+                relay.registerInstallation(store.installationId, PLATFORM, pushToken, currentLocale(), existingSecret)
                 store.installationId to existingSecret
             } catch (error: ApiException) {
                 if (error.statusCode != 401) throw error
@@ -76,7 +83,7 @@ internal class InstantNotificationCoordinator(context: Context) {
 
     private suspend fun registerNewInstallation(pushToken: String): Pair<String, String> {
         val installationId = store.installationId
-        val registration = relay.registerInstallation(installationId, PLATFORM, pushToken)
+        val registration = relay.registerInstallation(installationId, PLATFORM, pushToken, currentLocale())
         val secret = requireNotNull(registration.installationSecret) {
             "Notification service did not return installation credentials."
         }
@@ -92,6 +99,8 @@ internal class InstantNotificationCoordinator(context: Context) {
         if (expected == null || returned == null) return false
         return MessageDigest.isEqual(expected.toByteArray(), returned.toByteArray())
     }
+
+    private fun currentLocale(): String = Locale.getDefault().toLanguageTag().ifBlank { "en" }
 
     private companion object {
         const val PLATFORM = "android"

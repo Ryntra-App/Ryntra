@@ -18,26 +18,35 @@ internal class NotificationContentResolver(
             var text = notification.text
 
             val projectReference = reference.projectIdOrSlug
-            if (projectReference in title || projectReference in text) {
-                val project = projectCache.getOrPut(projectReference) {
+            val project = if (projectReference in title || projectReference in text) {
+                projectCache.getOrPut(projectReference) {
                     runCatching { projects.get(projectReference, token) }.getOrNull()
                 }
-                project?.let {
+            } else {
+                null
+            }
+            project?.let {
                     title = title.replace(projectReference, it.title)
                     text = text.replace(projectReference, it.title)
-                }
             }
+            var versionTitle: String? = null
             if (reference.versionId != null && (reference.versionId in title || reference.versionId in text)) {
                 val version = versionCache.getOrPut(reference.versionId) {
                     runCatching { versions.get(reference.versionId, token) }.getOrNull()
                 }
                 version?.let {
                     val label = it.versionNumber.ifBlank { it.name }
+                    versionTitle = label
                     title = title.replace(reference.versionId, label)
                     text = text.replace(reference.versionId, label)
                 }
             }
-            if (title == notification.title && text == notification.text) notification else notification.copy(title = title, text = text)
+            notification.copy(
+                title = title,
+                text = text,
+                projectTitle = project?.title,
+                versionTitle = versionTitle,
+            )
         }
     }
 }

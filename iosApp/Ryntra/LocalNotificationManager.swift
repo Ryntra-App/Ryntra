@@ -97,9 +97,10 @@ final class LocalNotificationManager {
         let knownIDs = Set(defaults.stringArray(forKey: knownIDsKey) ?? [])
         let newUnread = notifications.filter { !$0.read && !knownIDs.contains($0.id) }.prefix(5)
         for notification in newUnread {
+            let localized = notification.localizedContent
             let content = UNMutableNotificationContent()
-            content.title = notification.title.replacingOccurrences(of: "**", with: "")
-            content.body = notification.text.replacingOccurrences(of: "**", with: "")
+            content.title = localized.title
+            content.body = localized.body
             content.sound = .default
             content.userInfo = ["modrinthLink": notification.link]
             let request = UNNotificationRequest(identifier: notification.id, content: content, trigger: nil)

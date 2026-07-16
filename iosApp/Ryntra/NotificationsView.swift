@@ -100,6 +100,7 @@ private struct NotificationRow: View {
     let isRead: Bool
 
     var body: some View {
+        let content = notification.localizedContent
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: notification.symbol)
                 .font(.system(size: 17, weight: .semibold))
@@ -107,10 +108,10 @@ private struct NotificationRow: View {
                 .frame(width: 34, height: 34)
                 .background(Color.ryntraGreen.opacity(0.13), in: Circle())
             VStack(alignment: .leading, spacing: 4) {
-                Text(notification.title.replacingOccurrences(of: "**", with: ""))
+                Text(content.title)
                     .font(.subheadline.weight(isRead ? .medium : .bold))
                     .foregroundStyle(.primary)
-                Text(notification.text.replacingOccurrences(of: "**", with: ""))
+                Text(content.body)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(4)
@@ -135,7 +136,51 @@ private let notificationISO8601WithFractionalSeconds: ISO8601DateFormatter = {
 
 private let notificationISO8601 = ISO8601DateFormatter()
 
-private extension ModrinthNotification {
+extension ModrinthNotification {
+    var localizedContent: (title: String, body: String) {
+        let project = projectTitle?.isEmpty == false ? projectTitle : nil
+        let version = versionTitle?.isEmpty == false ? versionTitle : nil
+        switch type {
+        case "project_update":
+            let body: String
+            if let project, let version {
+                body = String(
+                    format: NSLocalizedString("For %@, version %@ is available.", comment: "Project update notification"),
+                    project,
+                    version
+                )
+            } else if let project {
+                body = String(
+                    format: NSLocalizedString("%@ has a new update on Modrinth.", comment: "Project update notification"),
+                    project
+                )
+            } else {
+                body = NSLocalizedString("A project you follow has a new update on Modrinth.", comment: "Project update notification")
+            }
+            return (NSLocalizedString("Project update", comment: "Notification title"), body)
+        case "team_invite":
+            return (
+                NSLocalizedString("Team invitation", comment: "Notification title"),
+                NSLocalizedString("You received a new team invitation on Modrinth.", comment: "Team invite notification")
+            )
+        case "status_change":
+            let body = project.map {
+                String(format: NSLocalizedString("The status of %@ changed on Modrinth.", comment: "Status notification"), $0)
+            } ?? NSLocalizedString("The status of one of your projects changed on Modrinth.", comment: "Status notification")
+            return (NSLocalizedString("Project status changed", comment: "Notification title"), body)
+        case "moderator_message":
+            let body = project.map {
+                String(format: NSLocalizedString("Modrinth sent new feedback about %@.", comment: "Moderator notification"), $0)
+            } ?? NSLocalizedString("Modrinth sent new feedback about one of your projects.", comment: "Moderator notification")
+            return (NSLocalizedString("Moderator message", comment: "Notification title"), body)
+        default:
+            return (
+                title.replacingOccurrences(of: "**", with: "").replacingOccurrences(of: "__", with: ""),
+                text.replacingOccurrences(of: "**", with: "").replacingOccurrences(of: "__", with: "")
+            )
+        }
+    }
+
     var localCreatedLabel: String {
         guard let date = notificationISO8601WithFractionalSeconds.date(from: created)
                 ?? notificationISO8601.date(from: created) else {

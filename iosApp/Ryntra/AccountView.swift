@@ -180,6 +180,7 @@ struct AccountView: View {
                 .pickerStyle(.menu)
                 .onChange(of: storedAppLanguage) { _ in
                     RyntraAppLanguage.apply(storedAppLanguage)
+                    Task { await model.updateInstantNotificationLocale() }
                 }
 
                 Toggle(isOn: $showFavoriteProjects) {

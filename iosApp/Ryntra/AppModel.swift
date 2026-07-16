@@ -138,6 +138,11 @@ final class AppModel: ObservableObject {
         }
     }
 
+    func updateInstantNotificationLocale() async {
+        guard instantNotifications.isConnected else { return }
+        await instantNotificationCoordinator.updateLocale()
+    }
+
     func updateInstantNotificationToken(_ token: String) async {
         await instantNotificationCoordinator.updatePushToken(token)
     }

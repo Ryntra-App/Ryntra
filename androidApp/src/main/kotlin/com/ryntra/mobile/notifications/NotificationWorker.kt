@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.ryntra.mobile.R
+import com.ryntra.mobile.preferences.AppLocale
 import com.ryntra.mobile.security.SecureTokenStore
 import com.ryntra.shared.model.ModrinthNotification
 import com.ryntra.shared.network.NotificationPollingClient
@@ -55,6 +56,8 @@ class NotificationWorker(
     }
 
     private fun showNotification(notification: ModrinthNotification) {
+        val localizedContext = AppLocale.wrap(applicationContext)
+        val text = localizedContext.notificationText(notification)
         val target = notification.link.toModrinthUrl()
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(target))
         val pendingIntent = PendingIntent.getActivity(
@@ -65,9 +68,9 @@ class NotificationWorker(
         )
         val built = NotificationCompat.Builder(applicationContext, NotificationChannels.MODRINTH_UPDATES)
             .setSmallIcon(R.drawable.ryntra_launcher_monochrome)
-            .setContentTitle(notification.title)
-            .setContentText(notification.text)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(notification.text))
+            .setContentTitle(text.title)
+            .setContentText(text.body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text.body))
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_STATUS)

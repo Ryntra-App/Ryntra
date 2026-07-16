@@ -32,12 +32,13 @@ class NotificationRelayClient internal constructor(
         installationId: String,
         platform: String,
         pushToken: String,
+        locale: String = "en",
         secret: String? = null,
     ): RelayRegistration {
         val response = httpClient.post("$endpoint/api/notifications/installations") {
             header(HttpHeaders.ContentType, ContentType.Application.Json)
             secret?.let { header(INSTALLATION_SECRET_HEADER, it) }
-            setBody(RegisterInstallationRequest(installationId, platform, pushToken))
+            setBody(RegisterInstallationRequest(installationId, platform, pushToken, locale))
         }
         return response.decodeRelayResponse()
     }
@@ -102,6 +103,7 @@ private data class RegisterInstallationRequest(
     val installationId: String,
     val platform: String,
     val pushToken: String,
+    val locale: String,
 )
 
 @Serializable

@@ -244,6 +244,19 @@
 "APNs registration timed out. Try again." = "Регистрация APNs заняла слишком много времени. Попробуйте снова.";
 "Instant notification authorization expired. Try again." = "Авторизация серверных уведомлений истекла. Попробуйте снова.";
 "Instant notification authorization was cancelled." = "Авторизация серверных уведомлений отменена.";
+/* Текст уведомлений. При переводе сохраняйте заполнители %@ без изменений. */
+"Project update" = "Обновление проекта";
+"For %@, version %@ is available." = "Для %@ доступна версия %@.";
+"%@ has a new update on Modrinth." = "Для %@ вышло обновление на Modrinth.";
+"A project you follow has a new update on Modrinth." = "Для проекта, на который вы подписаны, вышло обновление на Modrinth.";
+"Team invitation" = "Приглашение в команду";
+"You received a new team invitation on Modrinth." = "Вы получили новое приглашение в команду на Modrinth.";
+"Project status changed" = "Статус проекта изменён";
+"The status of %@ changed on Modrinth." = "Статус проекта %@ изменился на Modrinth.";
+"The status of one of your projects changed on Modrinth." = "Статус одного из ваших проектов изменился на Modrinth.";
+"Moderator message" = "Сообщение модератора";
+"Modrinth sent new feedback about %@." = "Modrinth прислал новый отзыв о проекте %@.";
+"Modrinth sent new feedback about one of your projects." = "Modrinth прислал новый отзыв об одном из ваших проектов.";
 "The notification service returned an invalid response." = "Сервис уведомлений вернул некорректный ответ.";
 "DonationAlerts" = "DonationAlerts";
 "Support the author" = "Поддержать автора";

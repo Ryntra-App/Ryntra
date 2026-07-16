@@ -2,6 +2,7 @@ package com.ryntra.shared.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 @Serializable
 data class ModrinthNotification(
@@ -14,6 +15,8 @@ data class ModrinthNotification(
     val read: Boolean,
     val created: String,
     val actions: List<ModrinthNotificationAction> = emptyList(),
+    @Transient val projectTitle: String? = null,
+    @Transient val versionTitle: String? = null,
 ) {
     val kind: ModrinthNotificationKind
         get() = ModrinthNotificationKind.fromApiValue(type)
