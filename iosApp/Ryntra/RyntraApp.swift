@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct RyntraApp: App {
+    @UIApplicationDelegateAdaptor(RyntraAppDelegate.self) private var appDelegate
     @StateObject private var model = AppModel()
     @AppStorage("themeStyle") private var storedThemeStyle = RyntraThemeStyle.platform.rawValue
     @AppStorage("appearanceMode") private var storedAppearanceMode = RyntraAppearanceMode.system.rawValue

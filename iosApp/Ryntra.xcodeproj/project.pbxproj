@@ -37,6 +37,8 @@
 		A029 /* AccountAvatarEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B032 /* AccountAvatarEditor.swift */; };
 		A030 /* ProjectGalleryEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B033 /* ProjectGalleryEditor.swift */; };
 		A031 /* MarkdownBadgeRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B034 /* MarkdownBadgeRowView.swift */; };
+		A032 /* LocalNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B035 /* LocalNotificationManager.swift */; };
+		A033 /* NotificationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B036 /* NotificationsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -74,6 +76,8 @@
 		B032 /* AccountAvatarEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountAvatarEditor.swift; sourceTree = "<group>"; };
 		B033 /* ProjectGalleryEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectGalleryEditor.swift; sourceTree = "<group>"; };
 		B034 /* MarkdownBadgeRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownBadgeRowView.swift; sourceTree = "<group>"; };
+		B035 /* LocalNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalNotificationManager.swift; sourceTree = "<group>"; };
+		B036 /* NotificationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -82,7 +86,7 @@
 
 /* Begin PBXGroup section */
 		D001 = {isa = PBXGroup; children = (D002, D003, D004,); sourceTree = "<group>"; };
-		D002 /* Ryntra */ = {isa = PBXGroup; path = Ryntra; sourceTree = "<group>"; children = (B001, B021, B030, B002, B003, B014, B031, B032, B004, B005, B006, B016, B015, B017, B025, B026, B024, B007, B027, D005, B008, B009, D006, B010, B013,); };
+		D002 /* Ryntra */ = {isa = PBXGroup; path = Ryntra; sourceTree = "<group>"; children = (B001, B021, B030, B002, B003, B014, B035, B036, B031, B032, B004, B005, B006, B016, B015, B017, B025, B026, B024, B007, B027, D005, B008, B009, D006, B010, B013,); };
 		D005 /* ProjectDetail */ = {isa = PBXGroup; path = ProjectDetail; sourceTree = "<group>"; children = (B018, B023, B034, B022, B033, B019, B020,); };
 		D003 /* Frameworks */ = {isa = PBXGroup; children = (B012,); name = Frameworks; sourceTree = "<group>"; };
 		D004 /* Products */ = {isa = PBXGroup; children = (B011,); name = Products; sourceTree = "<group>"; };
@@ -109,7 +113,7 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		C002 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A001, A019, A027, A002, A003, A012, A028, A029, A004, A005, A006, A014, A013, A015, A023, A024, A022, A007, A025, A016, A021, A031, A020, A030, A017, A018, A008, A009,); runOnlyForDeploymentPostprocessing = 0; };
+		C002 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A001, A019, A027, A002, A003, A012, A032, A033, A028, A029, A004, A005, A006, A014, A013, A015, A023, A024, A022, A007, A025, A016, A021, A031, A020, A030, A017, A018, A008, A009,); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */

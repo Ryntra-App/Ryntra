@@ -186,6 +186,15 @@
 "Write" = "Write";
 "Preview" = "Preview";
 "Nothing to preview" = "Nothing to preview";
+"Notifications" = "Notifications";
+"No new notifications" = "No new notifications";
+"Updates from Modrinth will appear here." = "Updates from Modrinth will appear here.";
+"%d unread" = "%d unread";
+"Mark all read" = "Mark all read";
+"Loaded directly from your Modrinth account." = "Loaded directly from your Modrinth account.";
+"Retry" = "Retry";
+"Local background checks" = "Local background checks";
+"Private on-device checks scheduled by iOS. Delivery time is not guaranteed." = "Private on-device checks scheduled by iOS. Delivery time is not guaranteed.";
 "Status and license" = "Status and license";
 "Status" = "Status";
 "License ID" = "License ID";

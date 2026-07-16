@@ -24,6 +24,10 @@ final class AppModel: ObservableObject {
     @Published private(set) var isAnalyticsLoading = false
     @Published private(set) var analyticsError: String?
     @Published private(set) var walletError: String?
+    @Published private(set) var notifications: [ModrinthNotification] = []
+    @Published private(set) var isNotificationsLoading = false
+    @Published private(set) var notificationsError: String?
+    @Published private(set) var locallyReadNotificationIDs: Set<String> = []
 
     private let controller = AppController()
     private let keychain = KeychainTokenStore()
@@ -31,6 +35,11 @@ final class AppModel: ObservableObject {
     private var observation: Observation?
     private var pendingToken: String?
     private var activeAnalyticsKey: String?
+    private var notificationAccountID: String?
+
+    var unreadNotificationCount: Int {
+        notifications.filter { !$0.read && !locallyReadNotificationIDs.contains($0.id) }.count
+    }
 
     var currentAccountID: String? {
         switch state {
@@ -81,6 +90,43 @@ final class AppModel: ObservableObject {
 
     func refresh() {
         controller.refresh()
+    }
+
+    func refreshNotifications() async {
+        guard !isNotificationsLoading else { return }
+        isNotificationsLoading = true
+        notificationsError = nil
+        defer { isNotificationsLoading = false }
+        do {
+            notifications = try await controller.loadNotifications()
+            let currentIDs = Set(notifications.map(\.id))
+            locallyReadNotificationIDs.formIntersection(currentIDs)
+        } catch {
+            notificationsError = error.localizedDescription
+        }
+    }
+
+    func markNotificationRead(_ notification: ModrinthNotification) async {
+        guard !notification.read && !locallyReadNotificationIDs.contains(notification.id) else { return }
+        await markNotificationsRead([notification.id])
+    }
+
+    func markAllNotificationsRead() async {
+        let ids = notifications
+            .filter { !$0.read && !locallyReadNotificationIDs.contains($0.id) }
+            .map(\.id)
+        await markNotificationsRead(ids)
+    }
+
+    private func markNotificationsRead(_ ids: [String]) async {
+        guard !ids.isEmpty else { return }
+        do {
+            try await controller.markNotificationsRead(notificationIds: ids)
+            locallyReadNotificationIDs.formUnion(ids)
+            notificationsError = nil
+        } catch {
+            notificationsError = error.localizedDescription
+        }
     }
 
     func loadAnalytics(projects: [Project], rangeDays: Int) async {
@@ -364,6 +410,10 @@ final class AppModel: ObservableObject {
         analyticsError = nil
         activeAnalyticsKey = nil
         isAnalyticsLoading = false
+        notifications = []
+        notificationsError = nil
+        locallyReadNotificationIDs = []
+        notificationAccountID = nil
         keychain.clear()
         controller.signOut()
     }
@@ -397,6 +447,10 @@ final class AppModel: ObservableObject {
                 pendingToken = nil
             }
             state = .ready(ready.dashboard)
+            if notificationAccountID != ready.dashboard.account.id {
+                notificationAccountID = ready.dashboard.account.id
+                Task { await refreshNotifications() }
+            }
         case let failed as AppStateFailed:
             if failed.isAuthenticationFailure {
                 keychain.clear()

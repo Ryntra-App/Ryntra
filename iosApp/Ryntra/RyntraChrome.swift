@@ -44,6 +44,8 @@ struct RyntraTopBar: View {
     var showsBackButton = false
     var onBack: () -> Void = {}
     var showsAvatar = true
+    var onNotificationsTap: (() -> Void)?
+    var unreadNotificationCount = 0
 
     var body: some View {
         HStack(spacing: 8) {
@@ -61,6 +63,23 @@ struct RyntraTopBar: View {
             Spacer(minLength: 8)
             if isRefreshing {
                 ProgressView().padding(.trailing, 8)
+            }
+            if let onNotificationsTap {
+                Button(action: onNotificationsTap) {
+                    Image(systemName: "bell")
+                        .frame(width: 38, height: 38)
+                        .overlay(alignment: .topTrailing) {
+                            if unreadNotificationCount > 0 {
+                                Text(unreadNotificationCount > 9 ? "9+" : "\(unreadNotificationCount)")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundStyle(.black)
+                                    .frame(minWidth: 15, minHeight: 15)
+                                    .background(Color.ryntraGreen, in: Circle())
+                            }
+                        }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(NSLocalizedString("Notifications", comment: "Navigation action"))
             }
             if showsAvatar {
                 Button(action: onAvatarTap) {

@@ -12,6 +12,7 @@ struct DashboardView: View {
     var errorMessage: String?
     @State private var selection = RyntraDestination.dashboard
     @State private var isProfileVisible = false
+    @State private var isNotificationsVisible = false
     @State private var selectedProject: Project?
     @State private var presentedError: String?
 
@@ -40,6 +41,23 @@ struct DashboardView: View {
                 .transition(RyntraMotion.navigationTransition(reduceMotion: reduceMotion))
             }
 
+            if isNotificationsVisible {
+                NavigationStack {
+                    NotificationsView()
+                        .ryntraChrome(
+                            title: NSLocalizedString("Notifications", comment: "Screen title"),
+                            dashboard: dashboard,
+                            isRefreshing: model.isNotificationsLoading,
+                            onAvatarTap: {},
+                            showsBackButton: true,
+                            onBack: { isNotificationsVisible = false },
+                            showsAvatar: false
+                        )
+                }
+                .zIndex(1)
+                .transition(RyntraMotion.navigationTransition(reduceMotion: reduceMotion))
+            }
+
             if let selectedProject {
                 NavigationStack {
                     ProjectDetailView(project: selectedProject)
@@ -59,6 +77,7 @@ struct DashboardView: View {
         }
         .animation(RyntraMotion.resolved(.navigation, reduceMotion: reduceMotion), value: selectedProject?.id)
         .animation(RyntraMotion.resolved(.navigation, reduceMotion: reduceMotion), value: isProfileVisible)
+        .animation(RyntraMotion.resolved(.navigation, reduceMotion: reduceMotion), value: isNotificationsVisible)
         .onAppear { presentedError = errorMessage }
         .onChange(of: errorMessage) { presentedError = $0 }
         .alert("Could not refresh", isPresented: errorBinding) {
@@ -92,7 +111,9 @@ struct DashboardView: View {
                         title: RyntraDestination.dashboard.label,
                         dashboard: dashboard,
                         isRefreshing: isRefreshing,
-                        onAvatarTap: { isProfileVisible = true }
+                        onAvatarTap: { isProfileVisible = true },
+                        onNotificationsTap: { isNotificationsVisible = true },
+                        unreadNotificationCount: model.unreadNotificationCount
                     )
             }
             .tabItem { Label(RyntraDestination.dashboard.label, systemImage: RyntraDestination.dashboard.platformSymbol) }
@@ -107,7 +128,9 @@ struct DashboardView: View {
                         title: RyntraDestination.projects.label,
                         dashboard: dashboard,
                         isRefreshing: isRefreshing,
-                        onAvatarTap: { isProfileVisible = true }
+                        onAvatarTap: { isProfileVisible = true },
+                        onNotificationsTap: { isNotificationsVisible = true },
+                        unreadNotificationCount: model.unreadNotificationCount
                     )
             }
             .tabItem { Label(RyntraDestination.projects.label, systemImage: RyntraDestination.projects.platformSymbol) }
@@ -119,7 +142,9 @@ struct DashboardView: View {
                         title: RyntraDestination.teams.label,
                         dashboard: dashboard,
                         isRefreshing: isRefreshing,
-                        onAvatarTap: { isProfileVisible = true }
+                        onAvatarTap: { isProfileVisible = true },
+                        onNotificationsTap: { isNotificationsVisible = true },
+                        unreadNotificationCount: model.unreadNotificationCount
                     )
             }
             .tabItem { Label(RyntraDestination.teams.label, systemImage: RyntraDestination.teams.platformSymbol) }
@@ -131,7 +156,9 @@ struct DashboardView: View {
                         title: RyntraDestination.analytics.label,
                         dashboard: dashboard,
                         isRefreshing: isRefreshing,
-                        onAvatarTap: { isProfileVisible = true }
+                        onAvatarTap: { isProfileVisible = true },
+                        onNotificationsTap: { isNotificationsVisible = true },
+                        unreadNotificationCount: model.unreadNotificationCount
                     )
             }
             .tabItem { Label(RyntraDestination.analytics.label, systemImage: RyntraDestination.analytics.platformSymbol) }
@@ -165,7 +192,9 @@ private extension View {
         onAvatarTap: @escaping () -> Void,
         showsBackButton: Bool = false,
         onBack: @escaping () -> Void = {},
-        showsAvatar: Bool = true
+        showsAvatar: Bool = true,
+        onNotificationsTap: (() -> Void)? = nil,
+        unreadNotificationCount: Int = 0
     ) -> some View {
         modifier(
             RyntraChromeModifier(
@@ -175,7 +204,9 @@ private extension View {
                 onAvatarTap: onAvatarTap,
                 showsBackButton: showsBackButton,
                 onBack: onBack,
-                showsAvatar: showsAvatar
+                showsAvatar: showsAvatar,
+                onNotificationsTap: onNotificationsTap,
+                unreadNotificationCount: unreadNotificationCount
             )
         )
     }
@@ -191,6 +222,8 @@ private struct RyntraChromeModifier: ViewModifier {
     let showsBackButton: Bool
     let onBack: () -> Void
     let showsAvatar: Bool
+    let onNotificationsTap: (() -> Void)?
+    let unreadNotificationCount: Int
 
     @ViewBuilder
     func body(content: Content) -> some View {
@@ -209,6 +242,17 @@ private struct RyntraChromeModifier: ViewModifier {
                     }
                     ToolbarItemGroup(placement: .navigationBarTrailing) {
                         if isRefreshing { ProgressView() }
+                        if let onNotificationsTap {
+                            Button(action: onNotificationsTap) {
+                                Image(systemName: "bell")
+                                    .overlay(alignment: .topTrailing) {
+                                        if unreadNotificationCount > 0 {
+                                            Circle().fill(Color.ryntraGreen).frame(width: 7, height: 7)
+                                        }
+                                    }
+                            }
+                            .accessibilityLabel(NSLocalizedString("Notifications", comment: "Navigation action"))
+                        }
                         if showsAvatar {
                             Button(action: onAvatarTap) {
                                 AsyncImage(url: URL(string: dashboard.account.avatarUrl ?? "")) { image in
@@ -235,7 +279,9 @@ private struct RyntraChromeModifier: ViewModifier {
                         onAvatarTap: onAvatarTap,
                         showsBackButton: showsBackButton,
                         onBack: onBack,
-                        showsAvatar: showsAvatar
+                        showsAvatar: showsAvatar,
+                        onNotificationsTap: onNotificationsTap,
+                        unreadNotificationCount: unreadNotificationCount
                     )
                 }
         }

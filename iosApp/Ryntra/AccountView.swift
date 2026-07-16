@@ -10,6 +10,7 @@ struct AccountView: View {
     @AppStorage("themeStyle") private var storedThemeStyle = RyntraThemeStyle.platform.rawValue
     @AppStorage("appearanceMode") private var storedAppearanceMode = RyntraAppearanceMode.system.rawValue
     @AppStorage("appLanguage") private var storedAppLanguage = RyntraAppLanguage.system.rawValue
+    @AppStorage(LocalNotificationManager.enabledKey) private var localNotificationsEnabled = false
 
     let account: Account
     let projectCount: Int
@@ -22,6 +23,7 @@ struct AccountView: View {
     @State private var isAvatarSaving = false
     @State private var errorMessage: String?
     @State private var avatarError: String?
+    @State private var isChangingNotifications = false
 
     private var normalizedUsername: String {
         username.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -179,6 +181,31 @@ struct AccountView: View {
                 Text("Platform follows the native controls and appearance of this device. Ryntra preserves the dark glass interface.")
             }
             .tint(Color.ryntraGreen)
+            .themedListRowBackground(isPlatformNative: isPlatformNative)
+
+            Section {
+                Toggle(isOn: Binding(
+                    get: { localNotificationsEnabled },
+                    set: { requestedValue in
+                        isChangingNotifications = true
+                        Task {
+                            localNotificationsEnabled = await LocalNotificationManager.shared.setEnabled(requestedValue)
+                            isChangingNotifications = false
+                        }
+                    }
+                )) {
+                    Label(NSLocalizedString("Local background checks", comment: "Notification setting"), systemImage: "bell")
+                }
+                .disabled(isChangingNotifications)
+                .tint(Color.ryntraGreen)
+            } header: {
+                RyntraSectionLabel(text: NSLocalizedString("Notifications", comment: "Settings"))
+            } footer: {
+                Text(NSLocalizedString(
+                    "Private on-device checks scheduled by iOS. Delivery time is not guaranteed.",
+                    comment: "Notification setting hint"
+                ))
+            }
             .themedListRowBackground(isPlatformNative: isPlatformNative)
 
             Section {

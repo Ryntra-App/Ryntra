@@ -224,6 +224,15 @@
 "Write" = "Текст";
 "Preview" = "Просмотр";
 "Nothing to preview" = "Нечего показывать";
+"Notifications" = "Уведомления";
+"No new notifications" = "Новых уведомлений нет";
+"Updates from Modrinth will appear here." = "Здесь появятся события из Modrinth.";
+"%d unread" = "Непрочитанных: %d";
+"Mark all read" = "Прочитать всё";
+"Loaded directly from your Modrinth account." = "Загружено напрямую из вашего аккаунта Modrinth.";
+"Retry" = "Повторить";
+"Local background checks" = "Локальная фоновая проверка";
+"Private on-device checks scheduled by iOS. Delivery time is not guaranteed." = "Приватная проверка на устройстве по расписанию iOS. Точное время доставки не гарантируется.";
 "Status and license" = "Статус и лицензия";
 "Status" = "Статус";
 "License ID" = "ID лицензии";
