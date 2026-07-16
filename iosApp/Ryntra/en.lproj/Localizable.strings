@@ -201,7 +201,7 @@
 "Private on-device checks scheduled by iOS. Delivery time is not guaranteed." = "Private on-device checks scheduled by iOS. Delivery time is not guaranteed.";
 "Enable instant notifications" = "Enable server notifications";
 "Disconnect instant notifications" = "Disconnect server notifications";
-"Instant delivery uses a separate read-only Modrinth authorization and can be disconnected at any time." = "The private relay checks every 10 minutes using a separate read-only Modrinth authorization.";
+"Instant delivery uses a separate read-only Modrinth authorization and can be disconnected at any time." = "The private relay usually delivers within a minute using a separate read-only Modrinth authorization.";
 "Notification permission was not granted." = "Notification permission was not granted.";
 "APNs registration timed out. Try again." = "APNs registration timed out. Try again.";
 "Instant notification authorization expired. Try again." = "Server notification authorization expired. Try again.";

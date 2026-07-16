@@ -85,6 +85,7 @@ final class AppModel: ObservableObject {
         switch instantNotificationCoordinator.consumeCallback(url) {
         case .success:
             instantNotifications = InstantNotificationStatus(isConnected: true)
+            Task { _ = await LocalNotificationManager.shared.setEnabled(false) }
             return
         case .failure(let message):
             instantNotifications.isLoading = false

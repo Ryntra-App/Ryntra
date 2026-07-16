@@ -3,9 +3,9 @@
 Ryntra offers two independent notification modes:
 
 - Local checks keep the normal Modrinth session on the device. Android WorkManager and iOS BackgroundTasks decide when a check can run.
-- Instant delivery uses an optional backend relay and a separate Modrinth OAuth grant limited to `USER_READ NOTIFICATION_READ`. The normal app session is never uploaded.
+- Server delivery uses a backend relay that polls about once per minute and a separate Modrinth OAuth grant limited to `USER_READ NOTIFICATION_READ`. The normal app session is never uploaded.
 
-Disabling instant delivery removes the push token, restricted Modrinth token, user ID, and delivery history from the relay database.
+Connecting server delivery disables local background polling to prevent duplicates. Disconnecting removes the push token, restricted Modrinth token, user ID, and delivery history from the relay database.
 
 ## 1. Backend
 
@@ -56,7 +56,7 @@ FIREBASE_SERVICE_ACCOUNT_JSON={...}
 The Android app initializes Firebase programmatically and does not require a committed `google-services.json`. Add these non-secret client values to `local.properties`, Gradle properties, the shell environment, or Codemagic variables:
 
 ```text
-RYNTRA_NOTIFICATION_BACKEND_URL=https://auth.example.com
+RYNTRA_BACKEND_URL=https://auth.example.com
 RYNTRA_FIREBASE_API_KEY=...
 RYNTRA_FIREBASE_APPLICATION_ID=1:...:android:...
 RYNTRA_FIREBASE_PROJECT_ID=...
@@ -94,18 +94,18 @@ The backend includes a standalone Node server:
 HOST=127.0.0.1 PORT=3000 npm start
 ```
 
-Run it with systemd, keep PostgreSQL private, and terminate HTTPS at Caddy or Nginx. Call the protected poll endpoint every one to five minutes:
+Run it with systemd, keep PostgreSQL private, and terminate HTTPS at Caddy or Nginx. Run the included notification poll worker every minute:
 
-```cron
-*/2 * * * * curl --fail --silent --show-error -H "Authorization: Bearer $CRON_SECRET" https://auth.example.com/api/notifications/poll >/dev/null
+```bash
+npm run notifications:poll
 ```
 
 After changing the domain:
 
 1. Update backend `PUBLIC_BASE_URL`, `MODRINTH_REDIRECT_URI`, and `NOTIFICATION_MODRINTH_REDIRECT_URI`.
 2. Update both callback URLs in the Modrinth OAuth application.
-3. Set Android/Codemagic `RYNTRA_NOTIFICATION_BACKEND_URL`.
-4. Set the iOS Xcode build setting `RYNTRA_NOTIFICATION_BACKEND_URL` or the Codemagic variable.
+3. Set Android/Codemagic `RYNTRA_BACKEND_URL`.
+4. Set the iOS Xcode build setting `RYNTRA_BACKEND_URL` or the Codemagic variable.
 5. Verify `https://auth.example.com/api/health` before enabling the cron job.
 
 ## Privacy verification

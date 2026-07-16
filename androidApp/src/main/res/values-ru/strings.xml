@@ -389,7 +389,7 @@
     <string name="notifications_local_hint">Приватная проверка на устройстве примерно каждые 15 минут; Android может задерживать её ради батареи.</string>
     <string name="notifications_permission_denied">Разрешение на уведомления не выдано.</string>
     <string name="notifications_instant_title">Серверные уведомления</string>
-    <string name="notifications_instant_hint">Приватная проверка каждые 10 минут через отдельную авторизацию Modrinth только для чтения.</string>
+    <string name="notifications_instant_hint">Доставка почти в реальном времени через отдельную авторизацию Modrinth только для чтения. Обычно в течение минуты.</string>
     <string name="notifications_instant_connected">Подключено. Нажмите, чтобы отключить и удалить данные relay.</string>
     <string name="notifications_instant_loading">Подключение к сервису уведомлений…</string>
     <string name="notifications_instant_unavailable">Не настроено в этой сборке. Локальная проверка продолжает работать.</string>

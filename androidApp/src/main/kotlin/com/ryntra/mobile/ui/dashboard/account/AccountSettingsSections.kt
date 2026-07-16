@@ -207,6 +207,7 @@ internal fun NotificationSettingsSection(
                     checked = isEnabled,
                     onCheckedChange = onEnabledChange,
                     contentDescription = stringResource(R.string.notifications_local_title),
+                    enabled = !instantState.isConnected,
                 )
             },
         )

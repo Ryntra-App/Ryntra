@@ -41,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -279,11 +280,13 @@ internal fun RyntraSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     contentDescription: String,
+    enabled: Boolean = true,
 ) {
     if (RyntraDesign.isPlatformNative) {
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
+            enabled = enabled,
             modifier = Modifier.semantics { this.contentDescription = contentDescription },
         )
         return
@@ -302,12 +305,14 @@ internal fun RyntraSwitch(
     Box(
         modifier = Modifier
             .size(width = 46.dp, height = 28.dp)
+            .alpha(if (enabled) 1f else 0.45f)
             .clip(CircleShape)
             .background(trackColor)
             .border(0.75.dp, Color.White.copy(alpha = if (checked) 0.08f else 0.12f), CircleShape)
             .semantics { this.contentDescription = contentDescription }
             .toggleable(
                 value = checked,
+                enabled = enabled,
                 role = Role.Switch,
                 onValueChange = onCheckedChange,
             ),

@@ -223,7 +223,7 @@ struct AccountView: View {
                 )) {
                     Label(NSLocalizedString("Local background checks", comment: "Notification setting"), systemImage: "bell")
                 }
-                .disabled(isChangingNotifications)
+                .disabled(isChangingNotifications || model.instantNotifications.isConnected)
                 .tint(Color.ryntraGreen)
                 if model.instantNotifications.isConnected {
                     Button(role: .destructive) {

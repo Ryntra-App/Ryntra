@@ -126,6 +126,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
         when (val instantResult = instantNotificationCoordinator.consumeCallback(uri)) {
             InstantCallbackResult.Ignored -> Unit
             InstantCallbackResult.Success -> {
+                setLocalNotificationsEnabled(false)
                 mutableInstantNotifications.value = mutableInstantNotifications.value.copy(
                     isConnected = true,
                     isLoading = false,
