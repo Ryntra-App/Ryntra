@@ -43,7 +43,7 @@ struct DashboardView: View {
 
             if isNotificationsVisible {
                 NavigationStack {
-                    NotificationsView()
+                    NotificationsView(onOpenProject: openNotificationProject)
                         .ryntraChrome(
                             title: NSLocalizedString("Notifications", comment: "Screen title"),
                             dashboard: dashboard,
@@ -60,7 +60,10 @@ struct DashboardView: View {
 
             if let selectedProject {
                 NavigationStack {
-                    ProjectDetailView(project: selectedProject)
+                    ProjectDetailView(
+                        project: selectedProject,
+                        isReadOnly: !isManagedProject(selectedProject)
+                    )
                         .ryntraChrome(
                             title: selectedProject.title,
                             dashboard: dashboard,
@@ -181,6 +184,31 @@ struct DashboardView: View {
 
     private var isPlatformNative: Bool {
         storedThemeStyle == RyntraThemeStyle.platform.rawValue
+    }
+
+    private func isManagedProject(_ project: Project) -> Bool {
+        dashboard.projects.contains { managed in
+            managed.id == project.id || (!(managed.slug?.isEmpty ?? true) && managed.slug == project.slug)
+        }
+    }
+
+    private func openNotificationProject(_ projectReference: String) {
+        if let managed = dashboard.projects.first(where: {
+            $0.id == projectReference || $0.slug == projectReference
+        }) {
+            isNotificationsVisible = false
+            selectedProject = managed
+            return
+        }
+        Task {
+            do {
+                let project = try await model.loadProjectDetails(projectIdOrSlug: projectReference)
+                isNotificationsVisible = false
+                selectedProject = project
+            } catch {
+                presentedError = error.localizedDescription
+            }
+        }
     }
 }
 

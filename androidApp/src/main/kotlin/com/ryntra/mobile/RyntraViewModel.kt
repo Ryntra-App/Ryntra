@@ -347,24 +347,57 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun openProject(project: Project) {
+        loadProject(seed = project, projectKey = project.slug ?: project.id)
+    }
+
+    fun openNotificationProject(projectReference: String) {
+        if (projectReference.isBlank()) return
+        val managedProject = currentDashboard()?.projects?.firstOrNull { project ->
+            project.id == projectReference || project.slug == projectReference
+        }
+        if (managedProject != null) {
+            openProject(managedProject)
+            return
+        }
+        loadProject(
+            seed = Project(id = projectReference, slug = projectReference, title = projectReference),
+            projectKey = projectReference,
+            initiallyReadOnly = true,
+        )
+    }
+
+    private fun loadProject(
+        seed: Project,
+        projectKey: String,
+        initiallyReadOnly: Boolean = false,
+    ) {
         projectLoadJob?.cancel()
-        mutableProjectDetail.value = ProjectDetailState(project = project, isLoading = true)
+        mutableProjectDetail.value = ProjectDetailState(
+            project = seed,
+            isReadOnly = initiallyReadOnly,
+            isLoading = true,
+        )
         projectLoadJob = viewModelScope.launch {
-            val projectKey = project.slug ?: project.id
             val detailsDeferred = async { suspendCatching { controller.loadProjectDetails(projectKey) } }
             val versionsDeferred = async { suspendCatching { controller.loadProjectVersions(projectKey) } }
             val details = detailsDeferred.await()
             val versions = versionsDeferred.await()
-            val loadedProject = details.getOrElse { project }
-            // Load roster after details so team_id / organization from the full project are available.
-            val roster = suspendCatching { controller.loadProjectTeamRoster(loadedProject) }
+            val loadedProject = details.getOrElse { seed }
+            val isReadOnly = !isManagedProject(loadedProject)
+            // Public projects do not need private roster requests. This also keeps organization
+            // permissions intact for projects present in the signed-in creator portfolio.
+            val roster = if (isReadOnly) {
+                null
+            } else {
+                suspendCatching { controller.loadProjectTeamRoster(loadedProject) }
+            }
             val dependencies = versions.getOrNull()?.let { loadedVersions ->
                 suspendCatching { controller.loadProjectDependencies(loadedVersions) }.getOrDefault(emptyList())
             }.orEmpty()
             val current = mutableProjectDetail.value
-            if (current?.project?.id != project.id) return@launch
+            if (current?.project?.id != seed.id) return@launch
 
-            val teamRoster = roster.getOrNull()
+            val teamRoster = roster?.getOrNull()
             mutableProjectDetail.value = ProjectDetailState(
                 project = loadedProject,
                 versions = versions.getOrDefault(emptyList()),
@@ -372,11 +405,23 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
                 members = teamRoster?.projectMembers.orEmpty(),
                 organizationMembers = teamRoster?.organizationMembers.orEmpty(),
                 organizationName = teamRoster?.organization?.name,
+                isReadOnly = isReadOnly,
                 isLoading = false,
                 errorMessage = details.exceptionOrNull()?.message ?: versions.exceptionOrNull()?.message,
-                memberErrorMessage = roster.exceptionOrNull()?.message,
+                memberErrorMessage = roster?.exceptionOrNull()?.message,
             )
         }
+    }
+
+    private fun isManagedProject(project: Project): Boolean = currentDashboard()?.projects?.any { managed ->
+        managed.id == project.id || (!managed.slug.isNullOrBlank() && managed.slug == project.slug)
+    } == true
+
+    private fun currentDashboard(): com.ryntra.shared.model.Dashboard? = when (val current = state.value) {
+        is AppState.Ready -> current.dashboard
+        is AppState.Loading -> current.previousDashboard
+        is AppState.Failed -> current.previousDashboard
+        AppState.SignedOut -> null
     }
 
     fun closeProject() {
@@ -799,6 +844,7 @@ data class ProjectDetailState(
     /** Organization members who inherit access when the project is under an org. */
     val organizationMembers: List<ProjectMember> = emptyList(),
     val organizationName: String? = null,
+    val isReadOnly: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val memberErrorMessage: String? = null,

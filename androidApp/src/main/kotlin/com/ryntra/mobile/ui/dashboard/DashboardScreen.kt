@@ -102,6 +102,7 @@ fun DashboardScreen(
     projectDetail: ProjectDetailState? = null,
     organizationDetail: OrganizationDetailState? = null,
     onProjectClick: (Project) -> Unit = {},
+    onNotificationProjectClick: (String) -> Unit = {},
     onCloseProject: () -> Unit = {},
     onOrganizationClick: (Organization) -> Unit = {},
     onCloseOrganization: () -> Unit = {},
@@ -253,6 +254,7 @@ fun DashboardScreen(
                         organizationMembers = detail.organizationMembers,
                         organizationName = detail.organizationName,
                         currentUserId = dashboard.account.id,
+                        isReadOnly = detail.isReadOnly,
                         isLoading = detail.isLoading,
                         errorMessage = detail.errorMessage,
                         memberErrorMessage = detail.memberErrorMessage,
@@ -327,6 +329,10 @@ fun DashboardScreen(
                         state = notifications,
                         onRefresh = onRefreshNotifications,
                         onMarkRead = onMarkNotificationsRead,
+                        onOpenProject = { projectReference ->
+                            isNotificationsVisible = false
+                            onNotificationProjectClick(projectReference)
+                        },
                     )
                     DashboardLayer.Tabs -> AnimatedContent(
                         targetState = destination,

@@ -57,6 +57,7 @@ fun NotificationsScreen(
     state: NotificationState,
     onRefresh: () -> Unit,
     onMarkRead: (List<String>) -> Unit,
+    onOpenProject: (String) -> Unit,
 ) {
     val uriHandler = LocalUriHandler.current
     var isArchiveVisible by rememberSaveable { mutableStateOf(false) }
@@ -131,7 +132,8 @@ fun NotificationsScreen(
                     notification = notification,
                     onClick = {
                         if (!notification.read) onMarkRead(listOf(notification.id))
-                        uriHandler.openUri(notification.link.toModrinthUrl())
+                        notification.projectReference?.let(onOpenProject)
+                            ?: uriHandler.openUri(notification.link.toModrinthUrl())
                     },
                 )
             }

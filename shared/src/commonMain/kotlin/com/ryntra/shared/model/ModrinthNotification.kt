@@ -17,6 +17,33 @@ data class ModrinthNotification(
 ) {
     val kind: ModrinthNotificationKind
         get() = ModrinthNotificationKind.fromApiValue(type)
+
+    val projectReference: String?
+        get() = ModrinthNotificationLink.parse(link)?.projectIdOrSlug
+}
+
+data class ModrinthNotificationLink(
+    val projectIdOrSlug: String,
+    val versionId: String? = null,
+) {
+    companion object {
+        private val projectRoutes = setOf("mod", "plugin", "datapack", "shader", "resourcepack", "project")
+
+        fun parse(link: String): ModrinthNotificationLink? {
+            val path = link
+                .substringAfter("modrinth.com/", link)
+                .substringBefore('?')
+                .substringBefore('#')
+                .trim('/')
+            val segments = path.split('/').filter(String::isNotBlank)
+            if (segments.size < 2 || segments.first().lowercase() !in projectRoutes) return null
+            val versionMarker = segments.indexOf("version")
+            return ModrinthNotificationLink(
+                projectIdOrSlug = segments[1],
+                versionId = versionMarker.takeIf { it >= 0 }?.let { segments.getOrNull(it + 1) },
+            )
+        }
+    }
 }
 
 @Serializable

@@ -4,6 +4,7 @@ import SwiftUI
 struct NotificationsView: View {
     @EnvironmentObject private var model: AppModel
     @State private var isArchiveVisible = false
+    let onOpenProject: (String) -> Void
 
     private var visibleNotifications: [ModrinthNotification] {
         model.notifications.filter { isRead($0) == isArchiveVisible }
@@ -37,7 +38,9 @@ struct NotificationsView: View {
                     ForEach(visibleNotifications, id: \.id) { notification in
                         Button {
                             Task { await model.markNotificationRead(notification) }
-                            if let url = notification.modrinthURL {
+                            if let projectReference = notification.projectReference {
+                                onOpenProject(projectReference)
+                            } else if let url = notification.modrinthURL {
                                 UIApplication.shared.open(url)
                             }
                         } label: {

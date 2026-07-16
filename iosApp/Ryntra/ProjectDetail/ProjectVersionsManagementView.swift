@@ -7,6 +7,7 @@ struct ProjectVersionsManagementView: View {
 
     let project: Project
     let versions: [ProjectVersion]
+    let isReadOnly: Bool
     let isLoading: Bool
     let errorMessage: String?
     let onReload: () async -> Void
@@ -19,11 +20,13 @@ struct ProjectVersionsManagementView: View {
             HStack {
                 Text("Releases").font(.title3.bold())
                 Spacer()
-                Button { isCreating = true } label: {
-                    Image(systemName: "plus").frame(width: 34, height: 34)
+                if !isReadOnly {
+                    Button { isCreating = true } label: {
+                        Image(systemName: "plus").frame(width: 34, height: 34)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.ryntraGreen)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.ryntraGreen)
             }
 
             if isLoading {
@@ -39,7 +42,9 @@ struct ProjectVersionsManagementView: View {
             } else {
                 LazyVStack(spacing: 0) {
                     ForEach(versions, id: \.id) { version in
-                        ManagedVersionCard(version: version) { editingVersion = version }
+                        ManagedVersionCard(version: version) {
+                            if !isReadOnly { editingVersion = version }
+                        }
                     }
                 }
             }

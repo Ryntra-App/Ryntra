@@ -1,0 +1,26 @@
+package com.ryntra.shared.model
+
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+
+class ModrinthNotificationLinkTest {
+    @Test
+    fun parsesProjectAndVersionLinks() {
+        val link = ModrinthNotificationLink.parse("https://modrinth.com/mod/sodium/version/mc1.21.5-0.6.13#files")
+
+        assertEquals("sodium", link?.projectIdOrSlug)
+        assertEquals("mc1.21.5-0.6.13", link?.versionId)
+    }
+
+    @Test
+    fun parsesRelativeProjectLinks() {
+        assertEquals("fabric-api", ModrinthNotificationLink.parse("/project/fabric-api?tab=versions")?.projectIdOrSlug)
+    }
+
+    @Test
+    fun rejectsNonProjectDestinations() {
+        assertNull(ModrinthNotificationLink.parse("https://modrinth.com/dashboard/notifications"))
+        assertNull(ModrinthNotificationLink.parse("https://modrinth.com/organization/example"))
+    }
+}

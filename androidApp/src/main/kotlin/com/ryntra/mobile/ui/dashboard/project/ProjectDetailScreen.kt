@@ -89,6 +89,7 @@ fun ProjectDetailScreen(
     organizationMembers: List<ProjectMember> = emptyList(),
     organizationName: String? = null,
     currentUserId: String? = null,
+    isReadOnly: Boolean = false,
     isLoading: Boolean = false,
     errorMessage: String? = null,
     memberErrorMessage: String? = null,
@@ -150,10 +151,16 @@ fun ProjectDetailScreen(
         members.firstOrNull { it.user.id == currentUserId }
             ?: organizationMembers.firstOrNull { it.user.id == currentUserId }
     }
-    val canCreateVersions = currentMember.hasPermission(0)
-    val canDeleteVersions = currentMember.hasPermission(1)
-    val canManageMembers = currentMember.hasPermission(6) || currentMember?.isOwner == true
+    val canCreateVersions = !isReadOnly && currentMember.hasPermission(0)
+    val canDeleteVersions = !isReadOnly && currentMember.hasPermission(1)
+    val canManageMembers = !isReadOnly && (currentMember.hasPermission(6) || currentMember?.isOwner == true)
     val teamId = project.team
+
+    LaunchedEffect(isReadOnly) {
+        if (isReadOnly && selectedTab !in setOf(ProjectDetailTab.Overview, ProjectDetailTab.Versions)) {
+            selectedTab = ProjectDetailTab.Overview
+        }
+    }
 
     LaunchedEffect(projectAction.successMessage) {
         if (projectAction.successMessage != null) {
@@ -172,6 +179,7 @@ fun ProjectDetailScreen(
         item(key = "tabs", contentType = "tabs") {
             ProjectDetailTabs(
                 selected = selectedTab,
+                isReadOnly = isReadOnly,
                 onSelect = { selectedTab = it },
                 modifier = Modifier.padding(bottom = 18.dp),
             )
@@ -283,7 +291,7 @@ fun ProjectDetailScreen(
                                 canEdit = canCreateVersions,
                                 canDelete = canDeleteVersions,
                                 isBusy = projectAction.isRunning && projectAction.targetId == version.id,
-                                onOpen = { editingVersion = version },
+                                onOpen = { if (canCreateVersions) editingVersion = version },
                                 onEdit = { editingVersion = version },
                                 onDelete = { onDeleteVersion(version.id) },
                             )

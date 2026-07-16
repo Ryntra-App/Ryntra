@@ -47,6 +47,7 @@ internal enum class ProjectDetailTab(
 @Composable
 internal fun ProjectDetailTabs(
     selected: ProjectDetailTab,
+    isReadOnly: Boolean,
     onSelect: (ProjectDetailTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -61,7 +62,9 @@ internal fun ProjectDetailTabs(
             .border(0.75.dp, Color.White.copy(alpha = 0.08f), outerShape)
             .padding(3.dp),
     ) {
-        ProjectDetailTab.entries.forEach { tab ->
+        ProjectDetailTab.entries.filter { tab ->
+            !isReadOnly || tab == ProjectDetailTab.Overview || tab == ProjectDetailTab.Versions
+        }.forEach { tab ->
             val isSelected = selected == tab
             val itemShape = RoundedCornerShape(8.dp)
             val contentColor = if (isSelected) colors.accent else colors.labelSecondary

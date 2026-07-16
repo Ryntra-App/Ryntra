@@ -5,6 +5,7 @@ struct ProjectDetailView: View {
     @EnvironmentObject private var model: AppModel
 
     @State private var project: Project
+    let isReadOnly: Bool
     @State private var selectedTab = ProjectDetailTab.overview
     @State private var versions: [ProjectVersion] = []
     @State private var dependencies: [ProjectDependency] = []
@@ -17,8 +18,9 @@ struct ProjectDetailView: View {
     @State private var versionError: String?
     @State private var memberError: String?
 
-    init(project: Project) {
+    init(project: Project, isReadOnly: Bool = false) {
         _project = State(initialValue: project)
+        self.isReadOnly = isReadOnly
         _markdownBlocks = State(initialValue: [])
     }
 
@@ -47,6 +49,7 @@ struct ProjectDetailView: View {
                     ProjectVersionsManagementView(
                         project: project,
                         versions: versions,
+                        isReadOnly: isReadOnly,
                         isLoading: isLoadingVersions,
                         errorMessage: versionError,
                         onReload: { await loadVersions() }
@@ -72,7 +75,7 @@ struct ProjectDetailView: View {
         .background(Color.ryntraBackground)
         .task(id: project.id) {
             async let loadedVersions: Void = loadVersions()
-            async let loadedMembers: Void = loadMembers()
+            async let loadedMembers: Void = loadMembersIfAllowed()
             async let loadedMarkdown = parseMarkdown(project.body)
             markdownBlocks = await loadedMarkdown
             _ = await (loadedVersions, loadedMembers)
@@ -103,7 +106,7 @@ struct ProjectDetailView: View {
 
     private var projectTabs: some View {
         HStack(spacing: 0) {
-            ForEach(ProjectDetailTab.allCases, id: \.self) { tab in
+            ForEach(availableTabs, id: \.self) { tab in
                 Button {
                     selectedTab = tab
                 } label: {
@@ -179,6 +182,15 @@ struct ProjectDetailView: View {
             memberError = error.localizedDescription
         }
         isLoadingMembers = false
+    }
+
+    private func loadMembersIfAllowed() async {
+        guard !isReadOnly else { return }
+        await loadMembers()
+    }
+
+    private var availableTabs: [ProjectDetailTab] {
+        isReadOnly ? [.overview, .versions] : ProjectDetailTab.allCases
     }
 
     private var identity: some View {

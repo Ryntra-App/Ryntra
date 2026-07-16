@@ -76,6 +76,7 @@ fun RyntraApp(viewModel: RyntraViewModel) {
                         instantNotifications = instantNotifications,
                         preferences = preferences,
                         onProjectClick = viewModel::openProject,
+                        onNotificationProjectClick = viewModel::openNotificationProject,
                         onCloseProject = viewModel::closeProject,
                         onOrganizationClick = viewModel::openOrganization,
                         onCloseOrganization = viewModel::closeOrganization,
