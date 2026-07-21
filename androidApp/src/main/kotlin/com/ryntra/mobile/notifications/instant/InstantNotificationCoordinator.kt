@@ -52,6 +52,24 @@ internal class InstantNotificationCoordinator(context: Context) {
         relay.registerInstallation(store.installationId, PLATFORM, pushToken, currentLocale(), secret)
     }
 
+    suspend fun synchronize(): InstantSynchronizationResult {
+        val secret = store.readSecret() ?: return InstantSynchronizationResult(isConnected = false)
+        return try {
+            val pushToken = FirebaseBootstrap.token(appContext)
+            relay.registerInstallation(store.installationId, PLATFORM, pushToken, currentLocale(), secret)
+            val status = relay.getStatus(store.installationId, secret)
+            store.isConnected = status.isConnected
+            InstantSynchronizationResult(
+                isConnected = status.isConnected,
+                disabledReason = status.disabledReason,
+                hasRegistration = true,
+            )
+        } catch (error: ApiException) {
+            if (error.statusCode == 401) store.resetRegistration()
+            throw error
+        }
+    }
+
     suspend fun updateLocale() {
         val secret = store.readSecret() ?: return
         val pushToken = FirebaseBootstrap.token(appContext)
@@ -115,3 +133,9 @@ internal sealed interface InstantCallbackResult {
     data object Success : InstantCallbackResult
     data class Failure(val message: String) : InstantCallbackResult
 }
+
+internal data class InstantSynchronizationResult(
+    val isConnected: Boolean,
+    val disabledReason: String? = null,
+    val hasRegistration: Boolean = false,
+)

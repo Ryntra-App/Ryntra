@@ -380,6 +380,8 @@
     <string name="notifications_empty">You are all caught up</string>
     <string name="notifications_archive_empty">No read notifications yet</string>
     <string name="notifications_load_failed">Could not load notifications</string>
+    <string name="notifications_accept_invitation">Accept invitation</string>
+    <string name="notifications_accepting_invitation">Accepting…</string>
     <string name="notifications_settings_title">Notifications</string>
     <string name="notifications_local_title">Local background checks</string>
     <string name="notifications_local_hint">Private on-device checks about every 15 minutes; Android may delay them to save battery.</string>
@@ -398,6 +400,7 @@
     <string name="notification_content_project_update_generic">A project you follow has a new update on Modrinth.</string>
     <string name="notification_content_team_invite_title">Team invitation</string>
     <string name="notification_content_team_invite_body">You received a new team invitation on Modrinth.</string>
+    <string name="notification_content_team_invite_project">You were invited to join the team for %1$s.</string>
     <string name="notification_content_status_title">Project status changed</string>
     <string name="notification_content_status_project">The status of %1$s changed on Modrinth.</string>
     <string name="notification_content_status_generic">The status of one of your projects changed on Modrinth.</string>

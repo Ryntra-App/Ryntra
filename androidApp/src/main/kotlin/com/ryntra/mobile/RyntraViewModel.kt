@@ -1,7 +1,13 @@
 package com.ryntra.mobile
 
 import android.app.Application
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.net.Uri
+import android.os.SystemClock
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.ryntra.mobile.auth.OAuthCallbackResult
@@ -15,6 +21,7 @@ import com.ryntra.mobile.preferences.RyntraPreferencesStore
 import com.ryntra.mobile.preferences.ThemeStyle
 import com.ryntra.mobile.notifications.NotificationScheduler
 import com.ryntra.mobile.notifications.NotificationBadgeStore
+import com.ryntra.mobile.notifications.NotificationRefreshSignal
 import com.ryntra.mobile.notifications.instant.InstantCallbackResult
 import com.ryntra.mobile.notifications.instant.InstantNotificationCoordinator
 import com.ryntra.mobile.security.SecureTokenStore
@@ -65,9 +72,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     private val mutableModeration = MutableStateFlow(ProjectModerationState())
     private val mutableMemberSearch = MutableStateFlow(MemberSearchState())
     private val mutableAnalytics = MutableStateFlow(AnalyticsState())
-    private val mutableNotifications = MutableStateFlow(
-        NotificationState(cachedUnreadCount = notificationBadgeStore.readCount()),
-    )
+    private val mutableNotifications = MutableStateFlow(NotificationState())
     private val mutableInstantNotifications = MutableStateFlow(
         InstantNotificationState(
             isAvailable = instantNotificationCoordinator.isAvailable,
@@ -84,6 +89,13 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     private var notificationsJob: Job? = null
     private var notificationAccountId: String? = null
     private var pendingNotificationProjectReference: String? = null
+    private var instantSynchronizationJob: Job? = null
+    private var lastForegroundRefreshAt = 0L
+    private val notificationRefreshReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == NotificationRefreshSignal.ACTION) refreshNotifications()
+        }
+    }
 
     val state: StateFlow<AppState> = controller.state
     val oauthError: StateFlow<String?> = mutableOAuthError.asStateFlow()
@@ -100,6 +112,12 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     val preferences: StateFlow<RyntraPreferences> = preferencesStore.preferences
 
     init {
+        ContextCompat.registerReceiver(
+            application,
+            notificationRefreshReceiver,
+            IntentFilter(NotificationRefreshSignal.ACTION),
+            ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
         if (instantNotificationCoordinator.isConnected && preferencesStore.preferences.value.localNotificationsEnabled) {
             setLocalNotificationsEnabled(false)
         }
@@ -167,6 +185,42 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun refresh() = controller.refresh()
+
+    fun onAppForeground() {
+        val now = SystemClock.elapsedRealtime()
+        if (lastForegroundRefreshAt != 0L && now - lastForegroundRefreshAt < FOREGROUND_REFRESH_INTERVAL_MS) return
+        lastForegroundRefreshAt = now
+        if (state.value is AppState.Ready) {
+            refreshNotifications()
+            controller.refresh()
+        }
+        synchronizeInstantNotifications()
+    }
+
+    private fun synchronizeInstantNotifications() {
+        if (!instantNotificationCoordinator.isAvailable || instantSynchronizationJob?.isActive == true) return
+        instantSynchronizationJob = viewModelScope.launch {
+            suspendCatching { instantNotificationCoordinator.synchronize() }.fold(
+                onSuccess = { result ->
+                    if (result.isConnected) setLocalNotificationsEnabled(false)
+                    else if (result.hasRegistration) setLocalNotificationsEnabled(true)
+                    mutableInstantNotifications.value = mutableInstantNotifications.value.copy(
+                        isConnected = result.isConnected,
+                        errorMessage = when (result.disabledReason) {
+                            "authorization_expired" -> "Modrinth authorization expired. Connect server notifications again."
+                            else -> null
+                        },
+                    )
+                },
+                onFailure = { error ->
+                    mutableInstantNotifications.value = mutableInstantNotifications.value.copy(
+                        isConnected = instantNotificationCoordinator.isConnected,
+                        errorMessage = error.message ?: "Unable to synchronize instant notifications.",
+                    )
+                },
+            )
+        }
+    }
 
     fun setShowFavoriteProjects(isEnabled: Boolean) = preferencesStore.setShowFavoriteProjects(isEnabled)
 
@@ -288,6 +342,29 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
                     )
                     mutableNotifications.value = restored
                     notificationBadgeStore.replace(restored.unreadCount)
+                },
+            )
+        }
+    }
+
+    fun acceptNotificationInvitation(notification: ModrinthNotification) {
+        if (mutableNotifications.value.activeActionNotificationId != null) return
+        mutableNotifications.value = mutableNotifications.value.copy(
+            activeActionNotificationId = notification.id,
+            errorMessage = null,
+        )
+        viewModelScope.launch {
+            suspendCatching { controller.acceptNotificationInvitation(notification) }.fold(
+                onSuccess = {
+                    mutableNotifications.value = mutableNotifications.value.copy(activeActionNotificationId = null)
+                    refreshNotifications()
+                    controller.refresh()
+                },
+                onFailure = { error ->
+                    mutableNotifications.value = mutableNotifications.value.copy(
+                        activeActionNotificationId = null,
+                        errorMessage = error.message ?: "Unable to accept the invitation.",
+                    )
                 },
             )
         }
@@ -431,6 +508,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
             }.orEmpty()
             val current = mutableProjectDetail.value
             if (current?.project?.id != seed.id) return@launch
+            if (details.isSuccess) controller.updateCachedProject(loadedProject)
 
             val teamRoster = roster?.getOrNull()
             mutableProjectDetail.value = ProjectDetailState(
@@ -902,6 +980,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
         if (detail.project.id != projectId && detail.project.slug != projectId) return
         val projectKey = detail.project.slug ?: detail.project.id
         val project = controller.loadProjectDetails(projectKey)
+        controller.updateCachedProject(project)
         val versions = if (refreshVersions) controller.loadProjectVersions(projectKey) else detail.versions
         val dependencies = if (refreshVersions) controller.loadProjectDependencies(versions) else detail.dependencies
         val roster = if (refreshMembers) {
@@ -953,12 +1032,14 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     override fun onCleared() {
+        runCatching { getApplication<Application>().unregisterReceiver(notificationRefreshReceiver) }
         instantNotificationCoordinator.close()
         controller.close()
         super.onCleared()
     }
 
     private companion object {
+        const val FOREGROUND_REFRESH_INTERVAL_MS = 15_000L
     }
 }
 
@@ -1047,12 +1128,12 @@ data class AnalyticsState(
 
 data class NotificationState(
     val items: List<ModrinthNotification> = emptyList(),
-    val cachedUnreadCount: Int = 0,
     val hasLoaded: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
+    val activeActionNotificationId: String? = null,
 ) {
-    val unreadCount: Int get() = if (hasLoaded) items.count { !it.read } else cachedUnreadCount
+    val unreadCount: Int get() = if (hasLoaded) items.count { !it.read } else 0
 }
 
 private fun NotificationState.withReadNotifications(notificationIds: Set<String>): NotificationState = copy(

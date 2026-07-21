@@ -10,16 +10,18 @@ import com.ryntra.mobile.MainActivity
 import com.ryntra.mobile.R
 import com.ryntra.mobile.notifications.NotificationChannels
 import com.ryntra.mobile.notifications.NotificationBadgeStore
+import com.ryntra.mobile.notifications.NotificationRefreshSignal
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
+@Suppress("OVERRIDE_DEPRECATION")
 class RyntraMessagingService : FirebaseMessagingService() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    override fun onRegistered(token: String) {
+    override fun onNewToken(token: String) {
         serviceScope.launch {
             val coordinator = InstantNotificationCoordinator(applicationContext)
             try {
@@ -33,7 +35,9 @@ class RyntraMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         val title = message.notification?.title ?: message.data["title"] ?: getString(R.string.app_name)
         val body = message.notification?.body ?: message.data["body"] ?: return
-        NotificationBadgeStore(this).increment()
+        val notificationId = message.data["notification_id"] ?: message.messageId ?: "$title\n$body"
+        if (!NotificationBadgeStore(this).recordPush(notificationId)) return
+        NotificationRefreshSignal.send(this)
         NotificationChannels.create(this)
         val launchIntent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -41,7 +45,7 @@ class RyntraMessagingService : FirebaseMessagingService() {
         }
         val pendingIntent = PendingIntent.getActivity(
             this,
-            message.messageId?.hashCode() ?: body.hashCode(),
+            notificationId.hashCode(),
             launchIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
@@ -54,7 +58,7 @@ class RyntraMessagingService : FirebaseMessagingService() {
             .setContentIntent(pendingIntent)
             .build()
         if (NotificationManagerCompat.from(this).areNotificationsEnabled()) {
-            NotificationManagerCompat.from(this).notify(message.messageId?.hashCode() ?: body.hashCode(), notification)
+            NotificationManagerCompat.from(this).notify(notificationId.hashCode(), notification)
         }
     }
 

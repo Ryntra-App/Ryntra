@@ -90,6 +90,7 @@ data class RelayStatus(
     val isConnected: Boolean,
     val platform: String,
     val connectedAt: String? = null,
+    val disabledReason: String? = null,
 )
 
 @Serializable

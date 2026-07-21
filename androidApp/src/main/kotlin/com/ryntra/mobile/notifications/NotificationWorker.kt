@@ -51,8 +51,10 @@ class NotificationWorker(
 
         val knownIds = store.knownIds()
         val newUnread = notifications.filter { !it.read && it.id !in knownIds }
-        if (canPostNotifications()) newUnread.take(MAX_PER_RUN).forEach(::showNotification)
-        repeat(newUnread.size) { NotificationBadgeStore(applicationContext).increment() }
+        val badgeStore = NotificationBadgeStore(applicationContext)
+        val unseen = newUnread.filter { badgeStore.recordPush(it.id) }
+        if (canPostNotifications()) unseen.take(MAX_PER_RUN).forEach(::showNotification)
+        if (unseen.isNotEmpty()) NotificationRefreshSignal.send(applicationContext)
         store.updateKnownIds((currentIds + knownIds).distinct())
     }
 

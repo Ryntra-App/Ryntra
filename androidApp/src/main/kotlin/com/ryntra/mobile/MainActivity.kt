@@ -29,7 +29,18 @@ class MainActivity : AppCompatActivity() {
         setContent {
             RyntraApp(viewModel)
         }
+        window.decorView.post(::preferHighestRefreshRate)
         handleAppIntent(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        window.decorView.post(::preferHighestRefreshRate)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        viewModel.onAppForeground()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -48,6 +59,18 @@ class MainActivity : AppCompatActivity() {
         val sanitizedIntent = Intent(intent).setData(null)
         sanitizedIntent.removeExtra(EXTRA_DEEP_LINK)
         setIntent(sanitizedIntent)
+    }
+
+    // Some non-ARR OEM displays ignore Compose's high frame-rate vote and pin the app to 60 Hz.
+    // A window-level preference lets the system select a faster mode without forcing a resolution.
+    private fun preferHighestRefreshRate() {
+        val display = window.decorView.display ?: return
+        val highestRefreshRate = display.supportedModes.maxOfOrNull { it.refreshRate } ?: return
+        if (window.attributes.preferredRefreshRate == highestRefreshRate) return
+
+        window.attributes = window.attributes.apply {
+            preferredRefreshRate = highestRefreshRate
+        }
     }
 
     companion object {

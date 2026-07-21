@@ -130,6 +130,7 @@ fun RyntraApp(viewModel: RyntraViewModel) {
                         onDisconnectInstantNotifications = viewModel::disconnectInstantNotifications,
                         onRefreshNotifications = viewModel::refreshNotifications,
                         onMarkNotificationsRead = viewModel::markNotificationsRead,
+                        onAcceptNotificationInvitation = viewModel::acceptNotificationInvitation,
                         onResetAppearance = viewModel::resetAppearance,
                         onExportPreferences = viewModel::exportPreferences,
                         onImportPreferences = viewModel::importPreferences,

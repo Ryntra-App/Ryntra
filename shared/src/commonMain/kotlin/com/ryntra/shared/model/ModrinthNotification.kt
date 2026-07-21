@@ -57,7 +57,19 @@ data class ModrinthNotificationLink(
 data class ModrinthNotificationAction(
     val title: String = "",
     @SerialName("action_route") val actionRoute: List<String> = emptyList(),
-)
+) {
+    val teamJoinId: String?
+        get() {
+            if (actionRoute.size != 2 || actionRoute[0].uppercase() != "POST") return null
+            val segments = actionRoute[1].trim('/').split('/')
+            if (segments.size != 3 || segments[0] != "team" || segments[2] != "join") return null
+            return segments[1].takeIf { TEAM_ID.matches(it) }
+        }
+
+    private companion object {
+        val TEAM_ID = Regex("^[A-Za-z0-9_-]{1,128}$")
+    }
+}
 
 enum class ModrinthNotificationKind {
     ProjectUpdate,

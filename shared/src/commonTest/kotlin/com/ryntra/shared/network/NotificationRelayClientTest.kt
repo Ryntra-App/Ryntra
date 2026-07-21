@@ -87,6 +87,23 @@ class NotificationRelayClientTest {
         assertEquals("This device is no longer authorized for instant notifications.", failure.message)
     }
 
+    @Test
+    fun statusExposesWhyDeliveryNeedsAttention() = runTest {
+        val engine = MockEngine {
+            respond(
+                """{"isConnected":false,"platform":"android","disabledReason":"authorization_expired"}""",
+                HttpStatusCode.OK,
+                jsonHeaders,
+            )
+        }
+        val client = NotificationRelayClient("https://auth.example.com", testClient(engine))
+
+        val status = client.getStatus("installation_identifier_1234", "device-secret")
+
+        assertEquals(false, status.isConnected)
+        assertEquals("authorization_expired", status.disabledReason)
+    }
+
     private companion object {
         val jsonHeaders = headersOf(HttpHeaders.ContentType, "application/json")
 

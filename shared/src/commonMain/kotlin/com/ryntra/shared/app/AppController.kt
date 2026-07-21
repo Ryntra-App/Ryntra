@@ -97,6 +97,26 @@ class AppController internal constructor(
         repository.markNotificationsRead(notificationIds, token)
     }
 
+    suspend fun acceptNotificationInvitation(notification: ModrinthNotification) {
+        val teamId = notification.actions.firstNotNullOfOrNull { it.teamJoinId }
+            ?: throw IllegalArgumentException("This notification does not contain a supported invitation action.")
+        repository.joinTeam(teamId, requireToken("accepting an invitation"))
+        repository.markNotificationsRead(listOf(notification.id), requireToken("updating notifications"))
+    }
+
+    fun updateCachedProject(project: Project) {
+        mutableState.value = when (val current = mutableState.value) {
+            is AppState.Ready -> AppState.Ready(current.dashboard.withFreshProject(project))
+            is AppState.Loading -> current.copy(
+                previousDashboard = current.previousDashboard?.withFreshProject(project),
+            )
+            is AppState.Failed -> current.copy(
+                previousDashboard = current.previousDashboard?.withFreshProject(project),
+            )
+            AppState.SignedOut -> AppState.SignedOut
+        }
+    }
+
     suspend fun loadModerationThread(threadId: String): ModerationThread =
         repository.loadModerationThread(threadId, requireToken("loading project moderation"))
 
@@ -422,6 +442,12 @@ class AppController internal constructor(
         })
 
 }
+
+internal fun Dashboard.withFreshProject(project: Project): Dashboard = copy(
+    projects = projects.map { cached ->
+        if (cached.id == project.id || cached.slug != null && cached.slug == project.slug) project else cached
+    },
+)
 
 class Observation internal constructor(
     private val job: Job,

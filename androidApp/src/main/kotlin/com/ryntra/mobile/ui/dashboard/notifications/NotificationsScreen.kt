@@ -58,6 +58,7 @@ fun NotificationsScreen(
     state: NotificationState,
     onRefresh: () -> Unit,
     onMarkRead: (List<String>) -> Unit,
+    onAcceptInvitation: (ModrinthNotification) -> Unit,
     onOpenProject: (String) -> Unit,
 ) {
     val uriHandler = LocalUriHandler.current
@@ -131,6 +132,9 @@ fun NotificationsScreen(
             items(visibleNotifications, key = ModrinthNotification::id, contentType = { "notification" }) { notification ->
                 NotificationRow(
                     notification = notification,
+                    isActionLoading = state.activeActionNotificationId == notification.id,
+                    isAnyActionLoading = state.activeActionNotificationId != null,
+                    onAcceptInvitation = { onAcceptInvitation(notification) },
                     onClick = {
                         if (!notification.read) onMarkRead(listOf(notification.id))
                         notification.projectReference?.let(onOpenProject)
@@ -154,10 +158,17 @@ fun NotificationsScreen(
 }
 
 @Composable
-private fun NotificationRow(notification: ModrinthNotification, onClick: () -> Unit) {
+private fun NotificationRow(
+    notification: ModrinthNotification,
+    isActionLoading: Boolean,
+    isAnyActionLoading: Boolean,
+    onAcceptInvitation: () -> Unit,
+    onClick: () -> Unit,
+) {
     val colors = RyntraDesign.colors
     val context = LocalContext.current
     val localizedText = context.notificationText(notification)
+    val canAcceptInvitation = notification.actions.any { it.teamJoinId != null }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -202,6 +213,20 @@ private fun NotificationRow(notification: ModrinthNotification, onClick: () -> U
                 style = MaterialTheme.typography.labelSmall,
                 color = colors.labelSecondary.copy(alpha = 0.72f),
             )
+            if (canAcceptInvitation && !notification.read) {
+                Button(
+                    onClick = onAcceptInvitation,
+                    enabled = !isAnyActionLoading,
+                    modifier = Modifier.padding(top = 4.dp),
+                ) {
+                    Text(
+                        stringResource(
+                            if (isActionLoading) R.string.notifications_accepting_invitation
+                            else R.string.notifications_accept_invitation,
+                        ),
+                    )
+                }
+            }
         }
         if (!notification.read) {
             Box(Modifier.padding(top = 5.dp).size(8.dp).background(colors.accent, CircleShape))

@@ -28,7 +28,8 @@ internal fun Context.notificationText(notification: ModrinthNotification): Notif
         )
         ModrinthNotificationKind.TeamInvite -> NotificationText(
             title = getString(R.string.notification_content_team_invite_title),
-            body = getString(R.string.notification_content_team_invite_body),
+            body = projectTitle?.let { getString(R.string.notification_content_team_invite_project, it) }
+                ?: getString(R.string.notification_content_team_invite_body),
         )
         ModrinthNotificationKind.StatusChange -> NotificationText(
             title = getString(R.string.notification_content_status_title),

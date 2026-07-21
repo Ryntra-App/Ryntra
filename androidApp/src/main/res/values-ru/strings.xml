@@ -384,6 +384,8 @@
     <string name="notifications_empty">Новых уведомлений нет</string>
     <string name="notifications_archive_empty">Прочитанных уведомлений пока нет</string>
     <string name="notifications_load_failed">Не удалось загрузить уведомления</string>
+    <string name="notifications_accept_invitation">Принять приглашение</string>
+    <string name="notifications_accepting_invitation">Принимаем…</string>
     <string name="notifications_settings_title">Уведомления</string>
     <string name="notifications_local_title">Локальная фоновая проверка</string>
     <string name="notifications_local_hint">Приватная проверка на устройстве примерно каждые 15 минут; Android может задерживать её ради батареи.</string>
@@ -402,6 +404,7 @@
     <string name="notification_content_project_update_generic">Для проекта, на который вы подписаны, вышло обновление на Modrinth.</string>
     <string name="notification_content_team_invite_title">Приглашение в команду</string>
     <string name="notification_content_team_invite_body">Вы получили новое приглашение в команду на Modrinth.</string>
+    <string name="notification_content_team_invite_project">Вас пригласили в команду проекта %1$s.</string>
     <string name="notification_content_status_title">Статус проекта изменён</string>
     <string name="notification_content_status_project">Статус проекта %1$s изменился на Modrinth.</string>
     <string name="notification_content_status_generic">Статус одного из ваших проектов изменился на Modrinth.</string>

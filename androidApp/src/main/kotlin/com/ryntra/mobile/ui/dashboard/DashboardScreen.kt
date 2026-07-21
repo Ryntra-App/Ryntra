@@ -69,6 +69,7 @@ import com.ryntra.mobile.ui.dashboard.project.ProjectDetailScreen
 import com.ryntra.mobile.ui.dashboard.projects.ProjectsScreen
 import com.ryntra.shared.model.Dashboard
 import com.ryntra.shared.model.Organization
+import com.ryntra.shared.model.ModrinthNotification
 import com.ryntra.shared.model.Project
 import com.ryntra.shared.model.CreateVersionRequest
 import com.ryntra.shared.model.ProjectFileUpload
@@ -156,6 +157,7 @@ fun DashboardScreen(
     onDisconnectInstantNotifications: () -> Unit = {},
     onRefreshNotifications: () -> Unit = {},
     onMarkNotificationsRead: (List<String>) -> Unit = {},
+    onAcceptNotificationInvitation: (ModrinthNotification) -> Unit = {},
     onResetAppearance: () -> Unit = {},
     onExportPreferences: (String) -> String = { "" },
     onImportPreferences: (String) -> Result<Unit> = { Result.failure(IllegalArgumentException("Import unavailable.")) },
@@ -341,6 +343,7 @@ fun DashboardScreen(
                         state = notifications,
                         onRefresh = onRefreshNotifications,
                         onMarkRead = onMarkNotificationsRead,
+                        onAcceptInvitation = onAcceptNotificationInvitation,
                         onOpenProject = { projectReference ->
                             isNotificationsVisible = false
                             onNotificationProjectClick(projectReference)
