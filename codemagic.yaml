@@ -38,6 +38,8 @@ workflows:
           APP_PATH="$CM_BUILD_DIR/build/ios-simulator/DerivedData/Build/Products/Debug-iphonesimulator/Ryntra.app"
           OUTPUT_DIR="$CM_BUILD_DIR/build/appetize"
           test -d "$APP_PATH"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP_PATH/Info.plist")" = "Ryntra"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundlePackageType' "$APP_PATH/Info.plist")" = "APPL"
           file "$APP_PATH/Ryntra"
           lipo -info "$APP_PATH/Ryntra"
           lipo -verify_arch x86_64 "$APP_PATH/Ryntra"
