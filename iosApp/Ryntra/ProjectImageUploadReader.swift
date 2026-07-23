@@ -1,7 +1,7 @@
 import Foundation
 import PhotosUI
-import PhotosUI
 import RyntraShared
+import SwiftUI
 import UniformTypeIdentifiers
 
 enum ProjectImageUploadError: LocalizedError {
@@ -30,7 +30,7 @@ enum ProjectImageUploadReader {
         baseName: String,
         maxBytes: Int
     ) async throws -> ProjectFileUpload {
-        guard let contentType = item.supportedContentTypes.first(where: { $0.conforms(to: .image) }) else {
+        guard let contentType = item.supportedContentTypes.first(where: { $0.conforms(to: UTType.image) }) else {
             throw ProjectImageUploadError.unsupportedFormat
         }
         guard let data = try await item.loadTransferable(type: Data.self), !data.isEmpty else {

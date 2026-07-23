@@ -52,11 +52,20 @@ struct OverviewView: View {
     }
 
     private var projectTypes: [(name: String, count: Int)] {
-        Dictionary(grouping: dashboard.projects, by: { project in project.displayTypeLabel })
-            .map { (name: $0.key, count: $0.value.count) }
-            .sorted { $0.count == $1.count ? $0.name < $1.name : $0.count > $1.count }
-            .prefix(4)
-            .map { $0 }
+        let grouped: [String: [Project]] = Dictionary(
+            grouping: dashboard.projects,
+            by: { project in project.displayTypeLabel }
+        )
+        let counts: [(name: String, count: Int)] = grouped.map { entry in
+            (name: entry.key, count: entry.value.count)
+        }
+        let sorted = counts.sorted { left, right in
+            if left.count == right.count {
+                return left.name < right.name
+            }
+            return left.count > right.count
+        }
+        return Array(sorted.prefix(4))
     }
 
     var body: some View {
