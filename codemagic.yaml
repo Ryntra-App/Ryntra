@@ -25,7 +25,7 @@ workflows:
           xcodebuild \
             -project iosApp/Ryntra.xcodeproj \
             -scheme Ryntra \
-            -configuration Debug \
+            -configuration Release \
             -destination "generic/platform=iOS Simulator" \
             -derivedDataPath "$CM_BUILD_DIR/build/ios-simulator/DerivedData" \
             ARCHS=x86_64 \
@@ -35,7 +35,7 @@ workflows:
             build
       - name: Package Appetize simulator build
         script: |
-          APP_PATH="$CM_BUILD_DIR/build/ios-simulator/DerivedData/Build/Products/Debug-iphonesimulator/Ryntra.app"
+          APP_PATH="$CM_BUILD_DIR/build/ios-simulator/DerivedData/Build/Products/Release-iphonesimulator/Ryntra.app"
           OUTPUT_DIR="$CM_BUILD_DIR/build/appetize"
           test -d "$APP_PATH"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP_PATH/Info.plist")" = "Ryntra"
@@ -47,7 +47,7 @@ workflows:
           ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$OUTPUT_DIR/Ryntra-simulator.zip"
     artifacts:
       - build/appetize/Ryntra-simulator.zip
-      - build/ios-simulator/DerivedData/Build/Products/Debug-iphonesimulator/*.app
+      - build/ios-simulator/DerivedData/Build/Products/Release-iphonesimulator/*.app
 
   ios-unsigned-ipa:
     name: Ryntra Unsigned Device IPA

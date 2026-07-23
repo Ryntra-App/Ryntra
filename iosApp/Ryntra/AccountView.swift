@@ -74,38 +74,23 @@ struct AccountView: View {
             .themedListRowBackground(isPlatformNative: isPlatformNative)
 
             Section {
-                Link(destination: SupportDetails.donationAlertsURL) {
-                    Label(NSLocalizedString("DonationAlerts", comment: "Support option"), systemImage: "heart")
-                }
-                Button {
-                    copySupportAddress(SupportDetails.usdtTRC20, label: "USDT · TRC20")
+                LabeledContent {
+                    TextField("Username", text: $username)
+                        .multilineTextAlignment(.trailing)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .disabled(isSaving)
                 } label: {
-                    supportAddressLabel("USDT · TRC20", address: SupportDetails.usdtTRC20)
+                    Label("Username", systemImage: "at")
                 }
-                Button {
-                    copySupportAddress(SupportDetails.tonUSDT, label: "USDT · TON")
-                } label: {
-                    supportAddressLabel("USDT · TON", address: SupportDetails.tonUSDT)
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Bio", systemImage: "text.alignleft")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    TextField("Tell people about your work", text: $bio, axis: .vertical)
+                        .lineLimit(3...6)
+                        .disabled(isSaving)
                 }
-            } header: {
-                RyntraSectionLabel(text: NSLocalizedString("Support the author", comment: "Settings section"))
-            } footer: {
-                if let copiedSupportAddress {
-                    Text(String(format: NSLocalizedString("%@ address copied.", comment: "Support copy result"), copiedSupportAddress))
-                } else {
-                    Text(NSLocalizedString("Thank you for supporting Ryntra development.", comment: "Support hint"))
-                }
-            }
-            .tint(Color.ryntraGreen)
-            .themedListRowBackground(isPlatformNative: isPlatformNative)
-
-            Section {
-                TextField("Username", text: $username)
-                    .textInputAutocapitalization(.never)
-                    .disabled(isSaving)
-                TextField("Bio", text: $bio, axis: .vertical)
-                    .lineLimit(3...6)
-                    .disabled(isSaving)
                 if let errorMessage {
                     Text(errorMessage)
                         .font(.caption)
@@ -284,6 +269,32 @@ struct AccountView: View {
                 }
             } header: {
                 RyntraSectionLabel(text: "Local data")
+            }
+            .tint(Color.ryntraGreen)
+            .themedListRowBackground(isPlatformNative: isPlatformNative)
+
+            Section {
+                Link(destination: SupportDetails.donationAlertsURL) {
+                    Label(NSLocalizedString("DonationAlerts", comment: "Support option"), systemImage: "heart")
+                }
+                Button {
+                    copySupportAddress(SupportDetails.usdtTRC20, label: "USDT · TRC20")
+                } label: {
+                    supportAddressLabel("USDT · TRC20", address: SupportDetails.usdtTRC20)
+                }
+                Button {
+                    copySupportAddress(SupportDetails.tonUSDT, label: "USDT · TON")
+                } label: {
+                    supportAddressLabel("USDT · TON", address: SupportDetails.tonUSDT)
+                }
+            } header: {
+                RyntraSectionLabel(text: NSLocalizedString("Support the author", comment: "Settings section"))
+            } footer: {
+                if let copiedSupportAddress {
+                    Text(String(format: NSLocalizedString("%@ address copied.", comment: "Support copy result"), copiedSupportAddress))
+                } else {
+                    Text(NSLocalizedString("Thank you for supporting Ryntra development.", comment: "Support hint"))
+                }
             }
             .tint(Color.ryntraGreen)
             .themedListRowBackground(isPlatformNative: isPlatformNative)

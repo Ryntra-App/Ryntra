@@ -175,6 +175,7 @@ struct AnalyticsTrendView: View {
             domain: visibleProjects.map(\.title),
             range: visibleProjects.map { analyticsProjectColor($0.id) }
         )
+        .chartXScale(domain: 0...max(points.count - 1, 1))
         .chartLegend(visibleProjects.count > 1 ? .visible : .hidden)
         .chartXAxis {
             AxisMarks(values: .automatic(desiredCount: 3)) { value in

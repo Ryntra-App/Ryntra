@@ -132,7 +132,7 @@ struct OverviewView: View {
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.bottom, isPlatformNative ? 16 : 120)
+            .padding(.bottom, isPlatformNative ? 20 : 96)
         }
         .background(Color.ryntraBackground)
         .refreshable { model.refresh() }
@@ -211,7 +211,7 @@ struct OverviewView: View {
                 Text(detail).font(.caption).foregroundStyle(.secondary)
             }
         }
-        .padding(.top, 26)
+        .padding(.top, 20)
         .padding(.bottom, 8)
     }
 

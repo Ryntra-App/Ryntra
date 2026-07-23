@@ -378,7 +378,12 @@ private struct OrganizationDetailView: View {
                                 .navigationTitle(project.title)
                                 .navigationBarTitleDisplayMode(.inline)
                         } label: {
-                            ProjectRow(project: project, showDescription: true, showStatus: true)
+                            ProjectRow(
+                                project: project,
+                                showDescription: true,
+                                showStatus: true,
+                                showsDisclosureIndicator: false
+                            )
                         }
                         .buttonStyle(.plain)
                     }

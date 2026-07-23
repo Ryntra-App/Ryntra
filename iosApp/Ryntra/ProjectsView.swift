@@ -40,22 +40,11 @@ struct ProjectsView: View {
     }
 
     var body: some View {
-        List {
-            Section {
+        ScrollView {
+            LazyVStack(spacing: 16) {
+                searchField
                 projectSummary
-                    .listRowInsets(EdgeInsets(top: 16, leading: 16, bottom: 8, trailing: 16))
-                    .listRowSeparator(.hidden)
-
-                Picker("Sort projects", selection: $storedSortMode) {
-                    ForEach(ProjectSortMode.allCases, id: \.self) { mode in
-                        Text(mode.label).tag(mode.rawValue)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 10, trailing: 16))
-                .listRowSeparator(.hidden)
-            }
-
+                sortPicker
             if filteredProjects.isEmpty {
                 EmptyStateView(
                     title: projects.isEmpty ? "No projects yet" : "No matching projects",
@@ -64,7 +53,6 @@ struct ProjectsView: View {
                         ? "Managed projects will appear here."
                         : "Try another title, slug, or summary."
                 )
-                .listRowSeparator(.hidden)
             } else {
                 ForEach(filteredProjects, id: \.id) { project in
                     Group {
@@ -82,22 +70,50 @@ struct ProjectsView: View {
                             )
                         }
                     }
+                    .frame(maxWidth: .infinity)
                     .contentShape(Rectangle())
                     .onTapGesture { onProjectTap(project) }
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
                 }
             }
-            if !isPlatformNative {
-                Color.clear
-                    .frame(height: 90)
-                    .listRowSeparator(.hidden)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, isPlatformNative ? 20 : 96)
+        }
+        .background(Color.ryntraBackground)
+        .refreshable { model.refresh() }
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+            TextField(NSLocalizedString("Search projects", comment: "Project search"), text: $query)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+            if !query.isEmpty {
+                Button {
+                    query = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(NSLocalizedString("Clear search", comment: "Search action"))
             }
         }
-        .listStyle(.plain)
-        .searchable(text: $query, prompt: "Search projects")
-        .refreshable { model.refresh() }
+        .padding(.horizontal, 14)
+        .frame(minHeight: 50)
+        .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    private var sortPicker: some View {
+        Picker("Sort projects", selection: $storedSortMode) {
+            ForEach(ProjectSortMode.allCases, id: \.self) { mode in
+                Text(mode.label).tag(mode.rawValue)
+            }
+        }
+        .pickerStyle(.segmented)
     }
 
     private var isPlatformNative: Bool {
@@ -159,6 +175,7 @@ struct ProjectRow: View {
     var showStatus = true
     var isFavorite = false
     var onFavoriteTap: (() -> Void)?
+    var showsDisclosureIndicator = true
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -203,7 +220,7 @@ struct ProjectRow: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(isFavorite ? "Remove favorite" : "Add favorite")
-            } else {
+            } else if showsDisclosureIndicator {
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.tertiary)

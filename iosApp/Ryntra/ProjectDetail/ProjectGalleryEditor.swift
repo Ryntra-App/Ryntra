@@ -148,14 +148,16 @@ struct ProjectGalleryEditor: View {
             viewedImage = GallerySelection(image: image)
         } label: {
             ZStack(alignment: .topLeading) {
+                Color.secondary.opacity(0.12)
                 AsyncImage(url: URL(string: image.url)) { loaded in
-                    loaded.resizable().scaledToFill()
+                    loaded
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipped()
                 } placeholder: {
-                    Color.secondary.opacity(0.12)
+                    ProgressView()
                 }
-                .frame(maxWidth: .infinity)
-                .aspectRatio(1.45, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 if image.featured {
                     Label(
@@ -169,6 +171,10 @@ struct ProjectGalleryEditor: View {
                     .padding(7)
                 }
             }
+            .frame(maxWidth: .infinity)
+            .aspectRatio(1.45, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
         .contextMenu {

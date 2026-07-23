@@ -11,6 +11,7 @@ struct ProjectBannerCard: View {
         VStack(spacing: 0) {
             banner
                 .frame(height: 92)
+                .frame(maxWidth: .infinity)
                 .clipped()
 
             HStack(spacing: 11) {
@@ -40,6 +41,7 @@ struct ProjectBannerCard: View {
             .padding(.vertical, 11)
         }
         .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .frame(maxWidth: .infinity)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay { RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Color.ryntraSeparator, lineWidth: 0.5) }
     }
@@ -49,7 +51,11 @@ struct ProjectBannerCard: View {
         ZStack(alignment: .topTrailing) {
             if let bannerURL = URL(string: project.bannerUrl ?? "") {
                 AsyncImage(url: bannerURL) { image in
-                    image.resizable().scaledToFill()
+                    image
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipped()
                 } placeholder: {
                     Color.ryntraSurfaceRaised
                 }

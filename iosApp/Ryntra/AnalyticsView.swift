@@ -163,8 +163,8 @@ struct AnalyticsView: View {
                 lifetimeMetrics
             }
             .padding(.horizontal, 16)
-            .padding(.top, 14)
-            .padding(.bottom, isPlatformNative ? 16 : 120)
+            .padding(.top, 8)
+            .padding(.bottom, isPlatformNative ? 20 : 96)
         }
         .background(Color.ryntraBackground)
         .task(id: analyticsTaskKey) {
@@ -336,29 +336,38 @@ struct AnalyticsView: View {
             }
         }
         .buttonStyle(.plain)
-        .disabled(item.metric == nil)
+        .accessibilityAddTraits(item.metric == nil ? .isStaticText : .isButton)
     }
 
     private var metricPicker: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 4) {
             ForEach(AnalyticsMetric.allCases) { metric in
                 Button {
                     withAnimation(RyntraMotion.resolved(RyntraMotion.control, reduceMotion: reduceMotion)) { selectedMetric = metric }
                 } label: {
                     Image(systemName: metric.symbol)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 34)
+                        .frame(height: 40)
                         .foregroundStyle(selectedMetric == metric ? metric.color : Color.secondary)
-                        .background(selectedMetric == metric ? Color.ryntraSurfaceRaised : Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 8))
+                        .background(
+                            selectedMetric == metric ? Color.ryntraSurfaceRaised : Color.clear,
+                            in: RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        )
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(metric.localizedLabel)
             }
         }
+        .padding(4)
+        .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.ryntraSeparator, lineWidth: 0.5)
+        }
     }
 
     private func sectionTitle(_ title: String) -> some View {
-        RyntraSectionLabel(text: title).padding(.top, 28).padding(.bottom, 8)
+        RyntraSectionLabel(text: title).padding(.top, 20).padding(.bottom, 8)
     }
 
     private func notice(_ message: String) -> some View {

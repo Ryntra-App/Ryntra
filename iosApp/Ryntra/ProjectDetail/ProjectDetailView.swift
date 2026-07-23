@@ -354,13 +354,21 @@ struct ProjectDetailView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
                     ForEach(project.gallery, id: \.url) { image in
-                        AsyncImage(url: URL(string: image.url)) { loaded in
-                            loaded.resizable().scaledToFill()
-                        } placeholder: {
-                            RoundedRectangle(cornerRadius: 8).fill(.quaternary)
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(.quaternary)
+                            AsyncImage(url: URL(string: image.url)) { loaded in
+                                loaded
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 172, height: 108)
+                                    .clipped()
+                            } placeholder: {
+                                ProgressView()
+                            }
                         }
                         .frame(width: 172, height: 108)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                     }
                 }
             }
