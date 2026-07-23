@@ -570,7 +570,6 @@ final class AppModel: ObservableObject {
 
     deinit {
         observation?.cancel()
-        instantNotificationCoordinator.close()
         controller.close()
     }
 }

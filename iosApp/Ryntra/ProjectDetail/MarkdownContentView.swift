@@ -91,8 +91,8 @@ struct MarkdownBlockView: View {
     private var attributedString: AttributedString {
         var attributed = AttributedString(block.content)
         for span in block.spans {
-            let start = attributed.index(attributed.startIndex, offsetBy: Int(span.start))
-            let end = attributed.index(attributed.startIndex, offsetBy: Int(span.end))
+            let start = attributed.index(attributed.startIndex, offsetByCharacters: Int(span.start))
+            let end = attributed.index(attributed.startIndex, offsetByCharacters: Int(span.end))
             let range = start..<end
 
             switch span.type {

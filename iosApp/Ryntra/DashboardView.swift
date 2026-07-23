@@ -78,9 +78,9 @@ struct DashboardView: View {
                 .transition(RyntraMotion.navigationTransition(reduceMotion: reduceMotion))
             }
         }
-        .animation(RyntraMotion.resolved(.navigation, reduceMotion: reduceMotion), value: selectedProject?.id)
-        .animation(RyntraMotion.resolved(.navigation, reduceMotion: reduceMotion), value: isProfileVisible)
-        .animation(RyntraMotion.resolved(.navigation, reduceMotion: reduceMotion), value: isNotificationsVisible)
+        .animation(RyntraMotion.resolved(RyntraMotion.navigation, reduceMotion: reduceMotion), value: selectedProject?.id)
+        .animation(RyntraMotion.resolved(RyntraMotion.navigation, reduceMotion: reduceMotion), value: isProfileVisible)
+        .animation(RyntraMotion.resolved(RyntraMotion.navigation, reduceMotion: reduceMotion), value: isNotificationsVisible)
         .onAppear { presentedError = errorMessage }
         .onAppear { openPendingNotificationProject() }
         .onChange(of: errorMessage) { presentedError = $0 }

@@ -252,7 +252,7 @@ struct AnalyticsView: View {
 
     private var periodMetrics: some View {
         let isCoreAvailable = report?.isCoreAvailable != false
-        metricGrid([
+        return metricGrid([
             display(.downloads, available: isCoreAvailable),
             display(.views, available: isCoreAvailable),
             display(.playtime, available: isCoreAvailable),
@@ -310,7 +310,7 @@ struct AnalyticsView: View {
     private func metricCard(_ item: AnalyticsMetricDisplay) -> some View {
         Button {
             guard let metric = item.metric else { return }
-            withAnimation(RyntraMotion.resolved(.control, reduceMotion: reduceMotion)) { selectedMetric = metric }
+            withAnimation(RyntraMotion.resolved(RyntraMotion.control, reduceMotion: reduceMotion)) { selectedMetric = metric }
         } label: {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
@@ -343,7 +343,7 @@ struct AnalyticsView: View {
         HStack(spacing: 6) {
             ForEach(AnalyticsMetric.allCases) { metric in
                 Button {
-                    withAnimation(RyntraMotion.resolved(.control, reduceMotion: reduceMotion)) { selectedMetric = metric }
+                    withAnimation(RyntraMotion.resolved(RyntraMotion.control, reduceMotion: reduceMotion)) { selectedMetric = metric }
                 } label: {
                     Image(systemName: metric.symbol)
                         .frame(maxWidth: .infinity)

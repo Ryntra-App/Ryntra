@@ -52,7 +52,7 @@ struct OverviewView: View {
     }
 
     private var projectTypes: [(name: String, count: Int)] {
-        Dictionary(grouping: dashboard.projects, by: { $0.displayTypeLabel })
+        Dictionary(grouping: dashboard.projects, by: { project in project.displayTypeLabel })
             .map { (name: $0.key, count: $0.value.count) }
             .sorted { $0.count == $1.count ? $0.name < $1.name : $0.count > $1.count }
             .prefix(4)

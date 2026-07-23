@@ -152,7 +152,7 @@ struct RyntraTabBar: View {
         .padding(.top, 6)
         .padding(.bottom, 8)
         .animation(
-            RyntraMotion.resolved(.control, reduceMotion: systemReduceMotion || appReduceMotion),
+            RyntraMotion.resolved(RyntraMotion.control, reduceMotion: systemReduceMotion || appReduceMotion),
             value: selection
         )
     }

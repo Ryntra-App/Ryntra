@@ -20,52 +20,33 @@ enum ProjectStatusSupport {
     }
 
     static func typeLabel(for project: Project) -> String {
-        switch project.displayKind() {
-        case .mod: return NSLocalizedString("Mod", comment: "Project type")
-        case .plugin: return NSLocalizedString("Plugin", comment: "Project type")
-        case .hybrid: return NSLocalizedString("Mod / Plugin", comment: "Project type")
-        case .modpack: return NSLocalizedString("Modpack", comment: "Project type")
-        case .resourcePack: return NSLocalizedString("Resource Pack", comment: "Project type")
-        case .shader: return NSLocalizedString("Shader", comment: "Project type")
-        case .dataPack: return NSLocalizedString("Data Pack", comment: "Project type")
-        case .server: return NSLocalizedString("Server", comment: "Project type")
-        case .project: return NSLocalizedString("Project", comment: "Project type")
+        switch project.projectType.lowercased() {
+        case "mod": return NSLocalizedString("Mod", comment: "Project type")
+        case "plugin": return NSLocalizedString("Plugin", comment: "Project type")
+        case "hybrid": return NSLocalizedString("Mod / Plugin", comment: "Project type")
+        case "modpack": return NSLocalizedString("Modpack", comment: "Project type")
+        case "resourcepack", "resource_pack": return NSLocalizedString("Resource Pack", comment: "Project type")
+        case "shader": return NSLocalizedString("Shader", comment: "Project type")
+        case "datapack", "data_pack": return NSLocalizedString("Data Pack", comment: "Project type")
+        case "server": return NSLocalizedString("Server", comment: "Project type")
         default: return project.projectType.capitalized
         }
     }
 
     static func attentionMessage(for project: Project) -> String {
-        let state = project.attentionState()
+        let state = project.status.lowercased()
         let base: String
-        switch state.kind {
-        case .reviewForPublication:
-            base = NSLocalizedString("Submitted for publication · awaiting moderation", comment: "Attention")
-        case .inReview:
-            base = NSLocalizedString("In moderation review", comment: "Attention")
-        case .rejected:
-            base = NSLocalizedString("Rejected by moderation · check the review notes", comment: "Attention")
-        case .withheld:
-            base = NSLocalizedString("Withheld from publishing · check the review notes", comment: "Attention")
-        case .scheduled:
-            base = NSLocalizedString("Publication is scheduled", comment: "Attention")
-        case .draft:
-            base = NSLocalizedString("Draft · not submitted for review yet", comment: "Attention")
-        case .unlisted:
-            base = NSLocalizedString("Unlisted · not shown in search", comment: "Attention")
-        case .private:
-            base = NSLocalizedString("Private · only visible to the team", comment: "Attention")
-        case .archived:
-            base = NSLocalizedString("Archived", comment: "Attention")
-        case .approved:
-            base = NSLocalizedString("Approved", comment: "Attention")
-        case .unknown:
-            fallthrough
-        default:
-            base = NSLocalizedString("Needs a status check on Modrinth", comment: "Attention")
-        }
-        if let note = state.moderatorNote, !note.isEmpty,
-           state.kind == .rejected || state.kind == .withheld {
-            return "\(base) · \(note)"
+        switch state {
+        case "processing": base = NSLocalizedString("In moderation review", comment: "Attention")
+        case "rejected": base = NSLocalizedString("Rejected by moderation · check the review notes", comment: "Attention")
+        case "withheld": base = NSLocalizedString("Withheld from publishing · check the review notes", comment: "Attention")
+        case "scheduled": base = NSLocalizedString("Publication is scheduled", comment: "Attention")
+        case "draft": base = NSLocalizedString("Draft · not submitted for review yet", comment: "Attention")
+        case "unlisted": base = NSLocalizedString("Unlisted · not shown in search", comment: "Attention")
+        case "private": base = NSLocalizedString("Private · only visible to the team", comment: "Attention")
+        case "archived": base = NSLocalizedString("Archived", comment: "Attention")
+        case "approved": base = NSLocalizedString("Approved", comment: "Attention")
+        default: base = NSLocalizedString("Needs a status check on Modrinth", comment: "Attention")
         }
         return base
     }
