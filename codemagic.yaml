@@ -28,6 +28,8 @@ workflows:
             -configuration Debug \
             -destination "generic/platform=iOS Simulator" \
             -derivedDataPath "$CM_BUILD_DIR/build/ios-simulator/DerivedData" \
+            ARCHS=x86_64 \
+            ONLY_ACTIVE_ARCH=NO \
             RYNTRA_BACKEND_URL="${RYNTRA_BACKEND_URL:-https://authrinthy.sawiq.org}" \
             CODE_SIGNING_ALLOWED=NO \
             build
@@ -36,6 +38,9 @@ workflows:
           APP_PATH="$CM_BUILD_DIR/build/ios-simulator/DerivedData/Build/Products/Debug-iphonesimulator/Ryntra.app"
           OUTPUT_DIR="$CM_BUILD_DIR/build/appetize"
           test -d "$APP_PATH"
+          file "$APP_PATH/Ryntra"
+          lipo -info "$APP_PATH/Ryntra"
+          lipo -verify_arch x86_64 "$APP_PATH/Ryntra"
           mkdir -p "$OUTPUT_DIR"
           ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$OUTPUT_DIR/Ryntra-simulator.zip"
     artifacts:
