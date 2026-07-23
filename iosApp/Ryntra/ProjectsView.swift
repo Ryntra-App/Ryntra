@@ -68,7 +68,7 @@ struct ProjectsView: View {
             } else {
                 ForEach(filteredProjects, id: \.id) { project in
                     Group {
-                        if isPlatformNative || !showProjectBanners {
+                        if !showProjectBanners {
                             ProjectRow(
                                 project: project,
                                 showDescription: false,

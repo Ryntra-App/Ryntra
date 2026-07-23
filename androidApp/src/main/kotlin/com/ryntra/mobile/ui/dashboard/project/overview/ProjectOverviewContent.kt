@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -86,7 +87,7 @@ internal fun ProjectIdentity(project: Project) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .size(132.dp)
+                .height(168.dp)
                 .clip(RoundedCornerShape(16.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant),
         ) {
@@ -104,6 +105,29 @@ internal fun ProjectIdentity(project: Project) {
                     modifier = Modifier.matchParentSize(),
                 )
             }
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(
+                        androidx.compose.ui.graphics.Brush.verticalGradient(
+                            listOf(
+                                androidx.compose.ui.graphics.Color.Transparent,
+                                androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.72f),
+                            ),
+                        ),
+                    ),
+            )
+            Text(
+                text = project.title,
+                style = MaterialTheme.typography.headlineSmall,
+                color = androidx.compose.ui.graphics.Color.White,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(16.dp),
+            )
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
         Box(

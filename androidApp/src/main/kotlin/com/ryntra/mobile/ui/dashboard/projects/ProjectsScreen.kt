@@ -95,7 +95,7 @@ fun ProjectsScreen(
         } else {
             items(filteredProjects, key = Project::id, contentType = { "project" }) { project ->
                 val projectId = project.id
-                if (RyntraDesign.isPlatformNative || !showProjectBanners) {
+                if (!showProjectBanners) {
                     ProjectRow(
                         project = project,
                         showDescription = false,

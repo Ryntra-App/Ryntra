@@ -228,7 +228,22 @@ struct ProjectDetailView: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 132)
+            .frame(height: 168)
+            .overlay(alignment: .bottomLeading) {
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.72)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(alignment: .bottomLeading) {
+                    Text(project.title)
+                        .font(.title2.bold())
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .padding(16)
+                }
+            }
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
             HStack(alignment: .center, spacing: 14) {
