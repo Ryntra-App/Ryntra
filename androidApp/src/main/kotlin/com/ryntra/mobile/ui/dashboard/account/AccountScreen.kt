@@ -66,6 +66,7 @@ fun AccountScreen(
     onAppearanceModeChange: (AppearanceMode) -> Unit,
     onAppLanguageChange: (AppLanguage) -> Unit,
     onShowFavoriteProjectsChange: (Boolean) -> Unit,
+    onShowProjectBannersChange: (Boolean) -> Unit,
     onReduceMotionChange: (Boolean) -> Unit,
     onGlassQualityChange: (GlassQuality) -> Unit,
     onLocalNotificationsChange: (Boolean) -> Unit,
@@ -212,6 +213,7 @@ fun AccountScreen(
                 onAppearanceModeChange = onAppearanceModeChange,
                 onAppLanguageChange = onAppLanguageChange,
                 onShowFavoriteProjectsChange = onShowFavoriteProjectsChange,
+                onShowProjectBannersChange = onShowProjectBannersChange,
                 onReduceMotionChange = onReduceMotionChange,
                 onGlassQualityChange = onGlassQualityChange,
                 onResetAppearance = {

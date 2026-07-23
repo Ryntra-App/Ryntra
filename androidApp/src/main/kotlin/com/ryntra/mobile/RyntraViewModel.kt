@@ -224,6 +224,8 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
 
     fun setShowFavoriteProjects(isEnabled: Boolean) = preferencesStore.setShowFavoriteProjects(isEnabled)
 
+    fun setShowProjectBanners(isEnabled: Boolean) = preferencesStore.setShowProjectBanners(isEnabled)
+
     fun setThemeStyle(style: ThemeStyle) = preferencesStore.setThemeStyle(style)
 
     fun setAppearanceMode(mode: AppearanceMode) = preferencesStore.setAppearanceMode(mode)

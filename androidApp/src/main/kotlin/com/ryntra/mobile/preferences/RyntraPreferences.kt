@@ -15,6 +15,7 @@ data class RyntraPreferences(
     val appearanceMode: AppearanceMode = AppearanceMode.System,
     val appLanguage: AppLanguage = AppLanguage.System,
     val showFavoriteProjects: Boolean = true,
+    val showProjectBanners: Boolean = true,
     val reduceMotion: Boolean = false,
     val glassQuality: GlassQuality = GlassQuality.Balanced,
     val projectSortMode: ProjectSortMode = ProjectSortMode.Popularity,
@@ -61,6 +62,8 @@ class RyntraPreferencesStore(context: Context) {
 
     fun setShowFavoriteProjects(isEnabled: Boolean) = update { copy(showFavoriteProjects = isEnabled) }
 
+    fun setShowProjectBanners(isEnabled: Boolean) = update { copy(showProjectBanners = isEnabled) }
+
     fun setReduceMotion(isEnabled: Boolean) = update { copy(reduceMotion = isEnabled) }
 
     fun setGlassQuality(quality: GlassQuality) = update { copy(glassQuality = quality) }
@@ -88,6 +91,7 @@ class RyntraPreferencesStore(context: Context) {
             themeStyle = ThemeStyle.Platform,
             appearanceMode = AppearanceMode.System,
             showFavoriteProjects = true,
+            showProjectBanners = true,
             reduceMotion = false,
             glassQuality = GlassQuality.Balanced,
         )
@@ -102,6 +106,7 @@ class RyntraPreferencesStore(context: Context) {
             .put("theme", current.appearanceMode.name.lowercase())
             .put("accentColor", "#30D158")
             .put(KEY_SHOW_FAVORITES, current.showFavoriteProjects)
+            .put(KEY_SHOW_PROJECT_BANNERS, current.showProjectBanners)
             .put(KEY_REDUCE_MOTION, current.reduceMotion)
             .put(KEY_GLASS_QUALITY, current.glassQuality.name.lowercase())
             .put("projectSortMode", current.projectSortMode.name.lowercase())
@@ -131,6 +136,7 @@ class RyntraPreferencesStore(context: Context) {
             appearanceMode = importedAppearance ?: current.appearanceMode,
             appLanguage = imported.optionalEnum<AppLanguage>(KEY_APP_LANGUAGE) ?: current.appLanguage,
             showFavoriteProjects = imported.optionalBoolean(KEY_SHOW_FAVORITES) ?: current.showFavoriteProjects,
+            showProjectBanners = imported.optionalBoolean(KEY_SHOW_PROJECT_BANNERS) ?: current.showProjectBanners,
             reduceMotion = imported.optionalBoolean(KEY_REDUCE_MOTION) ?: current.reduceMotion,
             glassQuality = imported.optionalEnum<GlassQuality>(KEY_GLASS_QUALITY) ?: current.glassQuality,
             projectSortMode = imported.optionalEnum<ProjectSortMode>("projectSortMode") ?: current.projectSortMode,
@@ -153,6 +159,7 @@ class RyntraPreferencesStore(context: Context) {
             .putString(KEY_APPEARANCE_MODE, value.appearanceMode.name)
             .putString(KEY_APP_LANGUAGE, value.appLanguage.name)
             .putBoolean(KEY_SHOW_FAVORITES, value.showFavoriteProjects)
+            .putBoolean(KEY_SHOW_PROJECT_BANNERS, value.showProjectBanners)
             .putBoolean(KEY_REDUCE_MOTION, value.reduceMotion)
             .putString(KEY_GLASS_QUALITY, value.glassQuality.name)
             .putString(KEY_PROJECT_SORT_MODE, value.projectSortMode.name)
@@ -168,6 +175,7 @@ class RyntraPreferencesStore(context: Context) {
         appearanceMode = storage.enumValue(KEY_APPEARANCE_MODE, AppearanceMode.System),
         appLanguage = storage.enumValue(KEY_APP_LANGUAGE, AppLanguage.System),
         showFavoriteProjects = storage.getBoolean(KEY_SHOW_FAVORITES, true),
+        showProjectBanners = storage.getBoolean(KEY_SHOW_PROJECT_BANNERS, true),
         reduceMotion = storage.getBoolean(KEY_REDUCE_MOTION, false),
         glassQuality = storage.enumValue(KEY_GLASS_QUALITY, GlassQuality.Balanced),
         projectSortMode = storage.enumValue(KEY_PROJECT_SORT_MODE, ProjectSortMode.Popularity),
@@ -212,6 +220,7 @@ class RyntraPreferencesStore(context: Context) {
         const val KEY_APPEARANCE_MODE = "appearanceMode"
         const val KEY_APP_LANGUAGE = "appLanguage"
         const val KEY_SHOW_FAVORITES = "showFavoriteProjects"
+        const val KEY_SHOW_PROJECT_BANNERS = "showProjectBanners"
         const val KEY_REDUCE_MOTION = "reduceMotion"
         const val KEY_GLASS_QUALITY = "glassQuality"
         const val KEY_PROJECT_SORT_MODE = "projectSortMode"

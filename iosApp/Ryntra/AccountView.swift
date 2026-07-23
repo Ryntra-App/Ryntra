@@ -6,6 +6,7 @@ import UIKit
 struct AccountView: View {
     @EnvironmentObject private var model: AppModel
     @AppStorage("showFavoriteProjects") private var showFavoriteProjects = true
+    @AppStorage("showProjectBanners") private var showProjectBanners = true
     @AppStorage("reduceMotion") private var reduceMotion = false
     @AppStorage("themeStyle") private var storedThemeStyle = RyntraThemeStyle.platform.rawValue
     @AppStorage("appearanceMode") private var storedAppearanceMode = RyntraAppearanceMode.system.rawValue
@@ -187,6 +188,10 @@ struct AccountView: View {
                     Label(NSLocalizedString("Pin favorites first", comment: "Settings"), systemImage: "star")
                 }
                 .tint(Color.ryntraGreen)
+                Toggle(isOn: $showProjectBanners) {
+                    Label(NSLocalizedString("Show project banners", comment: "Settings"), systemImage: "photo")
+                }
+                .tint(Color.ryntraGreen)
                 Toggle(isOn: $reduceMotion) {
                     Label(
                         NSLocalizedString("Reduce motion", comment: "Settings"),
@@ -198,6 +203,7 @@ struct AccountView: View {
                     storedThemeStyle = RyntraThemeStyle.platform.rawValue
                     storedAppearanceMode = RyntraAppearanceMode.system.rawValue
                     showFavoriteProjects = true
+                    showProjectBanners = true
                     reduceMotion = false
                     UserDefaults.standard.removeObject(forKey: "projectSortMode")
                 } label: {

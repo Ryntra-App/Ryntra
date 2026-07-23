@@ -6,6 +6,7 @@ struct ProjectsView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     @AppStorage("showFavoriteProjects") private var showFavoriteProjects = true
+    @AppStorage("showProjectBanners") private var showProjectBanners = true
     @AppStorage("reduceMotion") private var appReduceMotion = false
     @AppStorage("projectSortMode") private var storedSortMode = ProjectSortMode.popular.rawValue
     @AppStorage("favoriteProjectIds") private var storedFavoriteIds = "[]"
@@ -67,7 +68,7 @@ struct ProjectsView: View {
             } else {
                 ForEach(filteredProjects, id: \.id) { project in
                     Group {
-                        if isPlatformNative {
+                        if isPlatformNative || !showProjectBanners {
                             ProjectRow(
                                 project: project,
                                 showDescription: false,

@@ -32,6 +32,7 @@ fun ProjectsScreen(
     sortMode: ProjectSortMode = ProjectSortMode.Popularity,
     favoriteProjectIds: Set<String> = emptySet(),
     showFavoriteProjects: Boolean = true,
+    showProjectBanners: Boolean = true,
     onSortModeChange: (ProjectSortMode) -> Unit = {},
     onToggleFavoriteProject: (String) -> Unit = {},
     onProjectClick: (Project) -> Unit = {},
@@ -94,7 +95,7 @@ fun ProjectsScreen(
         } else {
             items(filteredProjects, key = Project::id, contentType = { "project" }) { project ->
                 val projectId = project.id
-                if (RyntraDesign.isPlatformNative) {
+                if (RyntraDesign.isPlatformNative || !showProjectBanners) {
                     ProjectRow(
                         project = project,
                         showDescription = false,

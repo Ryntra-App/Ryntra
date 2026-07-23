@@ -81,6 +81,7 @@ internal fun AppearanceSettingsSection(
     onAppearanceModeChange: (AppearanceMode) -> Unit,
     onAppLanguageChange: (AppLanguage) -> Unit,
     onShowFavoriteProjectsChange: (Boolean) -> Unit,
+    onShowProjectBannersChange: (Boolean) -> Unit,
     onReduceMotionChange: (Boolean) -> Unit,
     onGlassQualityChange: (GlassQuality) -> Unit,
     onResetAppearance: () -> Unit,
@@ -106,6 +107,19 @@ internal fun AppearanceSettingsSection(
             )
             AppearanceModePicker(selected = preferences.appearanceMode, onSelect = onAppearanceModeChange)
         }
+        SettingsDivider()
+        SettingsRow(
+            icon = Lucide.ImageOff,
+            title = stringResource(R.string.settings_project_banners),
+            subtitle = stringResource(R.string.settings_project_banners_hint),
+            trailing = {
+                RyntraSwitch(
+                    checked = preferences.showProjectBanners,
+                    onCheckedChange = onShowProjectBannersChange,
+                    contentDescription = stringResource(R.string.settings_project_banners),
+                )
+            },
+        )
         SettingsDivider()
         SettingsRow(
             icon = Lucide.Globe,

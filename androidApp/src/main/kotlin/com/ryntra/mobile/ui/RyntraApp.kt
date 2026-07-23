@@ -121,6 +121,7 @@ fun RyntraApp(viewModel: RyntraViewModel) {
                         onAppearanceModeChange = viewModel::setAppearanceMode,
                         onAppLanguageChange = viewModel::setAppLanguage,
                         onShowFavoriteProjectsChange = viewModel::setShowFavoriteProjects,
+                        onShowProjectBannersChange = viewModel::setShowProjectBanners,
                         onReduceMotionChange = viewModel::setReduceMotion,
                         onGlassQualityChange = viewModel::setGlassQuality,
                         onSortModeChange = viewModel::setProjectSortMode,

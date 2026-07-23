@@ -82,7 +82,30 @@ internal fun LoadingMembers() {
 
 @Composable
 internal fun ProjectIdentity(project: Project) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 22.dp)) {
+    Column(modifier = Modifier.padding(bottom = 22.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .size(132.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+        ) {
+            Text(
+                project.title.take(1).uppercase(),
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.align(Alignment.Center),
+            )
+            project.bannerUrl?.let {
+                AsyncImage(
+                    model = it,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.matchParentSize(),
+                )
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -114,6 +137,7 @@ internal fun ProjectIdentity(project: Project) {
                     modifier = Modifier.padding(top = 6.dp),
                 )
             }
+        }
         }
     }
 }

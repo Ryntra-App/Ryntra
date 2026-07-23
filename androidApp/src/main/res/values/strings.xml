@@ -127,6 +127,8 @@
     <string name="project_type_project">Project</string>
     <string name="analytics_filter_project">Filter by project</string>
     <string name="settings_favorites_hint">Keep starred projects at the top of the list</string>
+    <string name="settings_project_banners">Show project banners</string>
+    <string name="settings_project_banners_hint">Use artwork banners in the projects list</string>
     <string name="settings_reduce_motion">Reduce motion</string>
     <string name="settings_reduce_motion_hint">Use instant state changes and simpler transitions</string>
     <string name="settings_glass_quality">Glass quality</string>
