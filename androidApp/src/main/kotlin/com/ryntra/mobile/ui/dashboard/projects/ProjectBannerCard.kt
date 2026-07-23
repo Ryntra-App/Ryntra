@@ -52,7 +52,7 @@ internal fun ProjectBannerCard(
     onClick: () -> Unit,
 ) {
     val project = model.project
-    val shape = RoundedCornerShape(12.dp)
+    val shape = RyntraDesign.contentShape
 
     Box(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -66,7 +66,7 @@ internal fun ProjectBannerCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(112.dp)
+                    .height(92.dp)
                     .background(MaterialTheme.colorScheme.surfaceVariant),
             ) {
                 val bannerUrl = project.bannerUrl
@@ -184,11 +184,11 @@ private fun ProjectBannerMetric(
     color: androidx.compose.ui.graphics.Color,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(14.dp))
+        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(16.dp))
         Text(
             text = value,
             color = RyntraDesign.colors.labelSecondary,
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelMedium,
             modifier = Modifier.padding(start = 4.dp),
         )
     }

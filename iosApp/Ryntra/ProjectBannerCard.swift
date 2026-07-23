@@ -10,7 +10,7 @@ struct ProjectBannerCard: View {
     var body: some View {
         VStack(spacing: 0) {
             banner
-                .frame(height: 112)
+                .frame(height: 92)
                 .clipped()
 
             HStack(spacing: 11) {
@@ -39,9 +39,9 @@ struct ProjectBannerCard: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 11)
         }
-        .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 12))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay { RoundedRectangle(cornerRadius: 12).stroke(Color.ryntraSeparator, lineWidth: 0.5) }
+        .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Color.ryntraSeparator, lineWidth: 0.5) }
     }
 
     @ViewBuilder
@@ -107,6 +107,6 @@ struct ProjectBannerCard: View {
             Image(systemName: symbol).foregroundStyle(tint)
             Text(value).foregroundStyle(.secondary)
         }
-        .font(.caption2)
+        .font(.caption)
     }
 }

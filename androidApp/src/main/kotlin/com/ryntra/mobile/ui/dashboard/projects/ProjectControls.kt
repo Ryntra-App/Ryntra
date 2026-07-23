@@ -40,9 +40,9 @@ internal fun ProjectSummaryBand(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RyntraDesign.contentShape)
             .background(RyntraDesign.colors.surface)
-            .padding(vertical = 13.dp),
+            .padding(vertical = 16.dp),
     ) {
         SummaryMetric(projectCount.toString(), stringResource(R.string.analytics_projects), Modifier.weight(1f))
         SummaryMetric(formatExactCount(downloads), stringResource(R.string.analytics_downloads), Modifier.weight(1f))
@@ -55,14 +55,14 @@ private fun SummaryMetric(value: String, label: String, modifier: Modifier) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
         Text(
             text = value,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.SemiBold,
             maxLines = 1,
         )
         Text(
             text = label,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelMedium,
         )
     }
 }
@@ -89,7 +89,7 @@ internal fun ProjectSortControl(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RyntraDesign.contentShape)
             .background(RyntraDesign.colors.surface)
             .padding(3.dp),
     ) {

@@ -54,11 +54,11 @@ fun ProjectsScreen(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
             start = 16.dp,
-            top = 12.dp,
+            top = 20.dp,
             end = 16.dp,
             bottom = RyntraDesign.bottomContentPadding,
         ),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item(key = "projects-summary", contentType = "summary") {
             ProjectSummaryBand(
@@ -94,12 +94,20 @@ fun ProjectsScreen(
         } else {
             items(filteredProjects, key = Project::id, contentType = { "project" }) { project ->
                 val projectId = project.id
-                ProjectBannerCard(
-                    model = project.toProjectRowModel(),
-                    isFavorite = projectId in favoriteProjectIds,
-                    onFavoriteClick = { onToggleFavoriteProject(projectId) },
-                    onClick = { onProjectClick(project) },
-                )
+                if (RyntraDesign.isPlatformNative) {
+                    ProjectRow(
+                        project = project,
+                        showDescription = false,
+                        onClick = { onProjectClick(project) },
+                    )
+                } else {
+                    ProjectBannerCard(
+                        model = project.toProjectRowModel(),
+                        isFavorite = projectId in favoriteProjectIds,
+                        onFavoriteClick = { onToggleFavoriteProject(projectId) },
+                        onClick = { onProjectClick(project) },
+                    )
+                }
             }
         }
     }

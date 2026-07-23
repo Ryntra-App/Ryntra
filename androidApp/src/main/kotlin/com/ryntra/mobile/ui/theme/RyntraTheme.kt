@@ -158,7 +158,9 @@ object RyntraDesign {
         @ReadOnlyComposable
         get() = if (isPlatformNative) 112.dp else 188.dp
 
-    val contentShape = RoundedCornerShape(8.dp)
+    // One outer surface language across project, organization, and summary cards.
+    // Controls can still use the smaller Material 3 shape tokens below.
+    val contentShape = RoundedCornerShape(16.dp)
     val chromeShape = RoundedCornerShape(22.dp)
 
     val largeTitle = TextStyle(fontSize = 34.sp, lineHeight = 41.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.sp)

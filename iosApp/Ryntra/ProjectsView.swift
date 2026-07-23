@@ -42,7 +42,7 @@ struct ProjectsView: View {
         List {
             Section {
                 projectSummary
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    .listRowInsets(EdgeInsets(top: 16, leading: 16, bottom: 8, trailing: 16))
                     .listRowSeparator(.hidden)
 
                 Picker("Sort projects", selection: $storedSortMode) {
@@ -66,14 +66,24 @@ struct ProjectsView: View {
                 .listRowSeparator(.hidden)
             } else {
                 ForEach(filteredProjects, id: \.id) { project in
-                    ProjectBannerCard(
-                        project: project,
-                        isFavorite: favoriteIds.contains(project.id),
-                        onFavoriteTap: { toggleFavorite(project.id) }
-                    )
+                    Group {
+                        if isPlatformNative {
+                            ProjectRow(
+                                project: project,
+                                showDescription: false,
+                                onFavoriteTap: { toggleFavorite(project.id) }
+                            )
+                        } else {
+                            ProjectBannerCard(
+                                project: project,
+                                isFavorite: favoriteIds.contains(project.id),
+                                onFavoriteTap: { toggleFavorite(project.id) }
+                            )
+                        }
+                    }
                     .contentShape(Rectangle())
                     .onTapGesture { onProjectTap(project) }
-                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
                 }
@@ -105,14 +115,17 @@ struct ProjectsView: View {
                 label: "Followers"
             )
         }
-        .padding(.vertical, 13)
-        .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 10))
+        .padding(.vertical, 16)
+        .background(
+            isPlatformNative ? AnyShapeStyle(.thinMaterial) : AnyShapeStyle(Color.ryntraSurface),
+            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+        )
     }
 
     private func summaryMetric(_ value: String, label: String) -> some View {
         VStack(spacing: 1) {
-            Text(value).font(.headline).monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
-            Text(label).font(.caption2).foregroundStyle(.secondary)
+            Text(value).font(.title3.weight(.semibold)).monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
+            Text(label).font(.caption).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
