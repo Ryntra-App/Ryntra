@@ -83,53 +83,7 @@ internal fun LoadingMembers() {
 
 @Composable
 internal fun ProjectIdentity(project: Project) {
-    Column(modifier = Modifier.padding(bottom = 22.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(168.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-        ) {
-            Text(
-                project.title.take(1).uppercase(),
-                style = MaterialTheme.typography.displaySmall,
-                fontWeight = FontWeight.Black,
-                modifier = Modifier.align(Alignment.Center),
-            )
-            project.bannerUrl?.let {
-                AsyncImage(
-                    model = it,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.matchParentSize(),
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(
-                        androidx.compose.ui.graphics.Brush.verticalGradient(
-                            listOf(
-                                androidx.compose.ui.graphics.Color.Transparent,
-                                androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.72f),
-                            ),
-                        ),
-                    ),
-            )
-            Text(
-                text = project.title,
-                style = MaterialTheme.typography.headlineSmall,
-                color = androidx.compose.ui.graphics.Color.White,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(16.dp),
-            )
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 22.dp)) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -161,7 +115,6 @@ internal fun ProjectIdentity(project: Project) {
                     modifier = Modifier.padding(top = 6.dp),
                 )
             }
-        }
         }
     }
 }

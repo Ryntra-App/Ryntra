@@ -212,45 +212,12 @@ struct ProjectDetailView: View {
     }
 
     private var identity: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.ryntraSurfaceRaised)
-                Text(String(project.title.prefix(1)).uppercased())
-                    .font(.largeTitle.bold())
-                    .foregroundStyle(.secondary)
-                if let urlString = project.bannerUrl, let url = URL(string: urlString) {
-                    AsyncImage(url: url) { image in
-                        image.resizable().scaledToFill()
-                    } placeholder: {
-                        Color.clear
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 168)
-            .overlay(alignment: .bottomLeading) {
-                LinearGradient(
-                    colors: [.clear, .black.opacity(0.72)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(alignment: .bottomLeading) {
-                    Text(project.title)
-                        .font(.title2.bold())
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                        .padding(16)
-                }
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        HStack(alignment: .center, spacing: 14) {
+            ProjectArtwork(project: project)
+                .frame(width: 76, height: 76)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
 
-            HStack(alignment: .center, spacing: 14) {
-                ProjectArtwork(project: project)
-                    .frame(width: 56, height: 56)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(project.title)
                     .font(.title2.bold())
                 Text(project.displayTypeLabel)
@@ -261,7 +228,6 @@ struct ProjectDetailView: View {
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(project.status == "rejected" ? Color.red : Color.orange)
                         .padding(.top, 3)
-                }
                 }
             }
         }
