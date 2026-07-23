@@ -13,7 +13,7 @@ workflows:
       - androidApp/build/outputs/apk/debug/*.apk
 
   ios-native:
-    name: Ryntra iOS Simulator
+    name: Ryntra iOS Simulator for Appetize
     instance_type: mac_mini_m2
     max_build_duration: 60
     environment:
@@ -27,11 +27,20 @@ workflows:
             -scheme Ryntra \
             -configuration Debug \
             -destination "generic/platform=iOS Simulator" \
+            -derivedDataPath "$CM_BUILD_DIR/build/ios-simulator/DerivedData" \
             RYNTRA_BACKEND_URL="${RYNTRA_BACKEND_URL:-https://authrinthy.sawiq.org}" \
             CODE_SIGNING_ALLOWED=NO \
             build
+      - name: Package Appetize simulator build
+        script: |
+          APP_PATH="$CM_BUILD_DIR/build/ios-simulator/DerivedData/Build/Products/Debug-iphonesimulator/Ryntra.app"
+          OUTPUT_DIR="$CM_BUILD_DIR/build/appetize"
+          test -d "$APP_PATH"
+          mkdir -p "$OUTPUT_DIR"
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$OUTPUT_DIR/Ryntra-simulator.zip"
     artifacts:
-      - ~/Library/Developer/Xcode/DerivedData/**/Build/Products/Debug-iphonesimulator/*.app
+      - build/appetize/Ryntra-simulator.zip
+      - build/ios-simulator/DerivedData/Build/Products/Debug-iphonesimulator/*.app
 
   ios-unsigned-ipa:
     name: Ryntra Unsigned Device IPA
