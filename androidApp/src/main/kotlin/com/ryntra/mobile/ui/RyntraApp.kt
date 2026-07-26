@@ -38,16 +38,6 @@ fun RyntraApp(viewModel: RyntraViewModel) {
     LaunchedEffect(Unit) {
         viewModel.checkForUpdates()
     }
-    appUpdate?.let { update ->
-        AppUpdateDialog(
-            update = update,
-            onDownload = {
-                uriHandler.openUri(update.downloadUrl ?: update.releaseUrl)
-                viewModel.dismissAppUpdate()
-            },
-            onDismiss = viewModel::dismissAppUpdate,
-        )
-    }
     val startOAuth = {
         CustomTabsIntent.Builder()
             .setShowTitle(true)
@@ -69,6 +59,16 @@ fun RyntraApp(viewModel: RyntraViewModel) {
             themeStyle = preferences.themeStyle,
             appearanceMode = preferences.appearanceMode,
         ) {
+            appUpdate?.let { update ->
+                AppUpdateDialog(
+                    update = update,
+                    onDownload = {
+                        uriHandler.openUri(update.downloadUrl ?: update.releaseUrl)
+                        viewModel.dismissAppUpdate()
+                    },
+                    onDismiss = viewModel::dismissAppUpdate,
+                )
+            }
             RyntraMotionProvider(reduceMotion = preferences.reduceMotion) {
                 val presentation = state.dashboardPresentation()
                 if (presentation == null) {
