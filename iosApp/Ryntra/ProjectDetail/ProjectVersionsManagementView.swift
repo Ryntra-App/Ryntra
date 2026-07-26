@@ -255,10 +255,15 @@ private struct VersionEditorSheet: View {
                             }
                         }
                     }
-                } else if !version!.files.isEmpty {
+                } else if let version, !version.files.isEmpty {
                     Section("Files") {
-                        ForEach(version!.files, id: \.url) { file in
-                            Link(file.filename, destination: URL(string: file.url)!)
+                        ForEach(version.files, id: \.url) { file in
+                            if let fileURL = URL(string: file.url) {
+                                Link(file.filename, destination: fileURL)
+                            } else {
+                                Text(file.filename)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }

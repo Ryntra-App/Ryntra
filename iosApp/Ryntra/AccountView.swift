@@ -91,14 +91,20 @@ struct AccountView: View {
             .themedListRowBackground(isPlatformNative: isPlatformNative)
 
             Section {
-                Link(destination: URL(string: "https://modrinth.com/user/\(account.username)")!) {
-                    Label("Open Modrinth profile", systemImage: "arrow.up.right.square")
+                if let profileURL = URL(string: "https://modrinth.com/user/\(account.username)") {
+                    Link(destination: profileURL) {
+                        Label("Open Modrinth profile", systemImage: "arrow.up.right.square")
+                    }
                 }
-                Link(destination: URL(string: "https://modrinth.com/settings/pats")!) {
-                    Label("API tokens", systemImage: "key")
+                if let tokensURL = URL(string: "https://modrinth.com/settings/pats") {
+                    Link(destination: tokensURL) {
+                        Label("API tokens", systemImage: "key")
+                    }
                 }
-                Link(destination: URL(string: "https://modrinth.com/dashboard/revenue")!) {
-                    Label("Creator payouts", systemImage: "wallet.pass")
+                if let revenueURL = URL(string: "https://modrinth.com/dashboard/revenue") {
+                    Link(destination: revenueURL) {
+                        Label("Creator payouts", systemImage: "wallet.pass")
+                    }
                 }
                 Button {
                     UIPasteboard.general.string = account.id

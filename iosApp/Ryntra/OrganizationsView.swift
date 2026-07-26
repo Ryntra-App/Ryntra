@@ -464,16 +464,18 @@ private struct OrganizationDetailView: View {
                 )
             }
 
-            Link(destination: URL(string: "https://modrinth.com/organization/\(displayOrganization.slug)")!) {
-                Label(
-                    NSLocalizedString("Open on Modrinth", comment: "Open org page"),
-                    systemImage: "arrow.up.right.square"
-                )
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
+            if let organizationURL = URL(string: "https://modrinth.com/organization/\(displayOrganization.slug)") {
+                Link(destination: organizationURL) {
+                    Label(
+                        NSLocalizedString("Open on Modrinth", comment: "Open org page"),
+                        systemImage: "arrow.up.right.square"
+                    )
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                }
+                .buttonStyle(.bordered)
+                .tint(Color.ryntraGreen)
             }
-            .buttonStyle(.bordered)
-            .tint(Color.ryntraGreen)
         }
         .padding(16)
         .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 12))
