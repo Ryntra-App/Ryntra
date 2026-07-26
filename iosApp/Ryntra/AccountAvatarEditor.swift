@@ -10,44 +10,58 @@ struct AccountAvatarEditor: View {
     let onError: (String) -> Void
 
     @State private var selectedItem: PhotosPickerItem?
+    @State private var isPickerPresented = false
 
     var body: some View {
-        VStack(spacing: 8) {
-            PhotosPicker(selection: $selectedItem, matching: .images) {
-                ZStack(alignment: .bottomTrailing) {
-                    AsyncImage(url: URL(string: account.avatarUrl ?? "")) { image in
-                        image.resizable().scaledToFill()
-                    } placeholder: {
-                        Circle().fill(.quaternary)
-                    }
-                    .frame(width: 68, height: 68)
-                    .clipShape(Circle())
-                    .overlay(Circle().stroke(Color.ryntraGreen.opacity(0.45), lineWidth: 1.5))
+        ZStack(alignment: .bottomTrailing) {
+            AsyncImage(url: URL(string: account.avatarUrl ?? "")) { image in
+                image.resizable().scaledToFill()
+            } placeholder: {
+                Circle().fill(.quaternary)
+            }
+            .frame(width: 68, height: 68)
+            .clipShape(Circle())
+            .overlay(Circle().stroke(Color.ryntraGreen.opacity(0.45), lineWidth: 1.5))
 
+            if isBusy {
+                ProgressView()
+                    .controlSize(.small)
+                    .tint(.white)
+                    .frame(width: 28, height: 28)
+                    .background(Color.ryntraGreen, in: Circle())
+                    .overlay(Circle().stroke(Color.ryntraBackground, lineWidth: 2))
+            } else {
+                Menu {
+                    Button {
+                        isPickerPresented = true
+                    } label: {
+                        Label(
+                            NSLocalizedString("Choose photo", comment: "Profile action"),
+                            systemImage: "photo"
+                        )
+                    }
+                    if account.avatarUrl != nil {
+                        Button(role: .destructive) {
+                            Task { await removeAvatar() }
+                        } label: {
+                            Label(
+                                NSLocalizedString("Remove avatar", comment: "Profile action"),
+                                systemImage: "trash"
+                            )
+                        }
+                    }
+                } label: {
                     Image(systemName: "camera.fill")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.white)
-                        .frame(width: 26, height: 26)
+                        .frame(width: 28, height: 28)
                         .background(Color.ryntraGreen, in: Circle())
                         .overlay(Circle().stroke(Color.ryntraBackground, lineWidth: 2))
                 }
-            }
-            .buttonStyle(.plain)
-            .disabled(isBusy)
-            .accessibilityLabel(NSLocalizedString("Change avatar", comment: "Profile action"))
-
-            if isBusy {
-                ProgressView().controlSize(.small)
-            } else if account.avatarUrl != nil {
-                Button(role: .destructive) {
-                    Task { await removeAvatar() }
-                } label: {
-                    Image(systemName: "trash")
-                }
-                .buttonStyle(.borderless)
-                .accessibilityLabel(NSLocalizedString("Remove avatar", comment: "Profile action"))
+                .accessibilityLabel(NSLocalizedString("Avatar actions", comment: "Profile action"))
             }
         }
+        .photosPicker(isPresented: $isPickerPresented, selection: $selectedItem, matching: .images)
         .onChange(of: selectedItem) { item in
             guard let item else { return }
             Task { await upload(item) }
