@@ -261,12 +261,71 @@ struct AnalyticsView: View {
     }
 
     private var lifetimeMetrics: some View {
-        metricGrid([
-            .init(metric: nil, label: "Downloads", value: lifetimeDownloads.formatted(.number.grouping(.automatic)), symbol: "arrow.down", change: nil),
-            .init(metric: nil, label: "Followers", value: lifetimeFollowers.formatted(.number.grouping(.automatic)), symbol: "heart", change: nil),
-            .init(metric: nil, label: "Projects", value: dashboard.projects.count.formatted(), symbol: "shippingbox", change: nil),
-            .init(metric: nil, label: "Active", value: dashboard.projects.filter { $0.status == "approved" }.count.formatted(), symbol: "checkmark.circle", change: nil),
-        ])
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                lifetimeMetric(
+                    "Downloads",
+                    value: lifetimeDownloads.formatted(.number.grouping(.automatic)),
+                    symbol: "arrow.down",
+                    tint: .analyticsBlue
+                )
+                Divider().frame(height: 56)
+                lifetimeMetric(
+                    "Followers",
+                    value: lifetimeFollowers.formatted(.number.grouping(.automatic)),
+                    symbol: "heart",
+                    tint: .analyticsPink
+                )
+            }
+            Divider()
+            HStack(spacing: 0) {
+                lifetimeMetric(
+                    "Projects",
+                    value: dashboard.projects.count.formatted(),
+                    symbol: "shippingbox",
+                    tint: .ryntraGreen
+                )
+                Divider().frame(height: 56)
+                lifetimeMetric(
+                    "Active",
+                    value: dashboard.projects.filter { $0.status == "approved" }.count.formatted(),
+                    symbol: "checkmark.circle",
+                    tint: .ryntraGreen
+                )
+            }
+        }
+        .background(
+            isPlatformNative ? Color(uiColor: .secondarySystemGroupedBackground) : Color.ryntraSurface,
+            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.ryntraSeparator, lineWidth: 0.5)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private func lifetimeMetric(_ label: String, value: String, symbol: String, tint: Color) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: symbol)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(tint)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(label)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(value)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 74, alignment: .leading)
+        .padding(.horizontal, 14)
+        .accessibilityElement(children: .combine)
     }
 
     private func display(_ metric: AnalyticsMetric, available: Bool = true) -> AnalyticsMetricDisplay {

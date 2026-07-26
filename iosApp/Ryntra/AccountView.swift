@@ -26,6 +26,7 @@ struct AccountView: View {
     @State private var avatarError: String?
     @State private var isChangingNotifications = false
     @State private var copiedSupportAddress: String?
+    @State private var isEditingProfile = false
 
     private var normalizedUsername: String {
         username.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -70,45 +71,14 @@ struct AccountView: View {
                         .font(.caption)
                         .foregroundStyle(.red)
                 }
-            }
-            .themedListRowBackground(isPlatformNative: isPlatformNative)
-
-            Section {
-                LabeledContent {
-                    TextField("Username", text: $username)
-                        .multilineTextAlignment(.trailing)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .disabled(isSaving)
-                } label: {
-                    Label("Username", systemImage: "at")
-                }
-                VStack(alignment: .leading, spacing: 8) {
-                    Label("Bio", systemImage: "text.alignleft")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    TextField("Tell people about your work", text: $bio, axis: .vertical)
-                        .lineLimit(3...6)
-                        .disabled(isSaving)
-                }
-                if let errorMessage {
-                    Text(errorMessage)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                }
                 Button {
-                    Task { await saveProfile() }
+                    errorMessage = nil
+                    resetDraft()
+                    isEditingProfile = true
                 } label: {
-                    if isSaving {
-                        ProgressView()
-                    } else {
-                        Label("Save profile", systemImage: "checkmark.circle")
-                    }
+                    Label("Edit profile", systemImage: "pencil")
                 }
-                .disabled(normalizedUsername.isEmpty || !hasProfileChanges || isSaving)
                 .tint(Color.ryntraGreen)
-            } header: {
-                RyntraSectionLabel(text: "Profile")
             }
             .themedListRowBackground(isPlatformNative: isPlatformNative)
 
@@ -335,6 +305,61 @@ struct AccountView: View {
         .onAppear(perform: resetDraft)
         .onChange(of: account.username) { _ in synchronizeDraft() }
         .onChange(of: account.bio) { _ in synchronizeDraft() }
+        .sheet(isPresented: $isEditingProfile) {
+            profileEditor
+        }
+    }
+
+    private var profileEditor: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Username", text: $username)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .disabled(isSaving)
+                    TextField("Tell people about your work", text: $bio, axis: .vertical)
+                        .lineLimit(3...6)
+                        .disabled(isSaving)
+                } header: {
+                    Text("Profile")
+                } footer: {
+                    Text("Your username and bio are shown on your Modrinth profile.")
+                }
+
+                if let errorMessage {
+                    Section {
+                        Label(errorMessage, systemImage: "exclamationmark.triangle")
+                            .foregroundStyle(.red)
+                    }
+                }
+            }
+            .navigationTitle("Edit profile")
+            .navigationBarTitleDisplayMode(.inline)
+            .interactiveDismissDisabled(isSaving)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        resetDraft()
+                        errorMessage = nil
+                        isEditingProfile = false
+                    }
+                    .disabled(isSaving)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        Task { await saveProfileAndDismiss() }
+                    } label: {
+                        if isSaving {
+                            ProgressView()
+                        } else {
+                            Text("Save")
+                        }
+                    }
+                    .disabled(normalizedUsername.isEmpty || !hasProfileChanges || isSaving)
+                }
+            }
+        }
     }
 
     private var appVersion: String {
@@ -373,6 +398,14 @@ struct AccountView: View {
             errorMessage = error.localizedDescription
         }
         isSaving = false
+    }
+
+    @MainActor
+    private func saveProfileAndDismiss() async {
+        await saveProfile()
+        if errorMessage == nil {
+            isEditingProfile = false
+        }
     }
 
     @MainActor

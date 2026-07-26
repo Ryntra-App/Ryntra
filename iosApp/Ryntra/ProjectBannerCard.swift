@@ -10,9 +10,6 @@ struct ProjectBannerCard: View {
     var body: some View {
         VStack(spacing: 0) {
             banner
-                .frame(height: 92)
-                .frame(maxWidth: .infinity)
-                .clipped()
 
             HStack(spacing: 11) {
                 ProjectArtwork(project: project)
@@ -48,47 +45,54 @@ struct ProjectBannerCard: View {
 
     @ViewBuilder
     private var banner: some View {
-        ZStack(alignment: .topTrailing) {
-            if let bannerURL = URL(string: project.bannerUrl ?? "") {
-                AsyncImage(url: bannerURL) { image in
-                    image
-                        .resizable()
-                        .scaledToFill()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .clipped()
-                } placeholder: {
-                    Color.ryntraSurfaceRaised
-                }
-            } else {
-                Color.ryntraSurfaceRaised
-                    .overlay {
-                        Text(String(project.title.prefix(1)).uppercased())
-                            .font(.largeTitle.bold())
-                            .foregroundStyle(.secondary.opacity(0.45))
+        GeometryReader { geometry in
+            ZStack(alignment: .topTrailing) {
+                if let bannerURL = URL(string: project.bannerUrl ?? "") {
+                    AsyncImage(url: bannerURL) { image in
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                            .clipped()
+                    } placeholder: {
+                        Color.ryntraSurfaceRaised
+                            .frame(width: geometry.size.width, height: geometry.size.height)
                     }
-            }
-
-            if let onFavoriteTap {
-                Button(action: onFavoriteTap) {
-                    Image(systemName: "star")
-                        .symbolVariant(isFavorite ? .fill : .none)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(isFavorite ? Color.accentColor : Color.primary)
-                        .frame(width: 40, height: 40)
-                        .background(
-                            isFavorite ? Color.accentColor.opacity(0.18) : Color.clear,
-                            in: Circle()
-                        )
-                        .background(.regularMaterial, in: Circle())
-                        .scaleEffect(isFavorite ? 1.06 : 1)
+                } else {
+                    Color.ryntraSurfaceRaised
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .overlay {
+                            Text(String(project.title.prefix(1)).uppercased())
+                                .font(.largeTitle.bold())
+                                .foregroundStyle(.secondary.opacity(0.45))
+                        }
                 }
-                .buttonStyle(.plain)
-                .padding(8)
-                .accessibilityLabel(
-                    NSLocalizedString(isFavorite ? "Remove favorite" : "Add favorite", comment: "Project favorite action")
-                )
+
+                if let onFavoriteTap {
+                    Button(action: onFavoriteTap) {
+                        Image(systemName: "star")
+                            .symbolVariant(isFavorite ? .fill : .none)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(isFavorite ? Color.accentColor : Color.primary)
+                            .frame(width: 40, height: 40)
+                            .background(
+                                isFavorite ? Color.accentColor.opacity(0.18) : Color.clear,
+                                in: Circle()
+                            )
+                            .background(.regularMaterial, in: Circle())
+                            .scaleEffect(isFavorite ? 1.06 : 1)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(8)
+                    .accessibilityLabel(
+                        NSLocalizedString(isFavorite ? "Remove favorite" : "Add favorite", comment: "Project favorite action")
+                    )
+                }
             }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .clipped()
         }
+        .frame(height: 92)
     }
 
     private var statusLabel: some View {

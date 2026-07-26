@@ -132,7 +132,7 @@ struct OverviewView: View {
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.bottom, isPlatformNative ? 20 : 96)
+            .padding(.bottom, isPlatformNative ? 16 : 84)
         }
         .background(Color.ryntraBackground)
         .refreshable { model.refresh() }
@@ -211,8 +211,8 @@ struct OverviewView: View {
                 Text(detail).font(.caption).foregroundStyle(.secondary)
             }
         }
-        .padding(.top, 20)
-        .padding(.bottom, 8)
+        .padding(.top, 16)
+        .padding(.bottom, 6)
     }
 
     @ViewBuilder
@@ -274,13 +274,15 @@ struct OverviewView: View {
                 message: "Projects you own or manage will appear here."
             )
         } else {
-            ForEach(recentProjects, id: \.id) { project in
+            ForEach(Array(recentProjects.enumerated()), id: \.element.id) { index, project in
                 Button { onProjectTap(project) } label: {
                     ProjectRow(project: project, showDescription: false, showStatus: false)
                         .padding(.vertical, 4)
                 }
                 .buttonStyle(.plain)
-                Divider()
+                if index < recentProjects.count - 1 {
+                    Divider()
+                }
             }
         }
     }
