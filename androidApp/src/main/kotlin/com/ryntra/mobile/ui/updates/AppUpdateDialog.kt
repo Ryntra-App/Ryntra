@@ -50,8 +50,9 @@ internal fun AppUpdateDialog(
                 .fillMaxWidth()
                 .widthIn(max = 440.dp),
             shape = RyntraDesign.contentShape,
-            color = RyntraDesign.colors.surface,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 1f),
             tonalElevation = 6.dp,
+            shadowElevation = 12.dp,
         ) {
             Column(
                 modifier = Modifier.padding(top = 22.dp, bottom = 12.dp),
