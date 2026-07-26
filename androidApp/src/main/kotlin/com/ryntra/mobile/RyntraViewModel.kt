@@ -75,7 +75,9 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     private val mutableModeration = MutableStateFlow(ProjectModerationState())
     private val mutableMemberSearch = MutableStateFlow(MemberSearchState())
     private val mutableAnalytics = MutableStateFlow(AnalyticsState())
-    private val mutableNotifications = MutableStateFlow(NotificationState())
+    private val mutableNotifications = MutableStateFlow(
+        NotificationState(badgeUnreadCount = notificationBadgeStore.readCount()),
+    )
     private val mutableInstantNotifications = MutableStateFlow(
         InstantNotificationState(
             isAvailable = instantNotificationCoordinator.isAvailable,
@@ -97,7 +99,11 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     private var lastForegroundRefreshAt = 0L
     private val notificationRefreshReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.action == NotificationRefreshSignal.ACTION) refreshNotifications()
+            if (intent?.action != NotificationRefreshSignal.ACTION) return
+            mutableNotifications.value = mutableNotifications.value.copy(
+                badgeUnreadCount = notificationBadgeStore.readCount(),
+            )
+            refreshNotifications()
         }
     }
 
@@ -323,9 +329,12 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
         notificationsJob = viewModelScope.launch {
             suspendCatching { controller.loadNotifications() }.fold(
                 onSuccess = { items ->
-                    val unreadCount = items.count { !it.read }
-                    notificationBadgeStore.replace(unreadCount)
-                    mutableNotifications.value = NotificationState(items = items, hasLoaded = true)
+                    val unreadCount = notificationBadgeStore.synchronize(items)
+                    mutableNotifications.value = NotificationState(
+                        items = items,
+                        hasLoaded = true,
+                        badgeUnreadCount = unreadCount,
+                    )
                 },
                 onFailure = { error ->
                     mutableNotifications.value = mutableNotifications.value.copy(
@@ -1149,27 +1158,37 @@ data class AnalyticsState(
 data class NotificationState(
     val items: List<ModrinthNotification> = emptyList(),
     val hasLoaded: Boolean = false,
+    val badgeUnreadCount: Int = 0,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val activeActionNotificationId: String? = null,
 ) {
-    val unreadCount: Int get() = if (hasLoaded) items.count { !it.read } else 0
+    val unreadCount: Int
+        get() = maxOf(items.count { !it.read }, badgeUnreadCount).coerceAtLeast(0)
 }
 
-private fun NotificationState.withReadNotifications(notificationIds: Set<String>): NotificationState = copy(
-    items = items.map { notification ->
+private fun NotificationState.withReadNotifications(notificationIds: Set<String>): NotificationState {
+    val updatedItems = items.map { notification ->
         if (notification.id in notificationIds) notification.copy(read = true) else notification
-    },
-    hasLoaded = true,
-    errorMessage = null,
-)
+    }
+    return copy(
+        items = updatedItems,
+        hasLoaded = true,
+        badgeUnreadCount = updatedItems.count { !it.read },
+        errorMessage = null,
+    )
+}
 
-private fun NotificationState.withUnreadNotifications(notificationIds: Set<String>): NotificationState = copy(
-    items = items.map { notification ->
+private fun NotificationState.withUnreadNotifications(notificationIds: Set<String>): NotificationState {
+    val updatedItems = items.map { notification ->
         if (notification.id in notificationIds) notification.copy(read = false) else notification
-    },
-    hasLoaded = true,
-)
+    }
+    return copy(
+        items = updatedItems,
+        hasLoaded = true,
+        badgeUnreadCount = updatedItems.count { !it.read },
+    )
+}
 
 data class InstantNotificationState(
     val isAvailable: Boolean = false,
