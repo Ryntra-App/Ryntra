@@ -70,7 +70,7 @@ struct OverviewView: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 0) {
                 Text(String(format: NSLocalizedString("Welcome back, %@", comment: "Overview welcome"), dashboard.account.username))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
