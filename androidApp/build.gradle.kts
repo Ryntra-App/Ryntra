@@ -20,8 +20,8 @@ android {
         applicationId = "com.ryntra.mobile"
         minSdk = 26
         targetSdk = 36
-        versionCode = 30000
-        versionName = "3.0.0-alpha01"
+        versionCode = 20100
+        versionName = "2.1.0"
         buildConfigField(
             "String",
             "BACKEND_URL",

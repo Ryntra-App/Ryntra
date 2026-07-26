@@ -45,6 +45,8 @@ import com.ryntra.shared.model.ProjectVersion
 import com.ryntra.shared.model.VersionUpdate
 import com.ryntra.shared.model.WalletReport
 import com.ryntra.shared.network.ApiException
+import com.ryntra.shared.updates.AppUpdate
+import com.ryntra.shared.updates.AppUpdateClient
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -63,6 +65,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     private val instantNotificationCoordinator = InstantNotificationCoordinator(application)
     private val notificationBadgeStore = NotificationBadgeStore(application)
     private val controller = AppController()
+    private val updateClient = AppUpdateClient()
     private val mutableOAuthError = MutableStateFlow<String?>(null)
     private val mutableProjectDetail = MutableStateFlow<ProjectDetailState?>(null)
     private val mutableOrganizationDetail = MutableStateFlow<OrganizationDetailState?>(null)
@@ -79,6 +82,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
             isConnected = instantNotificationCoordinator.isConnected,
         ),
     )
+    private val mutableAppUpdate = MutableStateFlow<AppUpdate?>(null)
     private var pendingToken: String? = null
     private var projectLoadJob: Job? = null
     private var organizationLoadJob: Job? = null
@@ -109,6 +113,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     val analytics: StateFlow<AnalyticsState> = mutableAnalytics.asStateFlow()
     val notifications: StateFlow<NotificationState> = mutableNotifications.asStateFlow()
     val instantNotifications: StateFlow<InstantNotificationState> = mutableInstantNotifications.asStateFlow()
+    val appUpdate: StateFlow<AppUpdate?> = mutableAppUpdate.asStateFlow()
     val preferences: StateFlow<RyntraPreferences> = preferencesStore.preferences
 
     init {
@@ -185,6 +190,19 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun refresh() = controller.refresh()
+
+    fun checkForUpdates() {
+        viewModelScope.launch {
+            val update = runCatching { updateClient.latestRelease("apk") }.getOrNull()
+            if (update != null && AppUpdateClient.isNewerVersion(update.version)) {
+                mutableAppUpdate.value = update
+            }
+        }
+    }
+
+    fun dismissAppUpdate() {
+        mutableAppUpdate.value = null
+    }
 
     fun onAppForeground() {
         val now = SystemClock.elapsedRealtime()

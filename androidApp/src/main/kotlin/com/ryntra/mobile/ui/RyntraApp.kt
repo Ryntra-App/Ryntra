@@ -6,6 +6,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ryntra.mobile.RyntraViewModel
 import com.ryntra.mobile.ui.dashboard.DashboardScreen
@@ -30,7 +34,42 @@ fun RyntraApp(viewModel: RyntraViewModel) {
     val analytics by viewModel.analytics.collectAsStateWithLifecycle()
     val notifications by viewModel.notifications.collectAsStateWithLifecycle()
     val instantNotifications by viewModel.instantNotifications.collectAsStateWithLifecycle()
+    val appUpdate by viewModel.appUpdate.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
+    LaunchedEffect(Unit) {
+        viewModel.checkForUpdates()
+    }
+    appUpdate?.let { update ->
+        AlertDialog(
+            onDismissRequest = viewModel::dismissAppUpdate,
+            title = { Text(update.title) },
+            text = {
+                Text(
+                    if (update.notes.isBlank()) {
+                        "A new Ryntra version is available."
+                    } else {
+                        update.notes
+                    },
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        uriHandler.openUri(update.downloadUrl ?: update.releaseUrl)
+                        viewModel.dismissAppUpdate()
+                    },
+                ) {
+                    Text("Download")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::dismissAppUpdate) {
+                    Text("Later")
+                }
+            },
+        )
+    }
     val startOAuth = {
         CustomTabsIntent.Builder()
             .setShowTitle(true)

@@ -33,11 +33,13 @@ final class AppModel: ObservableObject {
     @Published private(set) var cachedUnreadNotificationCount = UserDefaults.standard.integer(forKey: "cachedUnreadNotificationCount")
     @Published private(set) var pendingNotificationProjectReference: String?
     @Published private(set) var instantNotifications = InstantNotificationStatus()
+    @Published private(set) var appUpdate: AppUpdate?
 
     private let controller = AppController()
     private let keychain = KeychainTokenStore()
     private let oauthCoordinator = OAuthCoordinator()
     private let instantNotificationCoordinator = InstantNotificationCoordinator()
+    private let updateClient = AppUpdateClient()
     private var observation: Observation?
     private var pendingToken: String?
     private var activeAnalyticsKey: String?
@@ -129,6 +131,18 @@ final class AppModel: ObservableObject {
 
     func refresh() {
         controller.refresh()
+    }
+
+    func checkForUpdates() {
+        Task {
+            guard let update = try? await updateClient.latestRelease(assetExtension: "ipa"),
+                  isNewerVersion(update.version) else { return }
+            appUpdate = update
+        }
+    }
+
+    func dismissAppUpdate() {
+        appUpdate = nil
     }
 
     func startInstantNotifications() async {
@@ -523,6 +537,18 @@ final class AppModel: ObservableObject {
         let count = notifications.filter { !$0.read && !locallyReadNotificationIDs.contains($0.id) }.count
         cachedUnreadNotificationCount = count
         UserDefaults.standard.set(count, forKey: "cachedUnreadNotificationCount")
+    }
+
+    private func isNewerVersion(_ candidate: String) -> Bool {
+        func components(_ value: String) -> [Int]? {
+            let parts = value.trimmingCharacters(in: CharacterSet(charactersIn: "vV")).split(separator: ".")
+            guard !parts.isEmpty, parts.count <= 3 else { return nil }
+            return parts.map(String.init).compactMap(Int.init)
+        }
+        guard let candidate = components(candidate), let current = components("2.1.0") else { return false }
+        let left = candidate + Array(repeating: 0, count: max(0, 3 - candidate.count))
+        let right = current + Array(repeating: 0, count: max(0, 3 - current.count))
+        return zip(left, right).first { $0 != $1 }.map { $0.0 > $0.1 } ?? false
     }
 
     private func performProjectAction(
