@@ -3,6 +3,7 @@ import SwiftUI
 @main
 struct RyntraApp: App {
     @UIApplicationDelegateAdaptor(RyntraAppDelegate.self) private var appDelegate
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var model = AppModel()
     @AppStorage("themeStyle") private var storedThemeStyle = RyntraThemeStyle.platform.rawValue
     @AppStorage("appearanceMode") private var storedAppearanceMode = RyntraAppearanceMode.system.rawValue
@@ -31,6 +32,13 @@ struct RyntraApp: App {
                     appDelegate.onRemoteNotificationToken = { token in
                         Task { await model.updateInstantNotificationToken(token) }
                     }
+                    appDelegate.onRemoteNotificationReceived = {
+                        Task { await model.refreshNotifications() }
+                    }
+                }
+                .onChange(of: scenePhase) { phase in
+                    guard phase == .active else { return }
+                    Task { await model.refreshNotifications() }
                 }
         }
     }

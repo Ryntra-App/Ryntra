@@ -117,7 +117,9 @@ struct OverviewView: View {
                 recentContent
 
                 if !projectTypes.isEmpty {
-                    sectionHeader(NSLocalizedString("Portfolio mix", comment: "Overview section"), detail: nil)
+                    RyntraSectionLabel(text: NSLocalizedString("Portfolio mix", comment: "Overview section"))
+                        .padding(.top, 6)
+                        .padding(.bottom, 2)
                     ForEach(Array(projectTypes.enumerated()), id: \.element.name) { index, type in
                         HStack {
                             Text(type.name)
@@ -126,7 +128,7 @@ struct OverviewView: View {
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
-                        .padding(.vertical, 10)
+                        .padding(.vertical, 7)
                         if index < projectTypes.count - 1 { Divider() }
                     }
                 }

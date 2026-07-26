@@ -125,6 +125,7 @@ final class LocalNotificationManager {
 
 final class RyntraAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     var onRemoteNotificationToken: ((String) -> Void)?
+    var onRemoteNotificationReceived: (() -> Void)?
 
     func application(
         _ application: UIApplication,
@@ -152,13 +153,15 @@ final class RyntraAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificati
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        [.banner, .sound, .badge]
+        onRemoteNotificationReceived?()
+        return [.banner, .sound, .badge]
     }
 
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
     ) async {
+        onRemoteNotificationReceived?()
         let userInfo = response.notification.request.content.userInfo
         guard let link = (userInfo["modrinthLink"] ?? userInfo["modrinth_link"]) as? String else { return }
         let path = link
