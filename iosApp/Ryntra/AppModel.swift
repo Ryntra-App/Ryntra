@@ -168,6 +168,7 @@ final class AppModel: ObservableObject {
     }
 
     func refreshNotifications() async {
+        guard case .ready = state else { return }
         guard !isNotificationsLoading else { return }
         isNotificationsLoading = true
         notificationsError = nil
