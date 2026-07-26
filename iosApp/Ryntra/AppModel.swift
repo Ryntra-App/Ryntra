@@ -545,7 +545,7 @@ final class AppModel: ObservableObject {
             guard !parts.isEmpty, parts.count <= 3 else { return nil }
             return parts.map(String.init).compactMap(Int.init)
         }
-        guard let candidate = components(candidate), let current = components("2.1.0") else { return false }
+        guard let candidate = components(candidate), let current = components("3.0.0") else { return false }
         let left = candidate + Array(repeating: 0, count: max(0, 3 - candidate.count))
         let right = current + Array(repeating: 0, count: max(0, 3 - current.count))
         return zip(left, right).first { $0 != $1 }.map { $0.0 > $0.1 } ?? false

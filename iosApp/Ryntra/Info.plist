@@ -17,9 +17,9 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>2.1.0</string>
+    <string>3.0.0</string>
     <key>CFBundleVersion</key>
-    <string>20100</string>
+    <string>30000</string>
     <key>RyntraBackendURL</key>
     <string>$(RYNTRA_BACKEND_URL)</string>
     <key>CFBundleURLTypes</key>
