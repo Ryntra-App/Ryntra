@@ -7,15 +7,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ryntra.mobile.RyntraViewModel
 import com.ryntra.mobile.ui.dashboard.DashboardScreen
 import com.ryntra.mobile.ui.login.LoginScreen
 import com.ryntra.mobile.ui.theme.RyntraMotionProvider
 import com.ryntra.mobile.ui.theme.RyntraTheme
+import com.ryntra.mobile.ui.updates.AppUpdateDialog
 import com.ryntra.shared.app.AppState
 import com.ryntra.shared.model.Dashboard
 
@@ -41,33 +39,13 @@ fun RyntraApp(viewModel: RyntraViewModel) {
         viewModel.checkForUpdates()
     }
     appUpdate?.let { update ->
-        AlertDialog(
-            onDismissRequest = viewModel::dismissAppUpdate,
-            title = { Text(update.title) },
-            text = {
-                Text(
-                    if (update.notes.isBlank()) {
-                        "A new Ryntra version is available."
-                    } else {
-                        update.notes
-                    },
-                )
+        AppUpdateDialog(
+            update = update,
+            onDownload = {
+                uriHandler.openUri(update.downloadUrl ?: update.releaseUrl)
+                viewModel.dismissAppUpdate()
             },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        uriHandler.openUri(update.downloadUrl ?: update.releaseUrl)
-                        viewModel.dismissAppUpdate()
-                    },
-                ) {
-                    Text("Download")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = viewModel::dismissAppUpdate) {
-                    Text("Later")
-                }
-            },
+            onDismiss = viewModel::dismissAppUpdate,
         )
     }
     val startOAuth = {

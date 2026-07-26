@@ -45,6 +45,8 @@ struct RootView: View {
                 } onDismiss: {
                     model.dismissAppUpdate()
                 }
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
             }
         }
     }
@@ -54,20 +56,29 @@ private struct AppUpdateView: View {
     let update: AppUpdate
     let onDownload: () -> Void
     let onDismiss: () -> Void
+    @State private var notesBlocks: [MarkdownBlock] = []
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    Label("New version available", systemImage: "arrow.down.circle.fill")
-                        .font(.title3.weight(.semibold))
+                    Label("Update available", systemImage: "arrow.down.circle.fill")
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.ryntraGreen)
-                    Text("Ryntra \(update.version)")
-                        .font(.largeTitle.bold())
-                    if !update.notes.isEmpty {
-                        Text(update.notes)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(update.title)
+                            .font(.title2.bold())
+                        Text("Ryntra \(update.version)")
+                            .font(.subheadline)
                             .foregroundStyle(.secondary)
-                            .textSelection(.enabled)
+                    }
+                    Divider()
+                    if !notesBlocks.isEmpty {
+                        VStack(alignment: .leading, spacing: 10) {
+                            ForEach(Array(notesBlocks.enumerated()), id: \.offset) { _, block in
+                                MarkdownBlockView(block: block)
+                            }
+                        }
                     } else {
                         Text("A new release is ready to download.")
                             .foregroundStyle(.secondary)
@@ -78,6 +89,11 @@ private struct AppUpdateView: View {
             }
             .navigationTitle("Update available")
             .navigationBarTitleDisplayMode(.inline)
+            .task(id: update.notes) {
+                notesBlocks = await Task.detached(priority: .userInitiated) {
+                    MarkdownParser.shared.parse(markdown: update.notes)
+                }.value
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Later", action: onDismiss)
