@@ -14,12 +14,25 @@ Join the Rinthy Discord server: https://discord.gg/6H5vDq2wk7
 
 ## Screenshots
 
-<div align="center">
-  <img src="./docs/screenshots/developer-panel.png" width="220" alt="Developer panel" />
-  <img src="./docs/screenshots/teams.png" width="220" alt="Teams and organizations" />
-  <img src="./docs/screenshots/analytics.png" width="220" alt="Analytics" />
-  <img src="./docs/screenshots/glass-theme.png" width="220" alt="Glass theme" />
-</div>
+<p align="center"><strong>Android · Material 3</strong></p>
+<p align="center">
+  <a href="./docs/screenshots/dashboard.png"><img src="./docs/screenshots/dashboard.png" width="210" alt="Rinthy dashboard on Android" /></a>
+  <a href="./docs/screenshots/projects.png"><img src="./docs/screenshots/projects.png" width="210" alt="Rinthy projects on Android" /></a>
+  <a href="./docs/screenshots/analytics.png"><img src="./docs/screenshots/analytics.png" width="210" alt="Rinthy analytics on Android" /></a>
+  <a href="./docs/screenshots/teams.png"><img src="./docs/screenshots/teams.png" width="210" alt="Rinthy teams on Android" /></a>
+</p>
+<p align="center"><sub>Dashboard · Projects · Analytics · Teams</sub></p>
+
+<p align="center"><strong>iOS · SwiftUI</strong></p>
+<p align="center">
+  <a href="./docs/screenshots/ios-dashboard.png"><img src="./docs/screenshots/ios-dashboard.png" width="210" alt="Rinthy dashboard on iOS" /></a>
+  <a href="./docs/screenshots/ios-projects.png"><img src="./docs/screenshots/ios-projects.png" width="210" alt="Rinthy projects on iOS" /></a>
+  <a href="./docs/screenshots/ios-analytics.png"><img src="./docs/screenshots/ios-analytics.png" width="210" alt="Rinthy analytics on iOS" /></a>
+  <a href="./docs/screenshots/ios-teams.png"><img src="./docs/screenshots/ios-teams.png" width="210" alt="Rinthy teams on iOS" /></a>
+</p>
+<p align="center"><sub>Dashboard · Projects · Analytics · Teams</sub></p>
+
+<p align="center"><sub>Click any screenshot to open the full-size capture.</sub></p>
 
 ## What Rinthy Can Do
 
@@ -115,12 +128,7 @@ Rinthy — неофициальное нативное мобильное при
 
 ## Скриншоты
 
-<div align="center">
-  <img src="./docs/screenshots/developer-panel.png" width="220" alt="Панель разработчика" />
-  <img src="./docs/screenshots/teams.png" width="220" alt="Команды и организации" />
-  <img src="./docs/screenshots/analytics.png" width="220" alt="Аналитика" />
-  <img src="./docs/screenshots/glass-theme.png" width="220" alt="Glass тема" />
-</div>
+Актуальные экраны Android и iOS собраны в [галерее выше](#screenshots). Нажми на любой скриншот, чтобы открыть его в полном размере.
 
 ## Возможности
 
