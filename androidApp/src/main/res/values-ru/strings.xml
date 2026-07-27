@@ -127,6 +127,8 @@
     <string name="project_type_project">Проект</string>
     <string name="analytics_filter_project">Фильтр по проекту</string>
     <string name="settings_favorites_hint">Поднимать отмеченные звездой проекты в начало списка</string>
+    <string name="settings_project_banners">Показывать баннеры проектов</string>
+    <string name="settings_project_banners_hint">Использовать иллюстрации-баннеры в списке проектов</string>
     <string name="settings_reduce_motion">Меньше анимаций</string>
     <string name="settings_reduce_motion_hint">Мгновенные изменения состояния и простые переходы</string>
     <string name="settings_glass_quality">Качество стекла</string>
