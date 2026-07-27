@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
       - name: Install Android SDK 37
         # API 37 ships as platforms;android-37.0 (not android-37). build-tools 37 is optional.
         run: sdkmanager "platforms;android-37.0" "build-tools;36.1.0"
