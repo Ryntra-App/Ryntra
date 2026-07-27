@@ -165,14 +165,22 @@ struct RyntraTabBar: View {
 private extension View {
     @ViewBuilder
     func ryntraCapsuleGlass() -> some View {
+#if compiler(>=6.2)
         if #available(iOS 26.0, *) {
             glassEffect(.regular.interactive(), in: .capsule)
         } else {
-            background(.ultraThinMaterial, in: Capsule())
-                .overlay {
-                    Capsule().stroke(Color.primary.opacity(0.16), lineWidth: 0.5)
-                }
-                .shadow(color: .black.opacity(0.14), radius: 14, y: 6)
+            ryntraCapsuleMaterialFallback()
         }
+#else
+        ryntraCapsuleMaterialFallback()
+#endif
+    }
+
+    private func ryntraCapsuleMaterialFallback() -> some View {
+        background(.ultraThinMaterial, in: Capsule())
+            .overlay {
+                Capsule().stroke(Color.primary.opacity(0.16), lineWidth: 0.5)
+            }
+            .shadow(color: .black.opacity(0.14), radius: 14, y: 6)
     }
 }
