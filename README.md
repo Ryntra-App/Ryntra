@@ -1,40 +1,40 @@
-# Rinthy
+# Ryntra
 
 <div align="center">
-  <img src="./public/logo.png" width="128" height="128" alt="Rinthy" />
+  <img src="./public/logo.png" width="128" height="128" alt="Ryntra" />
   <p><strong>A native mobile Modrinth dashboard for creators.</strong></p>
   <p>Manage projects, teams, versions, notifications, and analytics from your phone.</p>
 </div>
 
-> Rinthy is an unofficial app for Modrinth. It is not affiliated with, endorsed by, or maintained by Modrinth.
+> Ryntra is an unofficial app for Modrinth. It is not affiliated with, endorsed by, or maintained by Modrinth.
 
 ## Community
 
-Join the Rinthy Discord server: https://discord.gg/6H5vDq2wk7
+Join the Ryntra Discord server: https://discord.gg/6H5vDq2wk7
 
 ## Screenshots
 
 <p align="center"><strong>Android · Material 3</strong></p>
 <p align="center">
-  <a href="./docs/screenshots/dashboard.png"><img src="./docs/screenshots/dashboard.png" width="210" alt="Rinthy dashboard on Android" /></a>
-  <a href="./docs/screenshots/projects.png"><img src="./docs/screenshots/projects.png" width="210" alt="Rinthy projects on Android" /></a>
-  <a href="./docs/screenshots/analytics.png"><img src="./docs/screenshots/analytics.png" width="210" alt="Rinthy analytics on Android" /></a>
-  <a href="./docs/screenshots/teams.png"><img src="./docs/screenshots/teams.png" width="210" alt="Rinthy teams on Android" /></a>
+  <a href="./docs/screenshots/dashboard.png"><img src="./docs/screenshots/dashboard.png" width="210" alt="Ryntra dashboard on Android" /></a>
+  <a href="./docs/screenshots/projects.png"><img src="./docs/screenshots/projects.png" width="210" alt="Ryntra projects on Android" /></a>
+  <a href="./docs/screenshots/analytics.png"><img src="./docs/screenshots/analytics.png" width="210" alt="Ryntra analytics on Android" /></a>
+  <a href="./docs/screenshots/teams.png"><img src="./docs/screenshots/teams.png" width="210" alt="Ryntra teams on Android" /></a>
 </p>
 <p align="center"><sub>Dashboard · Projects · Analytics · Teams</sub></p>
 
 <p align="center"><strong>iOS · SwiftUI</strong></p>
 <p align="center">
-  <a href="./docs/screenshots/ios-dashboard.png"><img src="./docs/screenshots/ios-dashboard.png" width="210" alt="Rinthy dashboard on iOS" /></a>
-  <a href="./docs/screenshots/ios-projects.png"><img src="./docs/screenshots/ios-projects.png" width="210" alt="Rinthy projects on iOS" /></a>
-  <a href="./docs/screenshots/ios-analytics.png"><img src="./docs/screenshots/ios-analytics.png" width="210" alt="Rinthy analytics on iOS" /></a>
-  <a href="./docs/screenshots/ios-teams.png"><img src="./docs/screenshots/ios-teams.png" width="210" alt="Rinthy teams on iOS" /></a>
+  <a href="./docs/screenshots/ios-dashboard.png"><img src="./docs/screenshots/ios-dashboard.png" width="210" alt="Ryntra dashboard on iOS" /></a>
+  <a href="./docs/screenshots/ios-projects.png"><img src="./docs/screenshots/ios-projects.png" width="210" alt="Ryntra projects on iOS" /></a>
+  <a href="./docs/screenshots/ios-analytics.png"><img src="./docs/screenshots/ios-analytics.png" width="210" alt="Ryntra analytics on iOS" /></a>
+  <a href="./docs/screenshots/ios-teams.png"><img src="./docs/screenshots/ios-teams.png" width="210" alt="Ryntra teams on iOS" /></a>
 </p>
 <p align="center"><sub>Dashboard · Projects · Analytics · Teams</sub></p>
 
 <p align="center"><sub>Click any screenshot to open the full-size capture.</sub></p>
 
-## What Rinthy Can Do
+## What Ryntra Can Do
 
 - Sign in with Modrinth OAuth, with PAT login available as a fallback.
 - View, search, and manage your Modrinth projects.
@@ -60,7 +60,7 @@ The app checks GitHub Releases for newer versions and opens the matching APK or 
 
 ## Authentication
 
-Rinthy uses Modrinth OAuth for normal sign-in. PAT login is still available as a fallback for development or recovery.
+Ryntra uses Modrinth OAuth for normal sign-in. PAT login is still available as a fallback for development or recovery.
 
 Tokens are stored locally on your device using Android Keystore or the iOS Keychain.
 
@@ -112,17 +112,17 @@ The unsigned device workflow intentionally disables Codemagic signing. It is sti
 
 Notification privacy, Firebase/APNs setup, relay deployment, and troubleshooting are documented in [Notification setup](docs/NOTIFICATIONS.md).
 
-The normal Rinthy session token never goes to the notification relay. Instant notifications use a separate limited Modrinth authorization with only the permissions required to read notifications.
+The normal Ryntra session token never goes to the notification relay. Instant notifications use a separate limited Modrinth authorization with only the permissions required to read notifications.
 
 ## Translations
 
-See [Translating Rinthy](docs/TRANSLATING.md) for the Android and iOS translation workflow, validation command, language rules, and notification locale requirements.
+See [Translating Ryntra](docs/TRANSLATING.md) for the Android and iOS translation workflow, validation command, language rules, and notification locale requirements.
 
 ---
 
 # Русский
 
-Rinthy — неофициальное нативное мобильное приложение для авторов на Modrinth.
+Ryntra — неофициальное нативное мобильное приложение для авторов на Modrinth.
 
 С ним можно управлять проектами, версиями, командами, организациями, уведомлениями и аналитикой прямо с телефона или планшета.
 
@@ -206,7 +206,7 @@ Unsigned workflow намеренно отключает подпись Codemagic
 
 Настройка уведомлений, Firebase/APNs, relay-сервера и диагностика описаны в [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md).
 
-Обычный токен сессии Rinthy не отправляется в relay. Мгновенные уведомления используют отдельную ограниченную авторизацию Modrinth.
+Обычный токен сессии Ryntra не отправляется в relay. Мгновенные уведомления используют отдельную ограниченную авторизацию Modrinth.
 
 ## Переводы
 
@@ -214,4 +214,4 @@ Unsigned workflow намеренно отключает подпись Codemagic
 
 ## Сообщество
 
-Discord-сервер Rinthy: https://discord.gg/6H5vDq2wk7
+Discord-сервер Ryntra: https://discord.gg/6H5vDq2wk7
