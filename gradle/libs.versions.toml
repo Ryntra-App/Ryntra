@@ -16,7 +16,7 @@ workManager = "2.11.2"
 haze = "1.7.2"
 composeIcons = "2.2.1"
 jetbrainsMarkdown = "0.7.7"
-firebaseBom = "34.15.0"
+firebaseBom = "34.16.0"
 
 [libraries]
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
