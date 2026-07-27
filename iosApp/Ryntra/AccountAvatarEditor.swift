@@ -14,7 +14,7 @@ struct AccountAvatarEditor: View {
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            AsyncImage(url: URL(string: account.avatarUrl ?? "")) { image in
+            RemoteImage(url: URL(string: account.avatarUrl ?? "")) { image in
                 image.resizable().scaledToFill()
             } placeholder: {
                 Circle().fill(.quaternary)
@@ -58,6 +58,13 @@ struct AccountAvatarEditor: View {
                         .background(Color.ryntraGreen, in: Circle())
                         .overlay(Circle().stroke(Color.ryntraBackground, lineWidth: 2))
                 }
+#if os(macOS)
+                // AppKit would draw this as a bordered popup button stretched
+                // across the row, burying the camera badge inside a grey bar.
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
+#endif
                 .accessibilityLabel(NSLocalizedString("Avatar actions", comment: "Profile action"))
             }
         }

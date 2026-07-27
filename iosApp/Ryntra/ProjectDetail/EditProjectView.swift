@@ -46,7 +46,7 @@ struct EditProjectView: View {
         VStack(alignment: .leading, spacing: 20) {
             heading("Icon")
             HStack(spacing: 12) {
-                AsyncImage(url: URL(string: project.iconUrl ?? "")) { image in
+                RemoteImage(url: URL(string: project.iconUrl ?? "")) { image in
                     image.resizable().scaledToFill()
                 } placeholder: {
                     RoundedRectangle(cornerRadius: 8).fill(.quaternary)

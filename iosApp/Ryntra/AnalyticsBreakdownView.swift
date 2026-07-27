@@ -17,7 +17,7 @@ struct AnalyticsBreakdownRow: View {
 
     var body: some View {
         HStack(spacing: 11) {
-            AsyncImage(url: URL(string: insight.project.iconUrl ?? "")) { image in
+            RemoteImage(url: URL(string: insight.project.iconUrl ?? "")) { image in
                 image.resizable().scaledToFill()
             } placeholder: {
                 RoundedRectangle(cornerRadius: 8).fill(Color.ryntraSurfaceRaised)

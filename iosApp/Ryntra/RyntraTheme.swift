@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 enum RyntraThemeStyle: String, CaseIterable, Identifiable {
     case platform
@@ -111,39 +110,82 @@ extension Color {
     ]
 
     static let ryntraGreen = adaptive(
-        dark: UIColor(red: 0.28, green: 0.85, blue: 0.47, alpha: 1),
-        light: UIColor(red: 0.08, green: 0.46, blue: 0.23, alpha: 1)
+        dark: RyntraNativeColor(red: 0.28, green: 0.85, blue: 0.47, alpha: 1),
+        light: RyntraNativeColor(red: 0.08, green: 0.46, blue: 0.23, alpha: 1)
     )
 
     static let ryntraCyan = adaptive(
-        dark: UIColor(red: 0.33, green: 0.78, blue: 0.91, alpha: 1),
-        light: UIColor(red: 0.00, green: 0.40, blue: 0.49, alpha: 1)
+        dark: RyntraNativeColor(red: 0.33, green: 0.78, blue: 0.91, alpha: 1),
+        light: RyntraNativeColor(red: 0.00, green: 0.40, blue: 0.49, alpha: 1)
     )
 
     static let ryntraBackground = adaptive(
-        dark: UIColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1),
-        light: .systemBackground
+        dark: RyntraNativeColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1),
+        light: .ryntraLightBackground
     )
 
     static let ryntraSurface = adaptive(
-        dark: UIColor(red: 0.047, green: 0.047, blue: 0.055, alpha: 1),
-        light: .secondarySystemBackground
+        dark: RyntraNativeColor(red: 0.047, green: 0.047, blue: 0.055, alpha: 1),
+        light: .ryntraLightSurface
     )
 
     static let ryntraSurfaceRaised = adaptive(
-        dark: UIColor(red: 0.11, green: 0.11, blue: 0.118, alpha: 1),
-        light: .tertiarySystemBackground
+        dark: RyntraNativeColor(red: 0.11, green: 0.11, blue: 0.118, alpha: 1),
+        light: .ryntraLightSurfaceRaised
     )
 
     static let ryntraSeparator = adaptive(
-        dark: UIColor(red: 0.173, green: 0.173, blue: 0.18, alpha: 1),
-        light: .separator
+        dark: RyntraNativeColor(red: 0.173, green: 0.173, blue: 0.18, alpha: 1),
+        light: .ryntraLightSeparator
     )
 
-    private static func adaptive(dark: UIColor, light: UIColor) -> Color {
+    /// Resolves against the active appearance at draw time so the color keeps
+    /// following the system when the user switches light and dark.
+    private static func adaptive(dark: RyntraNativeColor, light: RyntraNativeColor) -> Color {
+#if canImport(UIKit)
         Color(uiColor: UIColor { traits in
             traits.userInterfaceStyle == .dark ? dark : light
         })
+#elseif canImport(AppKit)
+        Color(nsColor: NSColor(name: nil) { appearance in
+            appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? dark : light
+        })
+#endif
+    }
+}
+
+/// Light-mode system colors, named per platform.
+private extension RyntraNativeColor {
+    static var ryntraLightBackground: RyntraNativeColor {
+#if canImport(UIKit)
+        .systemBackground
+#elseif canImport(AppKit)
+        .windowBackgroundColor
+#endif
+    }
+
+    static var ryntraLightSurface: RyntraNativeColor {
+#if canImport(UIKit)
+        .secondarySystemBackground
+#elseif canImport(AppKit)
+        .underPageBackgroundColor
+#endif
+    }
+
+    static var ryntraLightSurfaceRaised: RyntraNativeColor {
+#if canImport(UIKit)
+        .tertiarySystemBackground
+#elseif canImport(AppKit)
+        .controlBackgroundColor
+#endif
+    }
+
+    static var ryntraLightSeparator: RyntraNativeColor {
+#if canImport(UIKit)
+        .separator
+#elseif canImport(AppKit)
+        .separatorColor
+#endif
     }
 }
 

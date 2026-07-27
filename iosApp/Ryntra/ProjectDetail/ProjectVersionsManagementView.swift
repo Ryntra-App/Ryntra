@@ -287,7 +287,7 @@ private struct VersionEditorSheet: View {
                 }
             }
             .navigationTitle(version == nil ? "Create version" : "Edit version")
-            .navigationBarTitleDisplayMode(.inline)
+            .ryntraInlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {

@@ -1,7 +1,8 @@
 // !$*UTF8*$!
 {
 	archiveVersion = 1;
-	classes = {};
+	classes = {
+	};
 	objectVersion = 56;
 	objects = {
 
@@ -44,6 +45,8 @@
 		A036 /* InstantNotificationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B039 /* InstantNotificationCoordinator.swift */; };
 		A037 /* ProjectModerationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B041 /* ProjectModerationView.swift */; };
 		A038 /* ModerationMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B042 /* ModerationMessageView.swift */; };
+		A039 /* PlatformCompat.swift in Sources */ = {isa = PBXBuildFile; fileRef = B043 /* PlatformCompat.swift */; };
+		A040 /* RemoteImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B047 /* RemoteImage.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -89,55 +92,396 @@
 		B040 /* Ryntra.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Ryntra.entitlements; sourceTree = "<group>"; };
 		B041 /* ProjectModerationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectModerationView.swift; sourceTree = "<group>"; };
 		B042 /* ModerationMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModerationMessageView.swift; sourceTree = "<group>"; };
+		B043 /* PlatformCompat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformCompat.swift; sourceTree = "<group>"; };
+		B047 /* RemoteImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteImage.swift; sourceTree = "<group>"; };
+		B044 /* Info-macOS.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info-macOS.plist"; sourceTree = "<group>"; };
+		B045 /* Ryntra-macOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Ryntra-macOS.entitlements"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		C001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A011,); runOnlyForDeploymentPostprocessing = 0; };
+		C001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A011 /* RyntraShared.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		D001 = {isa = PBXGroup; children = (D002, D003, D004,); sourceTree = "<group>"; };
-		D002 /* Ryntra */ = {isa = PBXGroup; path = Ryntra; sourceTree = "<group>"; children = (B001, B021, B030, B002, B003, B014, B035, B036, B038, B039, B037, B031, B032, B004, B005, B006, B016, B015, B017, B025, B026, B024, B007, B027, D005, B008, B009, D006, B010, B013, B040,); };
-		D005 /* ProjectDetail */ = {isa = PBXGroup; path = ProjectDetail; sourceTree = "<group>"; children = (B018, B023, B034, B022, B033, B019, B020, B041, B042,); };
-		D003 /* Frameworks */ = {isa = PBXGroup; children = (B012,); name = Frameworks; sourceTree = "<group>"; };
-		D004 /* Products */ = {isa = PBXGroup; children = (B011,); name = Products; sourceTree = "<group>"; };
+		D001 = {
+			isa = PBXGroup;
+			children = (
+				D002 /* Ryntra */,
+				D003 /* Frameworks */,
+				D004 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D002 /* Ryntra */ = {
+			isa = PBXGroup;
+			children = (
+				B001 /* RyntraApp.swift */,
+				B043 /* PlatformCompat.swift */,
+				B047 /* RemoteImage.swift */,
+				B021 /* RyntraTheme.swift */,
+				B030 /* ProjectStatusSupport.swift */,
+				B002 /* AppModel.swift */,
+				B003 /* KeychainTokenStore.swift */,
+				B014 /* OAuthCoordinator.swift */,
+				B035 /* LocalNotificationManager.swift */,
+				B036 /* NotificationsView.swift */,
+				B038 /* RemoteNotificationRegistration.swift */,
+				B039 /* InstantNotificationCoordinator.swift */,
+				B037 /* SupportDetails.swift */,
+				B031 /* ProjectImageUploadReader.swift */,
+				B032 /* AccountAvatarEditor.swift */,
+				B004 /* RootView.swift */,
+				B005 /* LoginView.swift */,
+				B006 /* DashboardView.swift */,
+				B016 /* RyntraChrome.swift */,
+				B015 /* OverviewView.swift */,
+				B017 /* AnalyticsView.swift */,
+				B025 /* AnalyticsTrendView.swift */,
+				B026 /* AnalyticsBreakdownView.swift */,
+				B024 /* AnalyticsWalletView.swift */,
+				B007 /* ProjectsView.swift */,
+				B027 /* ProjectBannerCard.swift */,
+				D005 /* ProjectDetail */,
+				B008 /* OrganizationsView.swift */,
+				B009 /* AccountView.swift */,
+				D006 /* Localizable.strings */,
+				B010 /* Assets.xcassets */,
+				B013 /* Info.plist */,
+				B044 /* Info-macOS.plist */,
+				B040 /* Ryntra.entitlements */,
+				B045 /* Ryntra-macOS.entitlements */,
+			);
+			path = Ryntra;
+			sourceTree = "<group>";
+		};
+		D003 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				B012 /* RyntraShared.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		D004 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B011 /* Ryntra.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D005 /* ProjectDetail */ = {
+			isa = PBXGroup;
+			children = (
+				B018 /* ProjectDetailView.swift */,
+				B023 /* MarkdownContentView.swift */,
+				B034 /* MarkdownBadgeRowView.swift */,
+				B022 /* EditProjectView.swift */,
+				B033 /* ProjectGalleryEditor.swift */,
+				B019 /* ProjectVersionsManagementView.swift */,
+				B020 /* ProjectMembersManagementView.swift */,
+				B041 /* ProjectModerationView.swift */,
+				B042 /* ModerationMessageView.swift */,
+			);
+			path = ProjectDetail;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		E001 /* Ryntra */ = {isa = PBXNativeTarget; buildConfigurationList = F002; buildPhases = (C004, C002, C001, C003,); buildRules = (); dependencies = (); name = Ryntra; productName = Ryntra; productReference = B011; productType = "com.apple.product-type.application"; };
+		E001 /* Ryntra */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F002 /* Build configuration list for PBXNativeTarget "Ryntra" */;
+			buildPhases = (
+				C004 /* Build shared Kotlin framework */,
+				C002 /* Sources */,
+				C001 /* Frameworks */,
+				C003 /* Resources */,
+				C005 /* Embed shared Kotlin framework (macOS) */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Ryntra;
+			productName = Ryntra;
+			productReference = B011 /* Ryntra.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		E002 /* Project object */ = {isa = PBXProject; attributes = {BuildIndependentTargetsInParallel = YES; LastSwiftUpdateCheck = 1600; LastUpgradeCheck = 1600; TargetAttributes = {E001 = {CreatedOnToolsVersion = 16.0;};};}; buildConfigurationList = F001; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, ru, Base,); mainGroup = D001; productRefGroup = D004; projectDirPath = ""; projectRoot = ""; targets = (E001,); };
+		E002 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					E001 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = F001 /* Build configuration list for PBXProject "Ryntra" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				ru,
+				Base,
+			);
+			mainGroup = D001;
+			productRefGroup = D004 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E001 /* Ryntra */,
+			);
+		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		C003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A010, A026,); runOnlyForDeploymentPostprocessing = 0; };
+		C003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A010 /* Assets.xcassets in Resources */,
+				A026 /* Localizable.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
-/* Begin PBXVariantGroup section */
-		D006 /* Localizable.strings */ = {isa = PBXVariantGroup; children = (B028, B029,); name = Localizable.strings; sourceTree = "<group>"; };
-/* End PBXVariantGroup section */
-
 /* Begin PBXShellScriptBuildPhase section */
-		C004 /* Build shared Kotlin framework */ = {isa = PBXShellScriptBuildPhase; alwaysOutOfDate = 1; buildActionMask = 2147483647; files = (); inputFileListPaths = (); inputPaths = (); name = "Build shared Kotlin framework"; outputFileListPaths = (); outputPaths = (); runOnlyForDeploymentPostprocessing = 0; shellPath = /bin/sh; shellScript = "cd \"$SRCROOT/..\"\n./gradlew :shared:embedAndSignAppleFrameworkForXcode\n"; };
+		C004 /* Build shared Kotlin framework */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build shared Kotlin framework";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\ncd \"$SRCROOT/..\"\n./gradlew :shared:embedAndSignAppleFrameworkForXcode";
+		};
+		C005 /* Embed shared Kotlin framework (macOS) */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Embed shared Kotlin framework (macOS)";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# The Kotlin framework is static on iOS and needs no embedding there.\n# macOS links it dynamically, and the Kotlin plugin disables its own embed\n# task for this setup, so copy and sign it here.\n[ \"$PLATFORM_NAME\" = \"macosx\" ] || exit 0\n\nSOURCE=\"$SRCROOT/../shared/build/xcode-frameworks/$CONFIGURATION/$SDK_NAME/RyntraShared.framework\"\nDESTINATION=\"$TARGET_BUILD_DIR/$FRAMEWORKS_FOLDER_PATH\"\n\nif [ ! -d \"$SOURCE\" ]; then\n  echo \"error: shared Kotlin framework not found at $SOURCE\" >&2\n  exit 1\nfi\n\nmkdir -p \"$DESTINATION\"\nrsync -a --delete \"$SOURCE\" \"$DESTINATION/\"\n\nif [ -n \"$EXPANDED_CODE_SIGN_IDENTITY\" ]; then\n  codesign --force --sign \"$EXPANDED_CODE_SIGN_IDENTITY\" --timestamp=none \"$DESTINATION/RyntraShared.framework\"\nfi";
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		C002 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A001, A019, A027, A002, A003, A012, A032, A033, A035, A036, A034, A028, A029, A004, A005, A006, A014, A013, A015, A023, A024, A022, A007, A025, A016, A021, A031, A020, A030, A017, A018, A037, A038, A008, A009,); runOnlyForDeploymentPostprocessing = 0; };
+		C002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A001 /* RyntraApp.swift in Sources */,
+				A039 /* PlatformCompat.swift in Sources */,
+				A040 /* RemoteImage.swift in Sources */,
+				A019 /* RyntraTheme.swift in Sources */,
+				A027 /* ProjectStatusSupport.swift in Sources */,
+				A002 /* AppModel.swift in Sources */,
+				A003 /* KeychainTokenStore.swift in Sources */,
+				A012 /* OAuthCoordinator.swift in Sources */,
+				A032 /* LocalNotificationManager.swift in Sources */,
+				A033 /* NotificationsView.swift in Sources */,
+				A035 /* RemoteNotificationRegistration.swift in Sources */,
+				A036 /* InstantNotificationCoordinator.swift in Sources */,
+				A034 /* SupportDetails.swift in Sources */,
+				A028 /* ProjectImageUploadReader.swift in Sources */,
+				A029 /* AccountAvatarEditor.swift in Sources */,
+				A004 /* RootView.swift in Sources */,
+				A005 /* LoginView.swift in Sources */,
+				A006 /* DashboardView.swift in Sources */,
+				A014 /* RyntraChrome.swift in Sources */,
+				A013 /* OverviewView.swift in Sources */,
+				A015 /* AnalyticsView.swift in Sources */,
+				A023 /* AnalyticsTrendView.swift in Sources */,
+				A024 /* AnalyticsBreakdownView.swift in Sources */,
+				A022 /* AnalyticsWalletView.swift in Sources */,
+				A007 /* ProjectsView.swift in Sources */,
+				A025 /* ProjectBannerCard.swift in Sources */,
+				A016 /* ProjectDetailView.swift in Sources */,
+				A021 /* MarkdownContentView.swift in Sources */,
+				A031 /* MarkdownBadgeRowView.swift in Sources */,
+				A020 /* EditProjectView.swift in Sources */,
+				A030 /* ProjectGalleryEditor.swift in Sources */,
+				A017 /* ProjectVersionsManagementView.swift in Sources */,
+				A018 /* ProjectMembersManagementView.swift in Sources */,
+				A037 /* ProjectModerationView.swift in Sources */,
+				A038 /* ModerationMessageView.swift in Sources */,
+				A008 /* OrganizationsView.swift in Sources */,
+				A009 /* AccountView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXVariantGroup section */
+		D006 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				B028 /* Localizable.strings */,
+				B029 /* Localizable.strings */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
 /* Begin XCBuildConfiguration section */
-		G001 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 16.0; SDKROOT = iphoneos; SWIFT_VERSION = 5.0;}; name = Debug; };
-		G002 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 16.0; SDKROOT = iphoneos; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_VERSION = 5.0;}; name = Release; };
-		G003 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {APS_ENVIRONMENT = development; ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = Ryntra/Ryntra.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 30000; DEVELOPMENT_TEAM = ""; ENABLE_PREVIEWS = YES; ENABLE_USER_SCRIPT_SANDBOXING = NO; FRAMEWORK_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",); GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Ryntra/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 16.0; MARKETING_VERSION = 3.0.0; PRODUCT_BUNDLE_IDENTIFIER = com.ryntra.mobile; PRODUCT_NAME = "$(TARGET_NAME)"; RYNTRA_BACKEND_URL = "https://authrinthy.sawiq.org"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2";}; name = Debug; };
-		G004 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {APS_ENVIRONMENT = production; ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = Ryntra/Ryntra.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 30000; DEVELOPMENT_TEAM = ""; ENABLE_USER_SCRIPT_SANDBOXING = NO; FRAMEWORK_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",); GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Ryntra/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 16.0; MARKETING_VERSION = 3.0.0; PRODUCT_BUNDLE_IDENTIFIER = com.ryntra.mobile; PRODUCT_NAME = "$(TARGET_NAME)"; RYNTRA_BACKEND_URL = "https://authrinthy.sawiq.org"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2";}; name = Release; };
+		G001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		G002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		G003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APS_ENVIRONMENT = development;
+				"ARCHS[sdk=macosx*]" = arm64;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Ryntra/Ryntra.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Ryntra/Ryntra-macOS.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 30000;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+				);
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Ryntra/Info.plist;
+				"INFOPLIST_FILE[sdk=macosx*]" = "Ryntra/Info-macOS.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 3.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ryntra.mobile;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				RYNTRA_BACKEND_URL = "https://authrinthy.sawiq.org";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				"TARGETED_DEVICE_FAMILY[sdk=iphone*]" = "1,2";
+			};
+			name = Debug;
+		};
+		G004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APS_ENVIRONMENT = production;
+				"ARCHS[sdk=macosx*]" = arm64;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Ryntra/Ryntra.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Ryntra/Ryntra-macOS.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 30000;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+				);
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Ryntra/Info.plist;
+				"INFOPLIST_FILE[sdk=macosx*]" = "Ryntra/Info-macOS.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 3.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ryntra.mobile;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				RYNTRA_BACKEND_URL = "https://authrinthy.sawiq.org";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				"TARGETED_DEVICE_FAMILY[sdk=iphone*]" = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		F001 = {isa = XCConfigurationList; buildConfigurations = (G001, G002,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		F002 = {isa = XCConfigurationList; buildConfigurations = (G003, G004,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		F001 /* Build configuration list for PBXProject "Ryntra" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				G001 /* Debug */,
+				G002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F002 /* Build configuration list for PBXNativeTarget "Ryntra" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				G003 /* Debug */,
+				G004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 	};
-	rootObject = E002;
+	rootObject = E002 /* Project object */;
 }

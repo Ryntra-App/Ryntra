@@ -72,6 +72,15 @@ private struct AnalyticsMetricDisplay: Identifiable {
 }
 
 struct AnalyticsView: View {
+    /// The surface of a card inside a grouped list, per platform.
+    private static var groupedSurface: Color {
+#if canImport(UIKit)
+        Color(uiColor: .secondarySystemGroupedBackground)
+#elseif canImport(AppKit)
+        Color(nsColor: .controlBackgroundColor)
+#endif
+    }
+
     @EnvironmentObject private var model: AppModel
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     @AppStorage("reduceMotion") private var appReduceMotion = false
@@ -295,7 +304,7 @@ struct AnalyticsView: View {
             }
         }
         .background(
-            isPlatformNative ? Color(uiColor: .secondarySystemGroupedBackground) : Color.ryntraSurface,
+            isPlatformNative ? Self.groupedSurface : Color.ryntraSurface,
             in: RoundedRectangle(cornerRadius: 12, style: .continuous)
         )
         .overlay {

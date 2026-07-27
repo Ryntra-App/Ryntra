@@ -25,6 +25,17 @@ kotlin {
         }
     }
 
+    // macOS links dynamically. A static framework pulls the whole
+    // platform.posix and platform.darwin cinterop caches into the app, and
+    // those reference symbols (fdclosedir, thread_suspend2, vm_reallocate)
+    // that the macOS SDK no longer exposes for linking. The XCFramework stays
+    // iOS-only because it feeds the IPA builds.
+    macosArm64().binaries.framework {
+        baseName = frameworkName
+        binaryOption("bundleId", "com.ryntra.mobile.shared")
+        isStatic = false
+    }
+
     sourceSets {
         commonMain.dependencies {
             implementation(libs.kotlinx.coroutines.core)
@@ -42,7 +53,7 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
         }
-        iosMain.dependencies {
+        appleMain.dependencies {
             implementation(libs.ktor.client.darwin)
         }
     }
