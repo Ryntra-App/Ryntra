@@ -32,9 +32,11 @@ data class AppUpdate(
     val downloadUrl: String?,
 )
 
-class AppUpdateClient(
-    private val httpClient: HttpClient = createPlatformHttpClient(),
+class AppUpdateClient internal constructor(
+    private val httpClient: HttpClient,
 ) {
+    constructor() : this(createPlatformHttpClient())
+
     suspend fun latestRelease(assetExtension: String? = null): AppUpdate? {
         val response = httpClient.get(LATEST_RELEASE_URL) {
             accept(ContentType.Application.Json)
