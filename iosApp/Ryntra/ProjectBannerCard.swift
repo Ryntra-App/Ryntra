@@ -48,7 +48,7 @@ struct ProjectBannerCard: View {
         GeometryReader { geometry in
             ZStack(alignment: .topTrailing) {
                 if let bannerURL = URL(string: project.bannerUrl ?? "") {
-                    AsyncImage(url: bannerURL) { image in
+                    RemoteImage(url: bannerURL) { image in
                         image
                             .resizable()
                             .scaledToFill()

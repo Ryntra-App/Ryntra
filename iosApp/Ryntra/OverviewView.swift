@@ -136,7 +136,7 @@ struct OverviewView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, isPlatformNative ? 16 : 84)
         }
-        .background(Color.ryntraBackground)
+        .ryntraScreenBackground(Color.ryntraBackground)
         .refreshable { model.refresh() }
     }
 
@@ -282,6 +282,8 @@ struct OverviewView: View {
                         .padding(.vertical, 4)
                 }
                 .buttonStyle(.plain)
+                .ryntraHoverHighlight()
+                .ryntraProjectContextMenu(project)
                 if index < recentProjects.count - 1 {
                     Divider()
                 }

@@ -77,7 +77,7 @@ struct ProjectDetailView: View {
             .padding(.top, 12)
             .padding(.bottom, 36)
         }
-        .background(Color.ryntraBackground)
+        .ryntraScreenBackground(Color.ryntraBackground)
         .task(id: project.id) {
             async let loadedVersions: Void = loadVersions()
             async let loadedMembers: Void = loadMembersIfAllowed()
@@ -287,7 +287,7 @@ struct ProjectDetailView: View {
             VStack(spacing: 8) {
                 ForEach(Array(dependencies.enumerated()), id: \.offset) { _, dependency in
                     HStack(spacing: 10) {
-                        AsyncImage(url: URL(string: dependency.iconUrl ?? "")) { image in
+                        RemoteImage(url: URL(string: dependency.iconUrl ?? "")) { image in
                             image.resizable().scaledToFill()
                         } placeholder: {
                             RoundedRectangle(cornerRadius: 8).fill(.quaternary)
@@ -357,7 +357,7 @@ struct ProjectDetailView: View {
                         ZStack {
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
                                 .fill(.quaternary)
-                            AsyncImage(url: URL(string: image.url)) { loaded in
+                            RemoteImage(url: URL(string: image.url)) { loaded in
                                 loaded
                                     .resizable()
                                     .scaledToFill()

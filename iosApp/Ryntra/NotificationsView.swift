@@ -41,7 +41,7 @@ struct NotificationsView: View {
                             if let projectReference = notification.projectReference {
                                 onOpenProject(projectReference)
                             } else if let url = notification.modrinthURL {
-                                UIApplication.shared.open(url)
+                                ryntraOpenExternalURL(url)
                             }
                         } label: {
                             NotificationRow(
@@ -85,7 +85,8 @@ struct NotificationsView: View {
                 }
             }
         }
-        .listStyle(.insetGrouped)
+        .ryntraGroupedListStyle()
+        .ryntraOpaqueListBackground()
         .refreshable { await model.refreshNotifications() }
         .task { await model.refreshNotifications() }
     }

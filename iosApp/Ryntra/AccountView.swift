@@ -1,9 +1,17 @@
 import Foundation
 import RyntraShared
 import SwiftUI
-import UIKit
 
 struct AccountView: View {
+    /// The backdrop behind a grouped list, per platform.
+    private static var groupedBackground: Color {
+#if canImport(UIKit)
+        Color(uiColor: .systemGroupedBackground)
+#elseif canImport(AppKit)
+        Color(nsColor: .windowBackgroundColor)
+#endif
+    }
+
     @EnvironmentObject private var model: AppModel
     @AppStorage("showFavoriteProjects") private var showFavoriteProjects = true
     @AppStorage("showProjectBanners") private var showProjectBanners = true
@@ -107,7 +115,7 @@ struct AccountView: View {
                     }
                 }
                 Button {
-                    UIPasteboard.general.string = account.id
+                    ryntraCopyToPasteboard(account.id)
                 } label: {
                     Label("Copy account ID", systemImage: "doc.on.doc")
                 }
@@ -124,6 +132,7 @@ struct AccountView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                .ryntraCompactSegments()
 
                 if isPlatformNative {
                     Picker(NSLocalizedString("Appearance", comment: "Settings"), selection: $storedAppearanceMode) {
@@ -132,6 +141,7 @@ struct AccountView: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                    .ryntraCompactSegments()
                 }
 
                 Picker(NSLocalizedString("Language", comment: "Settings"), selection: $storedAppLanguage) {
@@ -305,9 +315,14 @@ struct AccountView: View {
             }
             .themedListRowBackground(isPlatformNative: isPlatformNative)
         }
-        .listStyle(.insetGrouped)
+        .ryntraGroupedListStyle()
+        .ryntraSettingsRowControls()
+#if os(macOS)
+        .ryntraOpaqueListBackground()
+#else
         .scrollContentBackground(isPlatformNative ? .visible : .hidden)
-        .background(isPlatformNative ? Color(uiColor: .systemGroupedBackground) : Color.ryntraBackground)
+        .background(isPlatformNative ? Self.groupedBackground : Color.ryntraBackground)
+#endif
         .onAppear(perform: resetDraft)
         .onChange(of: account.username) { _ in synchronizeDraft() }
         .onChange(of: account.bio) { _ in synchronizeDraft() }
@@ -321,7 +336,7 @@ struct AccountView: View {
             Form {
                 Section {
                     TextField("Username", text: $username)
-                        .textInputAutocapitalization(.never)
+                        .ryntraNoAutocapitalization()
                         .autocorrectionDisabled()
                         .disabled(isSaving)
                     TextField("Tell people about your work", text: $bio, axis: .vertical)
@@ -341,7 +356,7 @@ struct AccountView: View {
                 }
             }
             .navigationTitle("Edit profile")
-            .navigationBarTitleDisplayMode(.inline)
+            .ryntraInlineNavigationTitle()
             .interactiveDismissDisabled(isSaving)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -431,7 +446,7 @@ struct AccountView: View {
     }
 
     private func copySupportAddress(_ value: String, label: String) {
-        UIPasteboard.general.string = value
+        ryntraCopyToPasteboard(value)
         copiedSupportAddress = label
     }
 

@@ -56,4 +56,37 @@ extension Project {
     var displayTypeLabel: String { ProjectStatusSupport.typeLabel(for: self) }
     var localizedStatusLabel: String { ProjectStatusSupport.statusLabel(status) }
     var attentionMessageText: String { ProjectStatusSupport.attentionMessage(for: self) }
+
+    /// Public page for this project on Modrinth.
+    var modrinthPageURL: URL? {
+        let reference = (slug?.isEmpty ?? true) ? id : (slug ?? id)
+        return URL(string: "https://modrinth.com/project/\(reference)")
+    }
+}
+
+extension View {
+    /// Right-click actions for a project row. Macs expect a context menu on
+    /// anything clickable; on iOS the same menu appears on long press.
+    func ryntraProjectContextMenu(_ project: Project) -> some View {
+        contextMenu {
+            if let url = project.modrinthPageURL {
+                Button {
+                    ryntraOpenExternalURL(url)
+                } label: {
+                    Label(
+                        NSLocalizedString("Open on Modrinth", comment: "Project context action"),
+                        systemImage: "arrow.up.right.square"
+                    )
+                }
+                Button {
+                    ryntraCopyToPasteboard(url.absoluteString)
+                } label: {
+                    Label(
+                        NSLocalizedString("Copy link", comment: "Project context action"),
+                        systemImage: "link"
+                    )
+                }
+            }
+        }
+    }
 }

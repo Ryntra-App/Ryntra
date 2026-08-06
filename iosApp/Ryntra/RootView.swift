@@ -1,6 +1,5 @@
 import RyntraShared
 import SwiftUI
-import UIKit
 
 struct RootView: View {
     @EnvironmentObject private var model: AppModel
@@ -39,7 +38,7 @@ struct RootView: View {
                 AppUpdateView(update: update) {
                     let destination = update.downloadUrl ?? update.releaseUrl
                     if let url = URL(string: destination) {
-                        UIApplication.shared.open(url)
+                        ryntraOpenExternalURL(url)
                     }
                     model.dismissAppUpdate()
                 } onDismiss: {
@@ -88,7 +87,7 @@ private struct AppUpdateView: View {
                 .padding(20)
             }
             .navigationTitle("Update available")
-            .navigationBarTitleDisplayMode(.inline)
+            .ryntraInlineNavigationTitle()
             .task(id: update.notes) {
                 notesBlocks = await Task.detached(priority: .userInitiated) {
                     MarkdownParser.shared.parse(markdown: update.notes)

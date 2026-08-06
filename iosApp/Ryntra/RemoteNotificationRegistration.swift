@@ -1,5 +1,4 @@
 import Foundation
-import UIKit
 import UserNotifications
 
 @MainActor
@@ -16,14 +15,14 @@ final class RemoteNotificationRegistration {
             .requestAuthorization(options: [.alert, .sound, .badge])
         guard granted else { throw RegistrationError.permissionDenied }
         if let token = UserDefaults.standard.string(forKey: tokenKey), !token.isEmpty {
-            UIApplication.shared.registerForRemoteNotifications()
+            ryntraRegisterForRemoteNotifications()
             return token
         }
 
         let requestID = UUID()
         return try await withCheckedThrowingContinuation { continuation in
             pending = (requestID, continuation)
-            UIApplication.shared.registerForRemoteNotifications()
+            ryntraRegisterForRemoteNotifications()
             Task {
                 try? await Task.sleep(for: .seconds(15))
                 guard pending?.id == requestID else { return }

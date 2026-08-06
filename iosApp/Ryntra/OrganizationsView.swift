@@ -6,7 +6,7 @@ struct OrganizationsView: View {
     @AppStorage("themeStyle") private var storedThemeStyle = RyntraThemeStyle.platform.rawValue
 
     let organizations: [Organization]
-    @State private var selectedOrganization: Organization?
+    let onOpenOrganization: (Organization) -> Void
     @State private var query = ""
 
     private var isPlatformNative: Bool {
@@ -27,28 +27,25 @@ struct OrganizationsView: View {
     }
 
     var body: some View {
-        Group {
-            if let selectedOrganization {
-                OrganizationDetailView(organization: selectedOrganization)
-            } else {
-                organizationList
-            }
-        }
-        .toolbar {
-            if selectedOrganization != nil {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button {
-                        selectedOrganization = nil
-                    } label: {
-                        Label(NSLocalizedString("Teams", comment: "Back to teams"), systemImage: "chevron.left")
-                    }
-                }
-            }
-        }
+        organizationList
     }
 
     private var organizationList: some View {
         List {
+#if os(macOS)
+            // A `searchable` field lands in the window titlebar on macOS, so it
+            // would appear and disappear as this tab comes and goes, shoving
+            // the rest of the toolbar around. Keeping it in the content mirrors
+            // how Projects searches and leaves the titlebar identical on every
+            // tab.
+            Section {
+                searchField
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 0, trailing: 16))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+            }
+#endif
+
             Section {
                 teamsSummary
                     .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16))
@@ -87,11 +84,32 @@ struct OrganizationsView: View {
                 } else {
                     ForEach(visibleOrganizations, id: \.id) { organization in
                         Button {
-                            selectedOrganization = organization
+                            onOpenOrganization(organization)
                         } label: {
                             OrganizationCard(organization: organization)
                         }
                         .buttonStyle(.plain)
+                        .ryntraHoverHighlight()
+                        .contextMenu {
+                            if let url = URL(string: "https://modrinth.com/organization/\(organization.slug)") {
+                                Button {
+                                    ryntraOpenExternalURL(url)
+                                } label: {
+                                    Label(
+                                        NSLocalizedString("Open on Modrinth", comment: "Project context action"),
+                                        systemImage: "arrow.up.right.square"
+                                    )
+                                }
+                                Button {
+                                    ryntraCopyToPasteboard(url.absoluteString)
+                                } label: {
+                                    Label(
+                                        NSLocalizedString("Copy link", comment: "Project context action"),
+                                        systemImage: "link"
+                                    )
+                                }
+                            }
+                        }
                         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
@@ -114,12 +132,41 @@ struct OrganizationsView: View {
             }
         }
         .listStyle(.plain)
+        .ryntraOpaqueListBackground()
+#if !os(macOS)
         .searchable(
             text: $query,
             prompt: NSLocalizedString("Search teams", comment: "Teams search")
         )
+#endif
         .refreshable { model.refresh() }
     }
+
+#if os(macOS)
+    private var searchField: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+            TextField(NSLocalizedString("Search teams", comment: "Teams search"), text: $query)
+                .textFieldStyle(.plain)
+                .ryntraNoAutocapitalization()
+                .autocorrectionDisabled()
+            if !query.isEmpty {
+                Button {
+                    query = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(NSLocalizedString("Clear search", comment: "Search action"))
+            }
+        }
+        .padding(.horizontal, 14)
+        .frame(minHeight: 40)
+        .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+#endif
 
     private var teamsSummary: some View {
         HStack(spacing: 0) {
@@ -196,7 +243,7 @@ private struct OrganizationCard: View {
     }
 
     private func organizationIcon(size: CGFloat, corner: CGFloat) -> some View {
-        AsyncImage(url: URL(string: organization.iconUrl ?? "")) { image in
+        RemoteImage(url: URL(string: organization.iconUrl ?? "")) { image in
             image.resizable().scaledToFill()
         } placeholder: {
             RoundedRectangle(cornerRadius: corner)
@@ -230,7 +277,7 @@ private struct MemberAvatarStack: View {
                     }
             } else {
                 ForEach(Array(visible.enumerated()), id: \.element.user.id) { _, member in
-                    AsyncImage(url: URL(string: member.user.avatarUrl ?? "")) { image in
+                    RemoteImage(url: URL(string: member.user.avatarUrl ?? "")) { image in
                         image.resizable().scaledToFill()
                     } placeholder: {
                         Circle().fill(.quaternary)
@@ -254,10 +301,11 @@ private struct MemberAvatarStack: View {
     }
 }
 
-private struct OrganizationDetailView: View {
+struct OrganizationDetailView: View {
     @EnvironmentObject private var model: AppModel
 
     let organization: Organization
+    let onProjectTap: (Project) -> Void
     @State private var detail: Organization?
     @State private var projects: [Project] = []
     @State private var members: [ProjectMember] = []
@@ -373,10 +421,8 @@ private struct OrganizationDetailView: View {
                     )
                 } else {
                     ForEach(projects, id: \.id) { project in
-                        NavigationLink {
-                            ProjectDetailView(project: project, isReadOnly: false)
-                                .navigationTitle(project.title)
-                                .navigationBarTitleDisplayMode(.inline)
+                        Button {
+                            onProjectTap(project)
                         } label: {
                             ProjectRow(
                                 project: project,
@@ -429,7 +475,7 @@ private struct OrganizationDetailView: View {
     private var organizationHeader: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 14) {
-                AsyncImage(url: URL(string: displayOrganization.iconUrl ?? "")) { image in
+                RemoteImage(url: URL(string: displayOrganization.iconUrl ?? "")) { image in
                     image.resizable().scaledToFill()
                 } placeholder: {
                     RoundedRectangle(cornerRadius: 14).fill(.quaternary)
@@ -553,7 +599,7 @@ private struct OrganizationMemberRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            AsyncImage(url: URL(string: member.user.avatarUrl ?? "")) { image in
+            RemoteImage(url: URL(string: member.user.avatarUrl ?? "")) { image in
                 image.resizable().scaledToFill()
             } placeholder: {
                 Circle().fill(.quaternary)

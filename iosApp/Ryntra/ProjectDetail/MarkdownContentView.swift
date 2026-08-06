@@ -53,7 +53,7 @@ struct MarkdownBlockView: View {
            !block.images[0].isBadge,
            let url = URL(string: block.images[0].url) {
             imageLink(block.images[0]) {
-                AsyncImage(url: url) { image in
+                RemoteImage(url: url) { image in
                     image.resizable().scaledToFit()
                 } placeholder: {
                     Color.secondary.opacity(0.1)
@@ -67,7 +67,7 @@ struct MarkdownBlockView: View {
                     ForEach(Array(block.images.enumerated()), id: \.offset) { _, badge in
                         if let url = URL(string: badge.url) {
                             imageLink(badge) {
-                                AsyncImage(url: url) { image in
+                                RemoteImage(url: url) { image in
                                     image.resizable().scaledToFit()
                                 } placeholder: {
                                     Color.secondary.opacity(0.1)
