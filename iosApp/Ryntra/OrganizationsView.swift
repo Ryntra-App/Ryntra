@@ -6,14 +6,7 @@ struct OrganizationsView: View {
     @AppStorage("themeStyle") private var storedThemeStyle = RyntraThemeStyle.platform.rawValue
 
     let organizations: [Organization]
-#if os(macOS)
-    /// Opening a team is routed through the dashboard so it joins the same
-    /// navigation path as profile and notifications. Keeping it local would put
-    /// it outside `path`, and then picking a tab could not dismiss it.
     let onOpenOrganization: (Organization) -> Void
-#else
-    @State private var selectedOrganization: Organization?
-#endif
     @State private var query = ""
 
     private var isPlatformNative: Bool {
@@ -34,28 +27,7 @@ struct OrganizationsView: View {
     }
 
     var body: some View {
-#if os(macOS)
         organizationList
-#else
-        Group {
-            if let selectedOrganization {
-                OrganizationDetailView(organization: selectedOrganization)
-            } else {
-                organizationList
-            }
-        }
-        .toolbar {
-            if selectedOrganization != nil {
-                ToolbarItem(placement: .ryntraLeading) {
-                    Button {
-                        selectedOrganization = nil
-                    } label: {
-                        Label(NSLocalizedString("Teams", comment: "Back to teams"), systemImage: "chevron.left")
-                    }
-                }
-            }
-        }
-#endif
     }
 
     private var organizationList: some View {
@@ -112,11 +84,7 @@ struct OrganizationsView: View {
                 } else {
                     ForEach(visibleOrganizations, id: \.id) { organization in
                         Button {
-#if os(macOS)
                             onOpenOrganization(organization)
-#else
-                            selectedOrganization = organization
-#endif
                         } label: {
                             OrganizationCard(organization: organization)
                         }
@@ -337,6 +305,7 @@ struct OrganizationDetailView: View {
     @EnvironmentObject private var model: AppModel
 
     let organization: Organization
+    let onProjectTap: (Project) -> Void
     @State private var detail: Organization?
     @State private var projects: [Project] = []
     @State private var members: [ProjectMember] = []
@@ -452,10 +421,8 @@ struct OrganizationDetailView: View {
                     )
                 } else {
                     ForEach(projects, id: \.id) { project in
-                        NavigationLink {
-                            ProjectDetailView(project: project, isReadOnly: false)
-                                .navigationTitle(project.title)
-                                .ryntraInlineNavigationTitle()
+                        Button {
+                            onProjectTap(project)
                         } label: {
                             ProjectRow(
                                 project: project,

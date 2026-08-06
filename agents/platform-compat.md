@@ -19,7 +19,8 @@ Current members earn their place: `ryntraOpenExternalURL` (5 call sites),
 
 Counter-examples that are deliberately **not** here:
 
-- `.toolbar(.hidden, for: .tabBar)` — one call site, `#if` in `DashboardView`
+- `.toolbar(.hidden, for: .tabBar)` — navigation-container behavior that stays
+  next to the iOS route it affects in `DashboardView`
 - `Color(uiColor: .systemGroupedBackground)` — one screen, a private computed
   property on that view
 - `NSApplicationDelegate` vs `UIApplicationDelegate` — one class, a typealias

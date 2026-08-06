@@ -35,8 +35,9 @@ places. See [apple-build.md](apple-build.md).
 
 Screens take data and callbacks; they do not reach into navigation state. The
 dashboard owns routing and passes `onProjectTap` / `onOpenOrganization` down.
-This is what lets macOS route through its navigation path while iOS keeps its
-overlay stack, with no change to the screen itself.
+This keeps one typed route model across platforms while iOS maintains a real
+`NavigationStack` for each tab and macOS renders the active route through its
+single window toolbar.
 
 Keep platform branches at the smallest scope that works. A whole duplicated
 `body` per platform is a last resort — `DashboardView` does it only because the

@@ -1,4 +1,5 @@
 import Foundation
+import RyntraShared
 import SwiftUI
 
 enum RyntraDestination: Int, CaseIterable {
@@ -184,5 +185,127 @@ private extension View {
                 Capsule().stroke(Color.primary.opacity(0.16), lineWidth: 0.5)
             }
             .shadow(color: .black.opacity(0.14), radius: 14, y: 6)
+    }
+}
+
+extension View {
+    func ryntraChrome(
+        title: String,
+        dashboard: Dashboard,
+        isRefreshing: Bool,
+        onAvatarTap: @escaping () -> Void,
+        showsBackButton: Bool = false,
+        onBack: @escaping () -> Void = {},
+        showsAvatar: Bool = true,
+        onNotificationsTap: (() -> Void)? = nil,
+        unreadNotificationCount: Int = 0,
+        windowTitle: String? = nil,
+        usesSystemBackButton: Bool = false
+    ) -> some View {
+        modifier(
+            RyntraChromeModifier(
+                title: title,
+                dashboard: dashboard,
+                isRefreshing: isRefreshing,
+                onAvatarTap: onAvatarTap,
+                showsBackButton: showsBackButton,
+                onBack: onBack,
+                showsAvatar: showsAvatar,
+                onNotificationsTap: onNotificationsTap,
+                unreadNotificationCount: unreadNotificationCount,
+                windowTitle: windowTitle,
+                usesSystemBackButton: usesSystemBackButton
+            )
+        )
+    }
+}
+
+private struct RyntraChromeModifier: ViewModifier {
+    @AppStorage("themeStyle") private var storedThemeStyle = RyntraThemeStyle.platform.rawValue
+
+    let title: String
+    let dashboard: Dashboard
+    let isRefreshing: Bool
+    let onAvatarTap: () -> Void
+    let showsBackButton: Bool
+    let onBack: () -> Void
+    let showsAvatar: Bool
+    let onNotificationsTap: (() -> Void)?
+    let unreadNotificationCount: Int
+    /// Window title to use instead of `title`. Changing the navigation title
+    /// makes SwiftUI rebuild the whole toolbar, and on macOS that rebuild is
+    /// visible as the titlebar flickering on every tab switch. The tab screens
+    /// pass a constant here so the toolbar stays put; `title` still drives the
+    /// Ryntra theme's own top bar.
+    var windowTitle: String?
+    let usesSystemBackButton: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if storedThemeStyle == RyntraThemeStyle.platform.rawValue {
+            content
+                .navigationTitle(windowTitle ?? title)
+#if !os(macOS)
+                .navigationBarTitleDisplayMode(showsBackButton ? .inline : .large)
+#endif
+                .toolbar {
+                    if showsBackButton && !usesSystemBackButton {
+                        ToolbarItem(placement: .ryntraLeading) {
+                            Button(action: onBack) {
+                                Image(systemName: "chevron.left")
+                            }
+                            .accessibilityLabel("Back")
+                        }
+                    }
+                    ToolbarItemGroup(placement: .ryntraTrailing) {
+                        if isRefreshing { ProgressView() }
+                        if let onNotificationsTap {
+                            Button(action: onNotificationsTap) {
+                                Image(systemName: "bell")
+                                    .overlay(alignment: .topTrailing) {
+                                        if unreadNotificationCount > 0 {
+                                            Circle().fill(Color.ryntraGreen).frame(width: 7, height: 7)
+                                        }
+                                    }
+                            }
+                            .accessibilityLabel(NSLocalizedString("Notifications", comment: "Navigation action"))
+                        }
+                        if showsAvatar {
+                            Button(action: onAvatarTap) {
+                                RemoteImage(url: URL(string: dashboard.account.avatarUrl ?? "")) { image in
+                                    image.resizable().scaledToFill()
+                                } placeholder: {
+                                    Circle().fill(.quaternary)
+                                }
+                                .frame(width: 32, height: 32)
+                                .clipShape(Circle())
+                            }
+                            .accessibilityLabel("Open \(dashboard.account.username)'s account")
+                        }
+                    }
+                }
+        } else {
+            content
+#if !os(macOS)
+                // On macOS the equivalent placement is the window toolbar, and
+                // hiding that takes the whole titlebar — window controls
+                // included — with it.
+                .toolbar(.hidden, for: .navigationBar)
+#endif
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    RyntraTopBar(
+                        title: title,
+                        avatarURL: dashboard.account.avatarUrl,
+                        username: dashboard.account.username,
+                        isRefreshing: isRefreshing,
+                        onAvatarTap: onAvatarTap,
+                        showsBackButton: showsBackButton,
+                        onBack: onBack,
+                        showsAvatar: showsAvatar,
+                        onNotificationsTap: onNotificationsTap,
+                        unreadNotificationCount: unreadNotificationCount
+                    )
+                }
+        }
     }
 }
