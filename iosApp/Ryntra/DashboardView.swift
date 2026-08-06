@@ -50,7 +50,7 @@ struct DashboardView: View {
             .alert("Could not refresh", isPresented: errorBinding) {
                 Button("Retry") { model.refresh() }
             } message: {
-                Text(errorMessage ?? "")
+                Text(presentedError ?? "")
             }
     }
 
@@ -478,7 +478,13 @@ struct DashboardView: View {
     private func openPendingNotificationProject() {
         guard let reference = model.pendingNotificationProjectReference else { return }
         model.consumeNotificationProjectReference()
+#if os(macOS)
         openNotificationProject(reference)
+#else
+        // Capture the active tab before the asynchronous project lookup starts.
+        // Switching tabs while it loads must not move the destination elsewhere.
+        openNotificationProject(reference, in: selection)
+#endif
     }
 
 #if os(macOS)
