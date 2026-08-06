@@ -296,7 +296,7 @@ struct ProjectDetailView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         VStack(alignment: .leading, spacing: 2) {
                             Text(
-                                dependency.title ?? dependency.projectId ?? dependency.fileName ??
+                                dependency.title ?? dependency.fileName ??
                                     NSLocalizedString("External dependency", comment: "Project dependency")
                             )
                                 .fontWeight(.semibold)

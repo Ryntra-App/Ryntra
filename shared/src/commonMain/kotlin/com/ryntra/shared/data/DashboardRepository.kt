@@ -6,6 +6,8 @@ import com.ryntra.shared.model.Account
 import com.ryntra.shared.model.AnalyticsQuery
 import com.ryntra.shared.model.AnalyticsReport
 import com.ryntra.shared.model.CreateVersionRequest
+import com.ryntra.shared.model.CreateProjectRequest
+import com.ryntra.shared.model.ProjectCreationMetadata
 import com.ryntra.shared.model.Project
 import com.ryntra.shared.model.ProjectDependency
 import com.ryntra.shared.model.ProjectFileUpload
@@ -76,6 +78,15 @@ class DashboardRepository(
     suspend fun updateProject(projectIdOrSlug: String, update: com.ryntra.shared.model.ProjectUpdate, token: String) =
         api.updateProject(projectIdOrSlug, update, token)
 
+    suspend fun loadProjectCreationMetadata(): ProjectCreationMetadata = coroutineScope {
+        val types = async { api.getProjectTypes() }
+        val categories = async { api.getProjectCategories() }
+        val licenses = async { api.getLicenses() }
+        ProjectCreationMetadata(types.await(), categories.await(), licenses.await())
+    }
+
+    suspend fun createProject(request: CreateProjectRequest, token: String): Project = api.createProject(request, token)
+
     suspend fun loadProjectVersions(projectIdOrSlug: String, token: String): List<ProjectVersion> =
         api.getProjectVersions(projectIdOrSlug, token)
 
@@ -136,15 +147,25 @@ class DashboardRepository(
     }
 
     suspend fun enrichDependencies(dependencies: List<ProjectDependency>, token: String): List<ProjectDependency> = coroutineScope {
-        val projectIds = dependencies.mapNotNull(ProjectDependency::projectId).distinct()
-        val projectsById = projectIds
-            .map { projectId -> async { runCatching { api.getProject(projectId, token) }.getOrNull() } }
-            .awaitAll()
-            .filterNotNull()
+        val unresolvedVersionIds = dependencies
+            .filter { it.projectId.isNullOrBlank() }
+            .mapNotNull(ProjectDependency::versionId)
+            .distinct()
+        val versionsById = runCatching { api.getVersionsByIds(unresolvedVersionIds, token) }
+            .getOrDefault(emptyList())
+            .associateBy(ProjectVersion::id)
+        val resolvedProjectIds = dependencies.mapNotNull { dependency ->
+            dependency.projectId?.takeIf(String::isNotBlank)
+                ?: dependency.versionId?.let(versionsById::get)?.projectId
+        }.distinct()
+        val projectsById = runCatching { api.getProjectsByIds(resolvedProjectIds, token) }
+            .getOrDefault(emptyList())
             .associateBy(Project::id)
 
         dependencies.map { dependency ->
-            val project = dependency.projectId?.let(projectsById::get)
+            val resolvedProjectId = dependency.projectId?.takeIf(String::isNotBlank)
+                ?: dependency.versionId?.let(versionsById::get)?.projectId
+            val project = resolvedProjectId?.let(projectsById::get)
             dependency.copy(title = project?.title, iconUrl = project?.iconUrl)
         }
     }

@@ -1,6 +1,7 @@
 package com.ryntra.mobile.ui.dashboard.projects
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,11 +14,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Search
+import com.composables.icons.lucide.Plus
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import com.ryntra.mobile.R
 import com.ryntra.mobile.ui.components.RyntraEmptyState
 import com.ryntra.mobile.ui.components.RyntraSearchField
@@ -36,6 +41,7 @@ fun ProjectsScreen(
     onSortModeChange: (ProjectSortMode) -> Unit = {},
     onToggleFavoriteProject: (String) -> Unit = {},
     onProjectClick: (Project) -> Unit = {},
+    onCreateProject: () -> Unit = {},
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     val pinnedFavoriteIds = if (showFavoriteProjects) favoriteProjectIds else emptySet()
@@ -51,6 +57,7 @@ fun ProjectsScreen(
             }
             .sortedForDisplay(sortMode, pinnedFavoriteIds)
     }
+    Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
@@ -111,5 +118,10 @@ fun ProjectsScreen(
                 }
             }
         }
+    }
+        FloatingActionButton(
+            onClick = onCreateProject,
+            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 104.dp),
+        ) { Icon(Lucide.Plus, contentDescription = stringResource(R.string.project_create)) }
     }
 }

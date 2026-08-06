@@ -15,13 +15,75 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import com.ryntra.shared.model.CreateVersionRequest
+import com.ryntra.shared.model.CreateProjectRequest
 import com.ryntra.shared.model.AnalyticsQuery
 import com.ryntra.shared.model.ProjectAttentionKind
 import com.ryntra.shared.model.ProjectFileUpload
 import com.ryntra.shared.model.ProjectMemberUpdate
 import com.ryntra.shared.model.VersionUpdate
+import com.ryntra.shared.data.DashboardRepository
 
 class ModrinthApiTest {
+    @Test
+    fun projectCreateUsesMultipartDraftPayload() = runTest {
+        val engine = MockEngine { request ->
+            assertEquals(HttpMethod.Post, request.method)
+            assertEquals("/v2/project", request.url.encodedPath)
+            assertTrue(request.body is MultiPartFormDataContent)
+            respond(
+                content = """{"id":"project-1","slug":"ryntra-tools","title":"Ryntra Tools","status":"draft"}""",
+                status = HttpStatusCode.OK,
+                headers = jsonHeaders,
+            )
+        }
+        val api = ModrinthApi(testClient(engine))
+
+        val project = api.createProject(
+            CreateProjectRequest(
+                slug = "ryntra-tools", title = "Ryntra Tools", description = "Creator tools",
+                body = "# About", projectType = "mod", categories = listOf("utility"),
+                clientSide = "required", serverSide = "optional", licenseId = "MIT",
+            ),
+            "mrp_test",
+        )
+
+        assertEquals("draft", project.status)
+        api.close()
+    }
+    @Test
+    fun versionOnlyDependencyIsResolvedToProjectMetadataInBatches() = runTest {
+        val engine = MockEngine { request ->
+            when (request.url.encodedPath) {
+                "/v2/versions" -> {
+                    assertEquals("[\"version-1\"]", request.url.parameters["ids"])
+                    respond(
+                        content = """[{"id":"version-1","project_id":"project-1","name":"Release","version_number":"1.0.0"}]""",
+                        status = HttpStatusCode.OK,
+                        headers = jsonHeaders,
+                    )
+                }
+                "/v2/projects" -> {
+                    assertEquals("[\"project-1\"]", request.url.parameters["ids"])
+                    respond(
+                        content = """[{"id":"project-1","title":"Sodium","icon_url":"https://cdn.example/sodium.png"}]""",
+                        status = HttpStatusCode.OK,
+                        headers = jsonHeaders,
+                    )
+                }
+                else -> error("Unexpected URL: ${request.url}")
+            }
+        }
+        val api = ModrinthApi(testClient(engine))
+
+        val dependency = DashboardRepository(api).enrichDependencies(
+            listOf(com.ryntra.shared.model.ProjectDependency(versionId = "version-1")),
+            "mrp_test",
+        ).single()
+
+        assertEquals("Sodium", dependency.title)
+        assertEquals("https://cdn.example/sodium.png", dependency.iconUrl)
+        api.close()
+    }
     @Test
     fun analyticsV3BucketsAreNormalizedIntoExactProjectMetrics() = runTest {
         val engine = MockEngine { request ->

@@ -444,4 +444,26 @@
     <string name="support_usdt_trc20">USDT · TRC20</string>
     <string name="support_ton_usdt">USDT · TON</string>
     <string name="support_address_copied">Wallet address copied.</string>
+    <string name="project_create">Create project</string>
+    <string name="project_create_intro">Start with a private draft. You can add a release and submit it for review when it is ready.</string>
+    <string name="project_create_identity">Basics</string>
+    <string name="project_create_compatibility">Discoverability</string>
+    <string name="project_create_content">Description</string>
+    <string name="project_create_name">Project name</string>
+    <string name="project_create_slug">Modrinth URL slug</string>
+    <string name="project_create_summary">Short summary</string>
+    <string name="project_create_type">Project type</string>
+    <string name="project_create_categories">Categories</string>
+    <string name="project_create_client">Client support</string>
+    <string name="project_create_server">Server support</string>
+    <string name="project_create_license">License</string>
+    <string name="project_create_links">Links (optional)</string>
+    <string name="project_create_description">Full description (GitHub Flavored Markdown)</string>
+    <string name="project_create_next">Continue</string>
+    <string name="project_create_back">Back</string>
+    <string name="project_create_draft">Create draft</string>
+    <string name="project_create_loading">Loading Modrinth options…</string>
+    <string name="project_create_retry">Retry</string>
+    <string name="project_create_add_icon">Choose icon</string>
+    <string name="project_create_private_note">The project stays private as a draft until you add a version and submit it.</string>
 </resources>

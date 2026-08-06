@@ -18,6 +18,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +38,8 @@ import com.ryntra.mobile.ui.components.RyntraSectionLabel
 import com.ryntra.mobile.ui.components.formatExactCount
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.shared.model.ProjectVersion
+import com.ryntra.shared.model.MarkdownParser
+import com.ryntra.mobile.ui.dashboard.project.markdown.MarkdownBlockView
 
 @Composable
 internal fun LoadingVersions() {
@@ -162,14 +165,10 @@ internal fun VersionCard(
             }
         }
         if (version.changelog.isNotBlank()) {
-            Text(
-                version.changelog,
-                color = RyntraDesign.colors.labelSecondary,
-                style = MaterialTheme.typography.bodySmall,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 12.dp),
-            )
+            val preview = remember(version.changelog) { MarkdownParser.parse(version.changelog).take(2) }
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 12.dp)) {
+                preview.forEach { MarkdownBlockView(it) }
+            }
         }
         HorizontalDivider(color = RyntraDesign.colors.separator, modifier = Modifier.padding(top = 14.dp))
     }

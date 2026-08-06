@@ -92,6 +92,18 @@ class MarkdownParserTest {
 
         assertEquals(MarkdownBlockType.Table, block.type)
         assertEquals("Loader | Version\nFabric | 1.21.1", block.content)
+        assertEquals(listOf("Loader", "Version"), block.table?.headers)
+        assertEquals(listOf("Fabric", "1.21.1"), block.table?.rows?.single()?.cells)
+    }
+
+    @Test
+    fun gfmTablePreservesAlignmentAndEscapedPipes() {
+        val block = MarkdownParser.parse(
+            "| Name | Notes |\n| :--- | ---: |\n| Ryntra | iOS \\| Android |",
+        ).single()
+
+        assertEquals(listOf(MarkdownTableAlignment.Start, MarkdownTableAlignment.End), block.table?.alignments)
+        assertEquals(listOf("Ryntra", "iOS | Android"), block.table?.rows?.single()?.cells)
     }
 
     @Test
@@ -115,6 +127,14 @@ class MarkdownParserTest {
 
         assertEquals(MarkdownSpanType.Link, block.spans.single().type)
         assertEquals("https://modrinth.com/project/ryntra", block.spans.single().linkUrl)
+    }
+
+    @Test
+    fun gfmUnderscoreEmphasisAndNestedListsArePreserved() {
+        val blocks = MarkdownParser.parse("__Bold__ and _italic_\n\n- Parent\n  - Child")
+
+        assertEquals(listOf(MarkdownSpanType.Bold, MarkdownSpanType.Italic), blocks.first().spans.map { it.type })
+        assertEquals(listOf(0, 1), blocks.filter { it.type == MarkdownBlockType.ListItem }.map { it.level })
     }
 
     @Test

@@ -34,6 +34,8 @@ import com.ryntra.shared.model.Account
 import com.ryntra.shared.model.AnalyticsQuery
 import com.ryntra.shared.model.AnalyticsReport
 import com.ryntra.shared.model.CreateVersionRequest
+import com.ryntra.shared.model.CreateProjectRequest
+import com.ryntra.shared.model.ProjectCreationMetadata
 import com.ryntra.shared.model.Project
 import com.ryntra.shared.model.ProjectDependency
 import com.ryntra.shared.model.ProjectFileUpload
@@ -816,6 +818,12 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
                 },
             )
         }
+    }
+
+    suspend fun loadProjectCreationMetadata(): ProjectCreationMetadata = controller.loadProjectCreationMetadata()
+
+    suspend fun createProject(request: CreateProjectRequest): Result<Project> = suspendCatching {
+        controller.createProject(request)
     }
 
     fun clearProjectUpdateStatus() {

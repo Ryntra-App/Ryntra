@@ -67,6 +67,7 @@ import com.ryntra.mobile.ui.dashboard.organizations.OrganizationsScreen
 import com.ryntra.mobile.ui.dashboard.overview.OverviewScreen
 import com.ryntra.mobile.ui.dashboard.project.ProjectDetailScreen
 import com.ryntra.mobile.ui.dashboard.projects.ProjectsScreen
+import com.ryntra.mobile.ui.dashboard.project.create.CreateProjectDialog
 import com.ryntra.shared.model.Dashboard
 import com.ryntra.shared.model.Organization
 import com.ryntra.shared.model.ModrinthNotification
@@ -76,6 +77,8 @@ import com.ryntra.shared.model.ProjectFileUpload
 import com.ryntra.shared.model.ProjectMemberUpdate
 import com.ryntra.shared.model.ProjectSortMode
 import com.ryntra.shared.model.VersionUpdate
+import com.ryntra.shared.model.CreateProjectRequest
+import com.ryntra.shared.model.ProjectCreationMetadata
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.delay
@@ -132,6 +135,8 @@ fun DashboardScreen(
     onSetGalleryBanner: (String, String) -> Unit = { _, _ -> },
     onModifyGalleryImage: (String, String, String, String, Int?) -> Unit = { _, _, _, _, _ -> },
     onCreateVersion: (String, CreateVersionRequest) -> Unit = { _, _ -> },
+    onLoadProjectCreationMetadata: suspend () -> ProjectCreationMetadata = { error("Unavailable") },
+    onCreateProject: suspend (CreateProjectRequest) -> Result<Project> = { Result.failure(IllegalStateException("Unavailable")) },
     onUpdateVersion: (String, VersionUpdate) -> Unit = { _, _ -> },
     onDeleteVersion: (String) -> Unit = {},
     onSearchMember: (String) -> Unit = {},
@@ -167,6 +172,7 @@ fun DashboardScreen(
     var destination by rememberSaveable { mutableStateOf(DashboardDestination.Overview) }
     var isProfileVisible by rememberSaveable { mutableStateOf(false) }
     var isNotificationsVisible by rememberSaveable { mutableStateOf(false) }
+    var isCreatingProject by rememberSaveable { mutableStateOf(false) }
     var visibleError by remember { mutableStateOf<String?>(null) }
     var retainedProjectDetail by remember { mutableStateOf<ProjectDetailState?>(null) }
     var retainedOrganizationDetail by remember { mutableStateOf<OrganizationDetailState?>(null) }
@@ -379,6 +385,7 @@ fun DashboardScreen(
                                 onSortModeChange = onSortModeChange,
                                 onToggleFavoriteProject = onToggleFavoriteProject,
                                 onProjectClick = onProjectClick,
+                                onCreateProject = { isCreatingProject = true },
                             )
                             DashboardDestination.Organizations -> OrganizationsScreen(
                                 organizations = dashboard.organizations,
@@ -459,6 +466,17 @@ fun DashboardScreen(
                         .fillMaxWidth()
                         .background(colors.surfaceRaised.copy(alpha = 0.98f), RoundedCornerShape(12.dp))
                         .padding(horizontal = 16.dp, vertical = 13.dp),
+                )
+            }
+            if (isCreatingProject) {
+                CreateProjectDialog(
+                    loadMetadata = onLoadProjectCreationMetadata,
+                    createProject = onCreateProject,
+                    onDismiss = { isCreatingProject = false },
+                    onCreated = { project ->
+                        isCreatingProject = false
+                        onProjectClick(project)
+                    },
                 )
             }
         }

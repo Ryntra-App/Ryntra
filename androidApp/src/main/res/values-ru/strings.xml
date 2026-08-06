@@ -448,4 +448,26 @@
     <string name="support_usdt_trc20">USDT · TRC20</string>
     <string name="support_ton_usdt">USDT · TON</string>
     <string name="support_address_copied">Адрес кошелька скопирован.</string>
+    <string name="project_create">Создать проект</string>
+    <string name="project_create_intro">Сначала создаётся приватный черновик. Релиз и отправку на модерацию можно добавить позже.</string>
+    <string name="project_create_identity">Основное</string>
+    <string name="project_create_compatibility">Поиск и совместимость</string>
+    <string name="project_create_content">Описание</string>
+    <string name="project_create_name">Название проекта</string>
+    <string name="project_create_slug">Адрес проекта на Modrinth</string>
+    <string name="project_create_summary">Краткое описание</string>
+    <string name="project_create_type">Тип проекта</string>
+    <string name="project_create_categories">Категории</string>
+    <string name="project_create_client">Поддержка клиента</string>
+    <string name="project_create_server">Поддержка сервера</string>
+    <string name="project_create_license">Лицензия</string>
+    <string name="project_create_links">Ссылки (необязательно)</string>
+    <string name="project_create_description">Полное описание (GitHub Flavored Markdown)</string>
+    <string name="project_create_next">Продолжить</string>
+    <string name="project_create_back">Назад</string>
+    <string name="project_create_draft">Создать черновик</string>
+    <string name="project_create_loading">Загружаем параметры Modrinth…</string>
+    <string name="project_create_retry">Повторить</string>
+    <string name="project_create_add_icon">Выбрать иконку</string>
+    <string name="project_create_private_note">Проект останется приватным черновиком, пока вы не добавите версию и не отправите его на модерацию.</string>
 </resources>
