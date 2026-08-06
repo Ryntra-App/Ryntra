@@ -36,7 +36,10 @@ struct KeychainValueStore {
         var query = baseQuery
         query[kSecValueData as String] = Data(value.utf8)
         query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        SecItemAdd(query as CFDictionary, nil)
+        let status = SecItemAdd(query as CFDictionary, nil)
+        if status != errSecSuccess {
+            NSLog("[Ryntra] keychain write failed: OSStatus %d", status)
+        }
     }
 
     func clear() {
@@ -44,6 +47,13 @@ struct KeychainValueStore {
     }
 
     private var baseQuery: [String: Any] {
+        // macOS keeps the legacy file-based keychain here. The modern
+        // data-protection keychain would avoid its password prompts, but it
+        // requires a keychain-access-group entitlement derived from a Team ID,
+        // and without one every write fails with errSecMissingEntitlement
+        // (-34018). Signing the app with a real team is what removes the
+        // prompts: they appear because an ad-hoc signature changes on every
+        // rebuild, so each build looks like a different app to the ACL.
         [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,

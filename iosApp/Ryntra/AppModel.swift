@@ -1,6 +1,5 @@
 import Foundation
 import RyntraShared
-import UIKit
 
 @MainActor
 final class AppModel: ObservableObject {
@@ -152,7 +151,7 @@ final class AppModel: ObservableObject {
         do {
             let url = try await instantNotificationCoordinator.createAuthorizationURL()
             instantNotifications.isLoading = false
-            await UIApplication.shared.open(url)
+            ryntraOpenExternalURL(url)
         } catch {
             instantNotifications.isLoading = false
             instantNotifications.errorMessage = error.localizedDescription

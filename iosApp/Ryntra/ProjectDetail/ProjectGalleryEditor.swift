@@ -149,7 +149,7 @@ struct ProjectGalleryEditor: View {
         } label: {
             ZStack(alignment: .topLeading) {
                 Color.secondary.opacity(0.12)
-                AsyncImage(url: URL(string: image.url)) { loaded in
+                RemoteImage(url: URL(string: image.url)) { loaded in
                     loaded
                         .resizable()
                         .scaledToFill()
@@ -268,7 +268,7 @@ private struct GalleryViewer: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    AsyncImage(url: URL(string: image.url)) { loaded in
+                    RemoteImage(url: URL(string: image.url)) { loaded in
                         loaded.resizable().scaledToFit()
                     } placeholder: {
                         ProgressView().frame(maxWidth: .infinity, minHeight: 220)
@@ -303,7 +303,7 @@ private struct GalleryViewer: View {
                 .padding()
             }
             .navigationTitle(image.displayTitle ?? NSLocalizedString("Gallery image", comment: "Gallery title"))
-            .navigationBarTitleDisplayMode(.inline)
+            .ryntraInlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(NSLocalizedString("Done", comment: "Gallery action")) { dismiss() }
@@ -350,7 +350,7 @@ private struct GalleryMetadataEditor: View {
                     )
                     .lineLimit(2...5)
                     TextField(NSLocalizedString("Ordering", comment: "Gallery field"), text: $ordering)
-                        .keyboardType(.numberPad)
+                        .ryntraNumericKeyboard()
                     Toggle(
                         NSLocalizedString("Use as project banner", comment: "Gallery field"),
                         isOn: $featured
@@ -362,7 +362,7 @@ private struct GalleryMetadataEditor: View {
                 }
             }
             .navigationTitle(NSLocalizedString("Edit gallery image", comment: "Gallery title"))
-            .navigationBarTitleDisplayMode(.inline)
+            .ryntraInlineNavigationTitle()
             .disabled(isSaving)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

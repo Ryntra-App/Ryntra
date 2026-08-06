@@ -161,7 +161,7 @@ struct ManagedMemberCard: View {
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 12) {
-                AsyncImage(url: URL(string: member.user.avatarUrl ?? "")) { image in
+                RemoteImage(url: URL(string: member.user.avatarUrl ?? "")) { image in
                     image.resizable().scaledToFill()
                 } placeholder: { Circle().fill(.quaternary) }
                 .frame(width: 44, height: 44)
@@ -211,7 +211,7 @@ struct InviteMemberSheet: View {
             List {
                 Section {
                     TextField("Exact Modrinth username", text: $query)
-                        .textInputAutocapitalization(.never)
+                        .ryntraNoAutocapitalization()
                         .autocorrectionDisabled()
                     Button("Search") { Task { await search() } }
                         .disabled(query.trimmingCharacters(in: .whitespaces).isEmpty || isSearching)
@@ -220,7 +220,7 @@ struct InviteMemberSheet: View {
                 if let result {
                     Section("Result") {
                         HStack {
-                            AsyncImage(url: URL(string: result.avatarUrl ?? "")) { image in
+                            RemoteImage(url: URL(string: result.avatarUrl ?? "")) { image in
                                 image.resizable().scaledToFill()
                             } placeholder: { Circle().fill(.quaternary) }
                             .frame(width: 38, height: 38).clipShape(Circle())
@@ -233,7 +233,7 @@ struct InviteMemberSheet: View {
                 if let localError { Section { Text(localError).foregroundStyle(.red) } }
             }
             .navigationTitle("Invite member")
-            .navigationBarTitleDisplayMode(.inline)
+            .ryntraInlineNavigationTitle()
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
         }
     }
@@ -305,7 +305,7 @@ struct MemberEditorSheet: View {
                         NSLocalizedString("Payout share (%)", comment: "Member field"),
                         text: $payout
                     )
-                    .keyboardType(.decimalPad)
+                    .ryntraNumericKeyboard(decimal: true)
                     Text(NSLocalizedString(
                         "Percent of team revenue for this member (0–100). Shares of all accepted members should add up to 100.",
                         comment: "Payout hint"
@@ -313,7 +313,7 @@ struct MemberEditorSheet: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     TextField(NSLocalizedString("Ordering", comment: "Member field"), text: $ordering)
-                        .keyboardType(.numberPad)
+                        .ryntraNumericKeyboard()
                 } header: {
                     Text(NSLocalizedString("Member", comment: "Member section"))
                 }
@@ -361,7 +361,7 @@ struct MemberEditorSheet: View {
                 if let localError { Section { Text(localError).foregroundStyle(.red) } }
             }
             .navigationTitle(NSLocalizedString("Edit member", comment: "Member editor"))
-            .navigationBarTitleDisplayMode(.inline)
+            .ryntraInlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(NSLocalizedString("Cancel", comment: "")) { dismiss() }

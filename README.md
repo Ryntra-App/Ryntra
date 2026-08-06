@@ -98,6 +98,30 @@ The app supports iOS 16.0 and newer on iPhone and iPad. Release builds use optim
 
 For sideloading, build or download the unsigned IPA and install it with Sideloadly or another trusted sideloading tool.
 
+### macOS Build
+
+The `Ryntra` scheme is multiplatform. Pick **My Mac** as the run destination to build a native Mac app on macOS 14.0 or newer, Apple Silicon only.
+
+```bash
+xcodebuild -project iosApp/Ryntra.xcodeproj -scheme Ryntra \
+  -destination 'platform=macOS,arch=arm64' build
+```
+
+macOS links the shared Kotlin framework dynamically, unlike the static one used for iOS: a static build pulls in the `platform.posix` and `platform.darwin` cinterop caches, which reference symbols the macOS SDK no longer exposes for linking. A build phase embeds and signs that framework into the app bundle.
+
+Intel Macs are not covered. Kotlin/Native deprecated `macosX64` in 2.3.20, so the Mac build is pinned to `arm64`; adding `macosX64()` in `shared/build.gradle.kts` would restore it for as long as Kotlin keeps the target.
+
+### visionOS
+
+Kotlin/Native has no visionOS target, so there is no native visionOS build. Apple Vision Pro runs the iPad build in compatibility mode instead — select the **Apple Vision Pro (Designed for iPad)** destination:
+
+```bash
+xcodebuild -project iosApp/Ryntra.xcodeproj -scheme Ryntra \
+  -destination 'platform=visionOS Simulator,name=Apple Vision Pro' build
+```
+
+The product lands in `Debug-iphonesimulator`, since the compatibility layer runs an iOS binary. Install it with `xcrun simctl install`.
+
 ### Codemagic
 
 The repository includes three Codemagic workflows:
@@ -191,6 +215,30 @@ Debug APK появится в `androidApp/build/outputs/apk/debug/`.
 Приложение поддерживает iOS 16.0 и новее на iPhone и iPad. Release-сборка использует оптимизированную whole-module компиляцию Swift.
 
 Для sideloading можно скачать unsigned IPA и установить его через Sideloadly или другой trusted sideloading-инструмент.
+
+### macOS-сборка
+
+Схема `Ryntra` мультиплатформенная. Выбери destination **My Mac**, чтобы собрать нативное приложение для macOS 14.0 и новее, только Apple Silicon.
+
+```bash
+xcodebuild -project iosApp/Ryntra.xcodeproj -scheme Ryntra \
+  -destination 'platform=macOS,arch=arm64' build
+```
+
+На macOS общий Kotlin-фреймворк линкуется динамически, в отличие от статического на iOS: статическая сборка тянет cinterop-кэши `platform.posix` и `platform.darwin`, которые ссылаются на символы, отсутствующие в macOS SDK. Отдельная build phase встраивает и подписывает этот фреймворк внутри бандла.
+
+Intel Mac не поддерживается. Kotlin/Native объявил `macosX64` устаревшим в 2.3.20, поэтому Mac-сборка закреплена за `arm64`; добавление `macosX64()` в `shared/build.gradle.kts` вернёт поддержку, пока Kotlin сохраняет этот таргет.
+
+### visionOS
+
+У Kotlin/Native нет таргета visionOS, поэтому нативной visionOS-сборки не существует. Apple Vision Pro запускает iPad-сборку в режиме совместимости — выбери destination **Apple Vision Pro (Designed for iPad)**:
+
+```bash
+xcodebuild -project iosApp/Ryntra.xcodeproj -scheme Ryntra \
+  -destination 'platform=visionOS Simulator,name=Apple Vision Pro' build
+```
+
+Продукт появится в `Debug-iphonesimulator`, потому что слой совместимости запускает iOS-бинарник. Установить его можно через `xcrun simctl install`.
 
 ### Codemagic
 

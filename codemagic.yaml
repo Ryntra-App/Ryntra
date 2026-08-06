@@ -42,12 +42,51 @@ workflows:
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundlePackageType' "$APP_PATH/Info.plist")" = "APPL"
           file "$APP_PATH/Ryntra"
           lipo -info "$APP_PATH/Ryntra"
-          lipo -verify_arch x86_64 "$APP_PATH/Ryntra"
+          lipo "$APP_PATH/Ryntra" -verify_arch x86_64
           mkdir -p "$OUTPUT_DIR"
           ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$OUTPUT_DIR/Ryntra-simulator.zip"
     artifacts:
       - build/appetize/Ryntra-simulator.zip
       - build/ios-simulator/DerivedData/Build/Products/Release-iphonesimulator/*.app
+
+  macos-native:
+    name: Ryntra macOS Native
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      xcode: latest
+      java: 21
+    scripts:
+      - name: Build macOS app
+        script: |
+          # arm64 only: Kotlin/Native deprecated macosX64 in 2.3.20, so the
+          # shared framework has no Intel slice to link against.
+          xcodebuild \
+            -project iosApp/Ryntra.xcodeproj \
+            -scheme Ryntra \
+            -configuration Release \
+            -destination "generic/platform=macOS" \
+            -derivedDataPath "$CM_BUILD_DIR/build/macos/DerivedData" \
+            ARCHS=arm64 \
+            ONLY_ACTIVE_ARCH=NO \
+            RYNTRA_BACKEND_URL="${RYNTRA_BACKEND_URL:-https://authrinthy.sawiq.org}" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+      - name: Package macOS app
+        script: |
+          APP_PATH="$CM_BUILD_DIR/build/macos/DerivedData/Build/Products/Release/Ryntra.app"
+          OUTPUT_DIR="$CM_BUILD_DIR/build/macos-app"
+          test -d "$APP_PATH"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundlePackageType' "$APP_PATH/Contents/Info.plist")" = "APPL"
+          # macOS links the Kotlin framework dynamically, so the app cannot
+          # launch unless a build phase embedded it.
+          test -d "$APP_PATH/Contents/Frameworks/RyntraShared.framework"
+          lipo "$APP_PATH/Contents/MacOS/Ryntra" -verify_arch arm64
+          mkdir -p "$OUTPUT_DIR"
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$OUTPUT_DIR/Ryntra-macos.zip"
+    artifacts:
+      - build/macos-app/Ryntra-macos.zip
+
 
   ios-unsigned-ipa:
     name: Ryntra Unsigned Device IPA
@@ -74,6 +113,9 @@ workflows:
           APP_PATH="$CM_BUILD_DIR/build/ios/DerivedData/Build/Products/Release-iphoneos/Ryntra.app"
           IPA_ROOT="$CM_BUILD_DIR/build/ipa"
           test -d "$APP_PATH"
+          # Vision Pro only accepts this build because it declares iPad support
+          # (device family 2). Losing that silently would drop visionOS.
+          /usr/libexec/PlistBuddy -c 'Print :UIDeviceFamily' "$APP_PATH/Info.plist" | grep -q 2
           rm -rf "$IPA_ROOT/Payload"
           mkdir -p "$IPA_ROOT/Payload"
           ditto "$APP_PATH" "$IPA_ROOT/Payload/Ryntra.app"

@@ -1,19 +1,41 @@
 import RyntraShared
 import SwiftUI
-import UIKit
 import WebKit
 
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
+
+#if os(macOS)
+struct MarkdownBadgeRowView: NSViewRepresentable {
+    let images: [MarkdownImage]
+
+    func makeCoordinator() -> MarkdownBadgeRowCoordinator {
+        MarkdownBadgeRowCoordinator()
+    }
+
+    func makeNSView(context: Context) -> WKWebView {
+        let view = MarkdownBadgeRow.makeWebView()
+        view.navigationDelegate = context.coordinator
+        return view
+    }
+
+    func updateNSView(_ view: WKWebView, context: Context) {
+        MarkdownBadgeRow.update(view, images: images, coordinator: context.coordinator)
+    }
+}
+#else
 struct MarkdownBadgeRowView: UIViewRepresentable {
     let images: [MarkdownImage]
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator()
+    func makeCoordinator() -> MarkdownBadgeRowCoordinator {
+        MarkdownBadgeRowCoordinator()
     }
 
     func makeUIView(context: Context) -> WKWebView {
-        let configuration = WKWebViewConfiguration()
-        configuration.defaultWebpagePreferences.allowsContentJavaScript = true
-        let view = WKWebView(frame: .zero, configuration: configuration)
+        let view = MarkdownBadgeRow.makeWebView()
         view.navigationDelegate = context.coordinator
         view.isOpaque = false
         view.backgroundColor = .clear
@@ -24,13 +46,29 @@ struct MarkdownBadgeRowView: UIViewRepresentable {
     }
 
     func updateUIView(_ view: WKWebView, context: Context) {
-        let payload = encodedPayload()
-        guard context.coordinator.payload != payload else { return }
-        context.coordinator.payload = payload
-        view.loadHTMLString(Self.html(payload: payload), baseURL: nil)
+        MarkdownBadgeRow.update(view, images: images, coordinator: context.coordinator)
+    }
+}
+#endif
+
+/// The parts of the badge row that do not depend on UIKit or AppKit.
+private enum MarkdownBadgeRow {
+    static func makeWebView() -> WKWebView {
+        let configuration = WKWebViewConfiguration()
+        configuration.defaultWebpagePreferences.allowsContentJavaScript = true
+        let view = WKWebView(frame: .zero, configuration: configuration)
+        view.underPageBackgroundColor = .clear
+        return view
     }
 
-    private func encodedPayload() -> String {
+    static func update(_ view: WKWebView, images: [MarkdownImage], coordinator: MarkdownBadgeRowCoordinator) {
+        let payload = encodedPayload(images)
+        guard coordinator.payload != payload else { return }
+        coordinator.payload = payload
+        view.loadHTMLString(html(payload: payload), baseURL: nil)
+    }
+
+    private static func encodedPayload(_ images: [MarkdownImage]) -> String {
         let values = images.map { image in
             [
                 "url": image.url,
@@ -52,7 +90,7 @@ struct MarkdownBadgeRowView: UIViewRepresentable {
         img{display:block;height:36px;width:auto;max-width:none;border-radius:5px}
         a{display:block;flex:0 0 auto}
         </style></head><body><div id="row"></div><script>
-        const items=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob('(payload)'),c=>c.charCodeAt(0))));
+        const items=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob('\(payload)'),c=>c.charCodeAt(0))));
         const row=document.getElementById('row');
         for(const item of items){
           const image=document.createElement('img'); image.src=item.url; image.alt=item.alt; image.loading='eager';
@@ -62,27 +100,27 @@ struct MarkdownBadgeRowView: UIViewRepresentable {
         </script></body></html>
         """
     }
+}
 
-    final class Coordinator: NSObject, WKNavigationDelegate {
-        var payload: String?
+final class MarkdownBadgeRowCoordinator: NSObject, WKNavigationDelegate {
+    var payload: String?
 
-        func webView(
-            _ webView: WKWebView,
-            decidePolicyFor navigationAction: WKNavigationAction,
-            decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
-        ) {
-            guard navigationAction.navigationType == .linkActivated else {
-                decisionHandler(.allow)
-                return
-            }
-            guard let url = navigationAction.request.url,
-                  let scheme = url.scheme?.lowercased(),
-                  scheme == "http" || scheme == "https" else {
-                decisionHandler(.cancel)
-                return
-            }
-            UIApplication.shared.open(url)
-            decisionHandler(.cancel)
+    func webView(
+        _ webView: WKWebView,
+        decidePolicyFor navigationAction: WKNavigationAction,
+        decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
+    ) {
+        guard navigationAction.navigationType == .linkActivated else {
+            decisionHandler(.allow)
+            return
         }
+        guard let url = navigationAction.request.url,
+              let scheme = url.scheme?.lowercased(),
+              scheme == "http" || scheme == "https" else {
+            decisionHandler(.cancel)
+            return
+        }
+        Task { @MainActor in ryntraOpenExternalURL(url) }
+        decisionHandler(.cancel)
     }
 }

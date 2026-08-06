@@ -73,6 +73,8 @@ struct ProjectsView: View {
                     .frame(maxWidth: .infinity)
                     .contentShape(Rectangle())
                     .onTapGesture { onProjectTap(project) }
+                    .ryntraHoverHighlight()
+                    .ryntraProjectContextMenu(project)
                 }
             }
             }
@@ -89,7 +91,7 @@ struct ProjectsView: View {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
             TextField(NSLocalizedString("Search projects", comment: "Project search"), text: $query)
-                .textInputAutocapitalization(.never)
+                .ryntraNoAutocapitalization()
                 .autocorrectionDisabled()
             if !query.isEmpty {
                 Button {
@@ -320,7 +322,7 @@ struct ProjectArtwork: View {
     let project: Project
 
     var body: some View {
-        AsyncImage(url: URL(string: project.iconUrl ?? "")) { image in
+        RemoteImage(url: URL(string: project.iconUrl ?? "")) { image in
             image.resizable().scaledToFill()
         } placeholder: {
             RoundedRectangle(cornerRadius: 10)

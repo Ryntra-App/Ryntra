@@ -83,7 +83,7 @@ struct RyntraTopBar: View {
             }
             if showsAvatar {
                 Button(action: onAvatarTap) {
-                    AsyncImage(url: URL(string: avatarURL ?? "")) { image in
+                    RemoteImage(url: URL(string: avatarURL ?? "")) { image in
                         image.resizable().scaledToFill()
                     } placeholder: {
                         Circle().fill(.quaternary)
@@ -166,7 +166,9 @@ private extension View {
     @ViewBuilder
     func ryntraCapsuleGlass() -> some View {
 #if compiler(>=6.2)
-        if #available(iOS 26.0, *) {
+        // macOS has to be named explicitly: `*` resolves to the deployment
+        // target there (14.0), and glassEffect needs 26.0.
+        if #available(iOS 26.0, macOS 26.0, *) {
             glassEffect(.regular.interactive(), in: .capsule)
         } else {
             ryntraCapsuleMaterialFallback()

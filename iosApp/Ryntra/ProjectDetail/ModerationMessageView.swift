@@ -79,7 +79,7 @@ struct ModerationMessageView: View {
 
     private func messageHeader(isModerator: Bool) -> some View {
         HStack(spacing: 9) {
-            AsyncImage(url: URL(string: author?.avatarUrl ?? "")) { image in
+            RemoteImage(url: URL(string: author?.avatarUrl ?? "")) { image in
                 image.resizable().scaledToFill()
             } placeholder: {
                 Circle().fill(Color.secondary.opacity(0.14))
