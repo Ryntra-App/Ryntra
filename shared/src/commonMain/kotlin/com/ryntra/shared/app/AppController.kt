@@ -7,6 +7,8 @@ import com.ryntra.shared.model.Account
 import com.ryntra.shared.model.AnalyticsQuery
 import com.ryntra.shared.model.AnalyticsReport
 import com.ryntra.shared.model.CreateVersionRequest
+import com.ryntra.shared.model.CreateProjectRequest
+import com.ryntra.shared.model.ProjectCreationMetadata
 import com.ryntra.shared.model.Dashboard
 import com.ryntra.shared.model.Organization
 import com.ryntra.shared.model.ModrinthNotification
@@ -268,6 +270,36 @@ class AppController internal constructor(
             )
             AppState.SignedOut -> AppState.SignedOut
         }
+    }
+
+    suspend fun loadProjectCreationMetadata(): ProjectCreationMetadata = repository.loadProjectCreationMetadata()
+
+    suspend fun createProject(request: CreateProjectRequest): Project {
+        val token = requireToken("creating a project")
+        val project = try {
+            repository.createProject(request, token)
+        } catch (error: ApiException) {
+            if (error.statusCode == 401 || error.statusCode == 403) {
+                throw IllegalStateException(
+                    "Your Modrinth token cannot create projects. Sign in again and grant the PROJECT_CREATE permission.",
+                    error,
+                )
+            }
+            throw error
+        }
+        if (accessToken == token) {
+            mutableState.value = when (val current = mutableState.value) {
+                is AppState.Ready -> AppState.Ready(current.dashboard.copy(projects = listOf(project) + current.dashboard.projects))
+                is AppState.Loading -> current.copy(previousDashboard = current.previousDashboard?.let {
+                    it.copy(projects = listOf(project) + it.projects)
+                })
+                is AppState.Failed -> current.copy(previousDashboard = current.previousDashboard?.let {
+                    it.copy(projects = listOf(project) + it.projects)
+                })
+                AppState.SignedOut -> AppState.SignedOut
+            }
+        }
+        return project
     }
 
     suspend fun changeProjectIcon(projectIdOrSlug: String, file: ProjectFileUpload) {

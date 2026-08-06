@@ -122,6 +122,8 @@ fun RyntraApp(viewModel: RyntraViewModel) {
                             )
                         },
                         onCreateVersion = viewModel::createVersion,
+                        onLoadProjectCreationMetadata = viewModel::loadProjectCreationMetadata,
+                        onCreateProject = viewModel::createProject,
                         onUpdateVersion = viewModel::updateVersion,
                         onDeleteVersion = viewModel::deleteVersion,
                         onSearchMember = viewModel::searchMember,

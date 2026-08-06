@@ -13,7 +13,20 @@ data class MarkdownBlock(
     val url: String? = null,
     val images: List<MarkdownImage> = emptyList(),
     val checked: Boolean? = null,
+    val table: MarkdownTable? = null,
 )
+
+@Serializable
+data class MarkdownTable(
+    val headers: List<String>,
+    val rows: List<MarkdownTableRow>,
+    val alignments: List<MarkdownTableAlignment> = emptyList(),
+)
+
+@Serializable
+data class MarkdownTableRow(val cells: List<String>)
+
+enum class MarkdownTableAlignment { Start, Center, End }
 
 @Serializable
 data class MarkdownImage(
@@ -127,14 +140,20 @@ object MarkdownParser {
                 // Unordered list: - item / * item
                 trimmed.startsWith("- ") || trimmed.startsWith("* ") -> {
                     val (content, checked) = parseTaskItem(trimmed.drop(2).trim())
-                    blocks += inlineBlock(content, MarkdownBlockType.ListItem, checked = checked)
+                    blocks += inlineBlock(
+                        content, MarkdownBlockType.ListItem,
+                        level = raw.listIndentLevel(), checked = checked,
+                    )
                     index++
                 }
 
                 // Ordered list: 1. item
                 orderedMarker(trimmed) != null -> {
                     val (ordinal, rest) = orderedMarker(trimmed)!!
-                    blocks += inlineBlock(rest, MarkdownBlockType.ListItem, ordered = true, ordinal = ordinal)
+                    blocks += inlineBlock(
+                        rest, MarkdownBlockType.ListItem,
+                        level = raw.listIndentLevel(), ordered = true, ordinal = ordinal,
+                    )
                     index++
                 }
 
@@ -375,6 +394,11 @@ object MarkdownParser {
         }
     }
 
+    private fun String.listIndentLevel(): Int = takeWhile { it == ' ' || it == '\t' }
+        .sumOf { if (it == '\t') 2 else 1 }
+        .div(2)
+        .coerceAtMost(6)
+
     private fun looksLikeBadge(alt: String, url: String): Boolean {
         val normalizedUrl = url.lowercase()
         if ("shields.io" in normalizedUrl || "/badge" in normalizedUrl) return true
@@ -475,6 +499,12 @@ private class InlineParser(
                     return InlineToken(index, end + 2, text.substring(index + 2, end), MarkdownSpanType.Bold)
                 }
             }
+            if (text.startsWith("__", index)) {
+                val end = text.indexOf("__", index + 2)
+                if (end >= 0) {
+                    return InlineToken(index, end + 2, text.substring(index + 2, end), MarkdownSpanType.Bold)
+                }
+            }
             if (text.startsWith("~~", index)) {
                 val end = text.indexOf("~~", index + 2)
                 if (end >= 0) {
@@ -510,6 +540,12 @@ private class InlineParser(
             }
             if (text[index] == '*' && !text.startsWith("**", index)) {
                 val end = text.indexOf('*', index + 1)
+                if (end >= 0) {
+                    return InlineToken(index, end + 1, text.substring(index + 1, end), MarkdownSpanType.Italic)
+                }
+            }
+            if (text[index] == '_' && !text.startsWith("__", index)) {
+                val end = text.indexOf('_', index + 1)
                 if (end >= 0) {
                     return InlineToken(index, end + 1, text.substring(index + 1, end), MarkdownSpanType.Italic)
                 }

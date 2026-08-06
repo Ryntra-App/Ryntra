@@ -1,6 +1,8 @@
 import Foundation
+import PhotosUI
 import RyntraShared
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ProjectsView: View {
     @EnvironmentObject private var model: AppModel
@@ -16,6 +18,7 @@ struct ProjectsView: View {
     var onProjectTap: (Project) -> Void = { _ in }
 
     @State private var query = ""
+    @State private var isCreatingProject = false
 
     private var sortMode: ProjectSortMode {
         ProjectSortMode(rawValue: storedSortMode) ?? .popular
@@ -84,6 +87,21 @@ struct ProjectsView: View {
         }
         .background(Color.ryntraBackground)
         .refreshable { model.refresh() }
+        .toolbar {
+            ToolbarItem(placement: .ryntraTrailing) {
+                Button { isCreatingProject = true } label: {
+                    Label("Create project", systemImage: "plus")
+                }
+                .accessibilityHint("Creates a private Modrinth draft")
+            }
+        }
+        .sheet(isPresented: $isCreatingProject) {
+            CreateProjectView { project in
+                isCreatingProject = false
+                onProjectTap(project)
+            }
+            .environmentObject(model)
+        }
     }
 
     private var searchField: some View {
@@ -168,6 +186,297 @@ struct ProjectsView: View {
         } else {
             withAnimation(RyntraMotion.control, update)
         }
+    }
+}
+
+private struct CreateProjectView: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+
+    let onCreated: (Project) -> Void
+
+    @State private var metadata: ProjectCreationMetadata?
+    @State private var step = 0
+    @State private var title = ""
+    @State private var slug = ""
+    @State private var slugEdited = false
+    @State private var summary = ""
+    @State private var projectType = ""
+    @State private var categories: Set<String> = []
+    @State private var clientSide = "unknown"
+    @State private var serverSide = "unknown"
+    @State private var licenseID = "MIT"
+    @State private var projectBody = ""
+    @State private var sourceURL = ""
+    @State private var issuesURL = ""
+    @State private var wikiURL = ""
+    @State private var discordURL = ""
+    @State private var icon: ProjectFileUpload?
+    @State private var iconName: String?
+    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var showingMarkdownPreview = false
+    @State private var isSubmitting = false
+    @State private var errorMessage: String?
+
+    private let environments = ["required", "optional", "unsupported", "unknown"]
+
+    var bodyView: some View {
+        NavigationStack {
+            Group {
+                if let metadata {
+                    Form {
+                        Section {
+                            Label(
+                                "Your project is created as a private draft. Add a release before submitting it for review.",
+                                systemImage: "lock.shield"
+                            )
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        }
+
+                        switch step {
+                        case 0: basics(metadata)
+                        case 1: discoverability(metadata)
+                        default: content
+                        }
+
+                        if let errorMessage {
+                            Section { Text(errorMessage).foregroundStyle(.red) }
+                        }
+                    }
+                } else if let errorMessage {
+                    VStack(spacing: 12) {
+                        Image(systemName: "wifi.exclamationmark").font(.largeTitle).foregroundStyle(.secondary)
+                        Text("Could not load Modrinth options").font(.headline)
+                        Text(errorMessage).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                        Button("Retry") { Task { await loadMetadata() } }
+                    }
+                    .padding(24)
+                } else {
+                    VStack(spacing: 12) {
+                        ProgressView()
+                        Text("Loading Modrinth options…").foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .navigationTitle("Create project")
+            .ryntraInlineNavigationTitle()
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", role: .cancel) { dismiss() }.disabled(isSubmitting)
+                }
+                ToolbarItem(placement: .principal) {
+                    VStack(spacing: 1) {
+                        Text("Create project").font(.headline)
+                        Text("\(step + 1) of 3").font(.caption2).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .safeAreaInset(edge: .bottom) {
+                if metadata != nil {
+                    HStack(spacing: 12) {
+                        if step > 0 {
+                            Button("Back") { step -= 1 }
+                                .buttonStyle(.bordered)
+                                .disabled(isSubmitting)
+                        }
+                        Button(step == 2 ? "Create draft" : "Continue") {
+                            if step < 2 { step += 1 } else { Task { await create() } }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.ryntraGreen)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .disabled(!canContinue || isSubmitting)
+                        .overlay { if isSubmitting { ProgressView().tint(.white) } }
+                    }
+                    .padding()
+                    .background(.bar)
+                }
+            }
+        }
+        .interactiveDismissDisabled(isDirty || isSubmitting)
+        .task { await loadMetadata() }
+        .onChange(of: selectedPhoto) { item in
+            guard let item else { return }
+            Task { await loadIcon(item) }
+        }
+    }
+
+    var body: some View { bodyView }
+
+    @ViewBuilder
+    private func basics(_ metadata: ProjectCreationMetadata) -> some View {
+        Section("Basics") {
+            TextField("Project name", text: Binding(
+                get: { title },
+                set: { value in title = value; if !slugEdited { slug = value.modrinthSlug } }
+            ))
+            TextField("Modrinth URL slug", text: Binding(
+                get: { slug },
+                set: { slugEdited = true; slug = $0.lowercased().replacingOccurrences(of: " ", with: "-") }
+            ))
+            .ryntraNoAutocapitalization()
+            .autocorrectionDisabled()
+            TextField("Short summary", text: $summary, axis: .vertical).lineLimit(2...4)
+            Picker("Project type", selection: $projectType) {
+                ForEach(metadata.projectTypes, id: \.self) { Text($0.capitalized).tag($0) }
+            }
+        }
+        Section("Artwork") {
+            PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                Label(iconName ?? "Choose project icon", systemImage: icon == nil ? "photo.badge.plus" : "checkmark.circle.fill")
+            }
+            if icon != nil {
+                Button("Remove selected icon", role: .destructive) { icon = nil; iconName = nil; selectedPhoto = nil }
+            }
+            Text("PNG, JPEG, WebP or GIF · up to 256 KiB").font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder
+    private func discoverability(_ metadata: ProjectCreationMetadata) -> some View {
+        Section("Categories") {
+            let available = metadata.categories.filter { $0.projectType == projectType }
+            if available.isEmpty {
+                Text("No categories are available for this type.").foregroundStyle(.secondary)
+            } else {
+                ForEach(available, id: \.name) { category in
+                    Toggle(category.name.capitalized, isOn: Binding(
+                        get: { categories.contains(category.name) },
+                        set: { enabled in
+                            if enabled { categories.insert(category.name) } else { categories.remove(category.name) }
+                        }
+                    ))
+                }
+            }
+        }
+        Section("Environment") {
+            Picker("Client support", selection: $clientSide) {
+                ForEach(environments, id: \.self) { Text($0.capitalized).tag($0) }
+            }
+            Picker("Server support", selection: $serverSide) {
+                ForEach(environments, id: \.self) { Text($0.capitalized).tag($0) }
+            }
+        }
+        Section("License") {
+            Picker("SPDX license", selection: $licenseID) {
+                ForEach(metadata.licenses, id: \.id) { license in
+                    Text(license.name ?? license.id).tag(license.id)
+                }
+            }
+            TextField("Custom SPDX ID", text: $licenseID)
+                .ryntraNoAutocapitalization()
+                .autocorrectionDisabled()
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        Section("Full description · GitHub Flavored Markdown") {
+            Picker("Description mode", selection: $showingMarkdownPreview) {
+                Text("Write").tag(false)
+                Text("Preview").tag(true)
+            }
+            .pickerStyle(.segmented)
+            if showingMarkdownPreview {
+                let blocks = MarkdownParser.shared.parse(markdown: projectBody)
+                if blocks.isEmpty { Text("Nothing to preview yet.").foregroundStyle(.secondary) }
+                ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in MarkdownBlockView(block: block) }
+            } else {
+                TextEditor(text: $projectBody)
+                    .font(.body.monospaced())
+                    .frame(minHeight: 240)
+                    .accessibilityLabel("Full project description")
+            }
+        }
+        Section("Links · optional") {
+            TextField("Source URL", text: $sourceURL).ryntraURLKeyboard()
+            TextField("Issues URL", text: $issuesURL).ryntraURLKeyboard()
+            TextField("Wiki URL", text: $wikiURL).ryntraURLKeyboard()
+            TextField("Discord URL", text: $discordURL).ryntraURLKeyboard()
+        }
+        Section {
+            Label("The draft stays private until you add a version and submit it to Modrinth moderation.", systemImage: "eye.slash")
+                .font(.subheadline).foregroundStyle(.secondary)
+        }
+    }
+
+    private var canContinue: Bool {
+        switch step {
+        case 0: return !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && (3...64).contains(slug.count) && !summary.isEmpty && !projectType.isEmpty
+        case 1: return !licenseID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        default: return !projectBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && linksAreValid
+        }
+    }
+
+    private var linksAreValid: Bool {
+        [sourceURL, issuesURL, wikiURL, discordURL].allSatisfy { value in
+            value.isEmpty || value.hasPrefix("https://") || value.hasPrefix("http://")
+        }
+    }
+
+    private var isDirty: Bool { !title.isEmpty || !summary.isEmpty || !projectBody.isEmpty || icon != nil }
+
+    @MainActor private func loadMetadata() async {
+        errorMessage = nil
+        do {
+            let loaded = try await model.loadProjectCreationMetadata()
+            metadata = loaded
+            if projectType.isEmpty { projectType = loaded.projectTypes.first ?? "mod" }
+        } catch { errorMessage = error.localizedDescription }
+    }
+
+    @MainActor private func loadIcon(_ item: PhotosPickerItem) async {
+        do {
+            guard let type = item.supportedContentTypes.first(where: { $0.conforms(to: .image) }),
+                  let data = try await item.loadTransferable(type: Data.self), !data.isEmpty else {
+                throw ProjectImageUploadError.unreadable
+            }
+            guard data.count <= 256 * 1024 else {
+                errorMessage = "Project icon must be 256 KiB or smaller."
+                selectedPhoto = nil
+                return
+            }
+            let name = "project-icon.\(type.preferredFilenameExtension ?? "png")"
+            icon = ProjectUploadFactory.shared.fromBase64(
+                fileName: name,
+                contentType: type.preferredMIMEType ?? "image/png",
+                base64: data.base64EncodedString()
+            )
+            iconName = name
+            errorMessage = nil
+        } catch { errorMessage = error.localizedDescription }
+    }
+
+    @MainActor private func create() async {
+        guard canContinue else { return }
+        isSubmitting = true
+        errorMessage = nil
+        defer { isSubmitting = false }
+        do {
+            let request = CreateProjectRequest(
+                slug: slug, title: title, description: summary, body: projectBody, projectType: projectType,
+                categories: Array(categories).sorted(), additionalCategories: [], clientSide: clientSide,
+                serverSide: serverSide, licenseId: licenseID, licenseUrl: nil,
+                sourceUrl: sourceURL.nilIfEmpty, issuesUrl: issuesURL.nilIfEmpty,
+                wikiUrl: wikiURL.nilIfEmpty, discordUrl: discordURL.nilIfEmpty, icon: icon
+            )
+            onCreated(try await model.createProject(request: request))
+        } catch { errorMessage = error.localizedDescription }
+    }
+}
+
+private extension String {
+    var modrinthSlug: String {
+        lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "[^a-z0-9_-]+", with: "-", options: .regularExpression)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+            .prefix(64).description
+    }
+
+    var nilIfEmpty: String? {
+        let value = trimmingCharacters(in: .whitespacesAndNewlines)
+        return value.isEmpty ? nil : value
     }
 }
 

@@ -11,20 +11,18 @@ struct MarkdownBlockView: View {
         case .image:
             markdownImages
         case .codeblock:
-            Text(block.content)
-                .font(.system(.footnote, design: .monospaced))
-                .foregroundStyle(.primary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(10)
-                .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
-        case .table:
-            ScrollView(.horizontal, showsIndicators: false) {
+            ScrollView(.horizontal, showsIndicators: true) {
                 Text(block.content)
                     .font(.system(.footnote, design: .monospaced))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.primary)
                     .fixedSize(horizontal: true, vertical: false)
-                    .padding(.vertical, 8)
+                    .textSelection(.enabled)
+                    .padding(10)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+        case .table:
+            markdownTable
         case .quote:
             HStack(alignment: .top, spacing: 10) {
                 RoundedRectangle(cornerRadius: 2)
@@ -34,13 +32,65 @@ struct MarkdownBlockView: View {
             }
         case .listitem:
             HStack(alignment: .top, spacing: 8) {
-                Text(listMarker)
-                    .font(font)
-                    .foregroundStyle(foregroundStyle)
+                if let checked = block.checked {
+                    Image(systemName: checked.boolValue ? "checkmark.square.fill" : "square")
+                        .foregroundStyle(checked.boolValue ? Color.ryntraGreen : .secondary)
+                        .accessibilityLabel(checked.boolValue ? "Completed" : "Not completed")
+                } else {
+                    Text(listMarker).font(font).foregroundStyle(foregroundStyle)
+                }
                 markdownText
             }
+            .padding(.leading, CGFloat(block.level) * 18)
         default:
             markdownText
+        }
+    }
+
+    @ViewBuilder
+    private var markdownTable: some View {
+        if let table = block.table {
+            ScrollView(.horizontal, showsIndicators: true) {
+                Grid(alignment: .leading, horizontalSpacing: 0, verticalSpacing: 0) {
+                    tableRow(table.headers, alignments: table.alignments, header: true)
+                    Divider().gridCellUnsizedAxes(.horizontal)
+                    ForEach(Array(table.rows.enumerated()), id: \.offset) { index, row in
+                        tableRow(row.cells, alignments: table.alignments, header: false)
+                        if index != table.rows.count - 1 {
+                            Divider().gridCellUnsizedAxes(.horizontal)
+                        }
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+            .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+        } else {
+            Text(block.content).font(.system(.footnote, design: .monospaced))
+        }
+    }
+
+    private func tableRow(_ cells: [String], alignments: [MarkdownTableAlignment], header: Bool) -> some View {
+        GridRow {
+            ForEach(Array(cells.enumerated()), id: \.offset) { index, cell in
+                Text(cell)
+                    .font(.footnote.weight(header ? .semibold : .regular))
+                    .foregroundStyle(header ? .primary : .secondary)
+                    .frame(
+                        minWidth: 120,
+                        maxWidth: 240,
+                        alignment: tableAlignment(alignments.indices.contains(index) ? alignments[index] : .start)
+                    )
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 9)
+            }
+        }
+    }
+
+    private func tableAlignment(_ alignment: MarkdownTableAlignment) -> Alignment {
+        switch alignment {
+        case .center: return .center
+        case .end: return .trailing
+        default: return .leading
         }
     }
 
@@ -51,7 +101,7 @@ struct MarkdownBlockView: View {
                 .frame(maxWidth: .infinity, minHeight: 42, maxHeight: 42)
         } else if block.images.count == 1,
            !block.images[0].isBadge,
-           let url = URL(string: block.images[0].url) {
+           let url = URL(string: block.images[0].url), url.isSafeMarkdownURL {
             imageLink(block.images[0]) {
                 RemoteImage(url: url) { image in
                     image.resizable().scaledToFit()
@@ -65,7 +115,7 @@ struct MarkdownBlockView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
                     ForEach(Array(block.images.enumerated()), id: \.offset) { _, badge in
-                        if let url = URL(string: badge.url) {
+                        if let url = URL(string: badge.url), url.isSafeMarkdownURL {
                             imageLink(badge) {
                                 RemoteImage(url: url) { image in
                                     image.resizable().scaledToFit()
@@ -106,7 +156,7 @@ struct MarkdownBlockView: View {
                 attributed[range].font = .system(.body, design: .monospaced)
                 attributed[range].backgroundColor = .secondary.opacity(0.15)
             case .link:
-                if let urlString = span.linkUrl, let url = URL(string: urlString) {
+                if let urlString = span.linkUrl, let url = URL(string: urlString), url.isSafeMarkdownURL {
                     attributed[range].link = url
                 }
             default:
@@ -132,7 +182,6 @@ struct MarkdownBlockView: View {
     }
 
     private var listMarker: String {
-        if let checked = block.checked { return checked.boolValue ? "[x]" : "[ ]" }
         return block.ordered ? "\(block.ordinal)." : "•"
     }
 
@@ -141,10 +190,17 @@ struct MarkdownBlockView: View {
         _ image: MarkdownImage,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        if let linkString = image.linkUrl, let link = URL(string: linkString) {
+        if let linkString = image.linkUrl, let link = URL(string: linkString), link.isSafeMarkdownURL {
             Link(destination: link) { content() }
         } else {
             content()
         }
+    }
+}
+
+private extension URL {
+    var isSafeMarkdownURL: Bool {
+        guard let scheme = scheme?.lowercased() else { return false }
+        return ["http", "https", "mailto"].contains(scheme)
     }
 }

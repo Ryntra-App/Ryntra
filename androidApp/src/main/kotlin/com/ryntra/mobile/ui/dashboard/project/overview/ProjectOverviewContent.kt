@@ -56,7 +56,7 @@ internal fun ProjectDependencyRow(dependency: ProjectDependency) {
         )
         Column(modifier = Modifier.padding(start = 10.dp).weight(1f)) {
             Text(
-                dependency.title ?: dependency.projectId ?: dependency.fileName
+                dependency.title ?: dependency.fileName
                     ?: stringResource(R.string.project_external_dependency),
                 fontWeight = FontWeight.SemiBold,
             )

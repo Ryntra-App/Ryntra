@@ -385,6 +385,14 @@ final class AppModel: ObservableObject {
         isProjectSaving = false
     }
 
+    func loadProjectCreationMetadata() async throws -> ProjectCreationMetadata {
+        try await controller.loadProjectCreationMetadata()
+    }
+
+    func createProject(request: CreateProjectRequest) async throws -> Project {
+        try await controller.createProject(request: request)
+    }
+
     func clearProjectUpdateStatus() {
         projectUpdateError = nil
         projectUpdateSuccess = false

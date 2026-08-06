@@ -170,6 +170,16 @@ extension View {
         keyboardType(decimal ? .decimalPad : .numberPad)
 #endif
     }
+
+    /// Requests the URL keyboard on iOS and remains a no-op on macOS.
+    @ViewBuilder
+    func ryntraURLKeyboard() -> some View {
+#if os(macOS)
+        self
+#else
+        keyboardType(.URL)
+#endif
+    }
 }
 
 #if os(macOS)

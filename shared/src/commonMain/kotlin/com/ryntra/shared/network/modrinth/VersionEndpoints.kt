@@ -10,6 +10,7 @@ import io.ktor.client.request.delete
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.get
+import io.ktor.client.request.parameter
 import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -26,6 +27,15 @@ internal class VersionEndpoints(
 ) {
     suspend fun get(versionId: String, token: String): ProjectVersion =
         client.get("version/$versionId") { authorize(token) }.decode()
+
+    suspend fun getMany(versionIds: List<String>, token: String): List<ProjectVersion> {
+        val ids = versionIds.filter(String::isNotBlank).distinct()
+        if (ids.isEmpty()) return emptyList()
+        return client.get("versions") {
+            authorize(token)
+            parameter("ids", apiJson.encodeToString(ids))
+        }.decode()
+    }
 
     suspend fun getForProject(projectIdOrSlug: String, token: String): List<ProjectVersion> =
         client.get("project/$projectIdOrSlug/version") { authorize(token) }.decode()

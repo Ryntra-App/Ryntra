@@ -4,6 +4,9 @@ import com.ryntra.shared.model.Account
 import com.ryntra.shared.model.AccountProfileUpdate
 import com.ryntra.shared.model.AnalyticsQuery
 import com.ryntra.shared.model.CreateVersionRequest
+import com.ryntra.shared.model.CreateProjectRequest
+import com.ryntra.shared.model.ProjectCategory
+import com.ryntra.shared.model.ProjectLicense
 import com.ryntra.shared.model.Organization
 import com.ryntra.shared.model.ModrinthNotification
 import com.ryntra.shared.model.ModerationThread
@@ -21,6 +24,7 @@ import com.ryntra.shared.network.modrinth.NotificationContentResolver
 import com.ryntra.shared.network.modrinth.ProjectEndpoints
 import com.ryntra.shared.network.modrinth.TeamOrganizationEndpoints
 import com.ryntra.shared.network.modrinth.ThreadEndpoints
+import com.ryntra.shared.network.modrinth.TagEndpoints
 import com.ryntra.shared.network.modrinth.VersionEndpoints
 import io.ktor.client.HttpClient
 
@@ -34,6 +38,7 @@ class ModrinthApi(
     private val insights = InsightEndpoints(httpClient)
     private val notifications = NotificationEndpoints(httpClient)
     private val threads = ThreadEndpoints(httpClient)
+    private val tags = TagEndpoints(httpClient)
     private val notificationContent = NotificationContentResolver(projects, versions)
 
     suspend fun getCurrentAccount(token: String): Account = accounts.getCurrent(token)
@@ -53,8 +58,18 @@ class ModrinthApi(
 
     suspend fun getProject(projectIdOrSlug: String, token: String): Project = projects.get(projectIdOrSlug, token)
 
+    suspend fun getProjectsByIds(projectIds: List<String>, token: String): List<Project> = projects.getMany(projectIds, token)
+
     suspend fun updateProject(projectIdOrSlug: String, update: ProjectUpdate, token: String) =
         projects.update(projectIdOrSlug, update, token)
+
+    suspend fun createProject(request: CreateProjectRequest, token: String): Project = projects.create(request, token)
+
+    suspend fun getProjectTypes(): List<String> = tags.projectTypes()
+
+    suspend fun getProjectCategories(): List<ProjectCategory> = tags.categories()
+
+    suspend fun getLicenses(): List<ProjectLicense> = tags.licenses()
 
     suspend fun changeProjectIcon(projectIdOrSlug: String, file: ProjectFileUpload, token: String) =
         projects.changeIcon(projectIdOrSlug, file, token)
@@ -94,6 +109,9 @@ class ModrinthApi(
 
     suspend fun getProjectVersions(projectIdOrSlug: String, token: String): List<ProjectVersion> =
         versions.getForProject(projectIdOrSlug, token)
+
+    suspend fun getVersionsByIds(versionIds: List<String>, token: String): List<ProjectVersion> =
+        versions.getMany(versionIds, token)
 
     suspend fun createVersion(projectId: String, request: CreateVersionRequest, token: String): ProjectVersion =
         versions.create(projectId, request, token)

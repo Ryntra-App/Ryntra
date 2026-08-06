@@ -114,6 +114,16 @@ private struct ManagedVersionCard: View {
                 .padding(14)
             }
             .buttonStyle(.plain)
+            if !version.changelog.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(Array(MarkdownParser.shared.parse(markdown: version.changelog).prefix(2).enumerated()), id: \.offset) { _, block in
+                        MarkdownBlockView(block: block)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 14)
+                .padding(.bottom, 12)
+            }
             Divider()
         }
     }
