@@ -6,7 +6,7 @@
   "packageRules": [
     {
       "description": "Keep AGP compatible with the supported Android Studio baseline",
-      "matchPackageNames": [
+      "matchDepNames": [
         "com.android.application",
         "com.android.kotlin.multiplatform.library"
       ],
