@@ -25,6 +25,25 @@ import com.ryntra.shared.data.DashboardRepository
 
 class ModrinthApiTest {
     @Test
+    fun licenseTagsUseShortValueAsProjectLicenseId() = runTest {
+        val engine = MockEngine { request ->
+            assertEquals("/v2/tag/license", request.url.encodedPath)
+            respond(
+                content = """[{"short":"MIT","name":"MIT License"}]""",
+                status = HttpStatusCode.OK,
+                headers = jsonHeaders,
+            )
+        }
+        val api = ModrinthApi(testClient(engine))
+
+        val license = api.getLicenses().single()
+
+        assertEquals("MIT", license.id)
+        assertEquals("MIT License", license.name)
+        api.close()
+    }
+
+    @Test
     fun projectCreateUsesMultipartDraftPayload() = runTest {
         val engine = MockEngine { request ->
             assertEquals(HttpMethod.Post, request.method)
