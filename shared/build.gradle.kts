@@ -9,7 +9,7 @@ plugins {
 kotlin {
     android {
         namespace = "com.ryntra.shared"
-        compileSdk = 37
+        compileSdk = 36
         minSdk = 26
         withHostTestBuilder {}
     }

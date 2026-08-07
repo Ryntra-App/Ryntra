@@ -14,7 +14,7 @@ fun String.asBuildConfigString(): String =
 
 android {
     namespace = "com.ryntra.mobile"
-    compileSdk = 37
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.ryntra.mobile"
