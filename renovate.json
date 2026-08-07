@@ -2,5 +2,37 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
+  ],
+  "packageRules": [
+    {
+      "description": "Keep AGP compatible with the supported Android Studio baseline",
+      "matchPackageNames": [
+        "com.android.application",
+        "com.android.kotlin.multiplatform.library"
+      ],
+      "allowedVersions": "9.1.0"
+    },
+    {
+      "description": "Keep Gradle aligned with AGP 9.1",
+      "matchPackageNames": [
+        "gradle"
+      ],
+      "allowedVersions": "9.3.1"
+    },
+    {
+      "description": "Keep Lifecycle on the newest line compatible with AGP 9.1 and compile SDK 36",
+      "matchPackageNames": [
+        "androidx.lifecycle:lifecycle-runtime-compose",
+        "androidx.lifecycle:lifecycle-viewmodel-compose"
+      ],
+      "allowedVersions": "2.10.0"
+    },
+    {
+      "description": "Keep AndroidX Core on the newest line compatible with compile SDK 36",
+      "matchPackageNames": [
+        "androidx.core:core-ktx"
+      ],
+      "allowedVersions": "1.18.0"
+    }
   ]
 }
