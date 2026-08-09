@@ -45,6 +45,7 @@ internal fun MarkdownEditor(
     onModeChange: (MarkdownEditorMode) -> Unit,
     enabled: Boolean = true,
     minLines: Int = 9,
+    isError: Boolean = false,
 ) {
     EditorModePicker(mode, onModeChange)
     if (mode == MarkdownEditorMode.Write) {
@@ -57,10 +58,11 @@ internal fun MarkdownEditor(
             singleLine = false,
             minLines = minLines,
             enabled = enabled,
+            isError = isError,
             modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
         )
     } else {
-        MarkdownDraftPreview(markdown, Modifier.padding(top = 10.dp))
+        MarkdownDraftPreview(markdown, Modifier.padding(top = 10.dp), isError)
     }
 }
 
@@ -99,7 +101,7 @@ private fun EditorModePicker(selected: MarkdownEditorMode, onSelect: (MarkdownEd
 }
 
 @Composable
-private fun MarkdownDraftPreview(markdown: String, modifier: Modifier = Modifier) {
+private fun MarkdownDraftPreview(markdown: String, modifier: Modifier = Modifier, isError: Boolean = false) {
     val blocks by produceState<List<MarkdownBlock>>(emptyList(), markdown) {
         delay(120)
         value = withContext(Dispatchers.Default) { MarkdownParser.parse(markdown) }
@@ -109,7 +111,11 @@ private fun MarkdownDraftPreview(markdown: String, modifier: Modifier = Modifier
         modifier = modifier
             .fillMaxWidth()
             .background(RyntraDesign.colors.surface, RoundedCornerShape(8.dp))
-            .border(0.75.dp, RyntraDesign.colors.separator, RoundedCornerShape(8.dp))
+            .border(
+                0.75.dp,
+                if (isError) RyntraDesign.colors.destructive else RyntraDesign.colors.separator,
+                RoundedCornerShape(8.dp),
+            )
             .padding(12.dp),
     ) {
         if (blocks.isEmpty()) {

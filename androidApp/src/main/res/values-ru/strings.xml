@@ -462,7 +462,7 @@
     <string name="project_create_server">Поддержка сервера</string>
     <string name="project_create_license">Лицензия</string>
     <string name="project_create_links">Ссылки (необязательно)</string>
-    <string name="project_create_description">Полное описание (GitHub Flavored Markdown)</string>
+    <string name="project_create_description">Полное описание</string>
     <string name="project_create_next">Продолжить</string>
     <string name="project_create_back">Назад</string>
     <string name="project_create_draft">Создать черновик</string>
@@ -483,6 +483,11 @@
     <string name="project_create_character_count">%1$d из %2$d символов</string>
     <string name="project_create_slug_help">Создан из названия автоматически. Его можно изменить.</string>
     <string name="project_create_slug_error">Используйте от 3 до 64 поддерживаемых символов для адреса.</string>
+    <string name="project_create_slug_required">Добавьте адрес проекта. Он создаётся из названия автоматически.</string>
+    <string name="project_create_name_required">Введите название проекта.</string>
+    <string name="project_create_name_error">Название проекта должно быть не длиннее 64 символов.</string>
+    <string name="project_create_summary_required">Добавьте краткое описание, чтобы люди поняли суть проекта.</string>
+    <string name="project_create_summary_error">Краткое описание должно быть не длиннее 256 символов.</string>
     <string name="project_create_summary_hint">Одно понятное предложение о том, зачем устанавливать проект</string>
     <string name="project_create_type_help">От типа зависят доступные категории и раздел проекта на Modrinth.</string>
     <string name="project_create_artwork">Иконка проекта</string>
@@ -592,7 +597,7 @@
     <string name="project_create_type_plugin_help">Серверные функции для платформ вроде Paper, Spigot, Bukkit или Velocity.</string>
     <string name="project_create_type_datapack_help">Совместимый с ванильной игрой контент, загружаемый вместе с миром Minecraft.</string>
     <string name="project_create_type_other_help">Выберите тип, определяющий раздел проекта и доступные параметры.</string>
-    <string name="project_create_description_help">Поддерживается GitHub Flavored Markdown. Расскажите о функциях, установке и совместимости.</string>
+    <string name="project_create_description_help">Расскажите об основных функциях, установке, требованиях и совместимости.</string>
     <string name="project_create_description_hint"># О проекте\n\nЧто он умеет?\n\n## Установка\n\nОбъясните, как начать работу.</string>
     <string name="project_create_description_required">Добавьте полное описание перед созданием черновика.</string>
     <string name="project_create_links_help">Помогите найти исходный код, поддержку, документацию и сообщество.</string>
@@ -604,6 +609,12 @@
     <string name="project_create_url_error">Введите полную ссылку, начинающуюся с https:// или http://</string>
     <string name="project_create_load_error">Не удалось загрузить параметры Modrinth</string>
     <string name="project_create_submit_error">Modrinth не смог создать проект. Проверьте поля и повторите попытку.</string>
+    <string name="project_create_fix_required_fields">Заполните обязательные поля, отмеченные ниже.</string>
+    <string name="project_create_error_session">Сессия Modrinth истекла. Войдите снова и повторите попытку.</string>
+    <string name="project_create_error_permission">У вашего аккаунта Modrinth нет разрешения на создание проектов.</string>
+    <string name="project_create_error_slug_taken">Этот адрес проекта уже занят. Вернитесь на первый шаг и выберите другой.</string>
+    <string name="project_create_error_rate_limit">Modrinth получает слишком много запросов. Подождите немного и повторите попытку.</string>
+    <string name="project_create_error_response">Черновик не создан из-за неожиданного ответа Modrinth. Введённые данные сохранены, попробуйте ещё раз.</string>
     <string name="project_create_discard_title">Удалить этот черновик?</string>
     <string name="project_create_discard_message">Введённые на этом экране данные будут потеряны.</string>
     <string name="project_create_discard">Удалить</string>

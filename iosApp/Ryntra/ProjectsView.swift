@@ -218,6 +218,7 @@ private struct CreateProjectView: View {
     @State private var showingMarkdownPreview = false
     @State private var isSubmitting = false
     @State private var errorMessage: String?
+    @State private var validationAttemptedSteps: Set<Int> = []
     @State private var showingDiscardConfirmation = false
     @State private var showingCategoryPicker = false
     @State private var categoryQuery = ""
@@ -357,8 +358,7 @@ private struct CreateProjectView: View {
                 .disabled(isSubmitting)
             }
             Button {
-                focusedField = nil
-                if step < 2 { changeStep(to: step + 1) } else { Task { await create() } }
+                continueOrCreate()
             } label: {
                 HStack(spacing: 8) {
                     if isSubmitting { ProgressView().tint(.white) }
@@ -370,7 +370,7 @@ private struct CreateProjectView: View {
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .tint(.ryntraGreen)
-            .disabled(!canContinue || isSubmitting)
+            .disabled(isSubmitting)
         }
         .padding(.horizontal)
         .padding(.vertical, 12)
@@ -415,22 +415,38 @@ private struct CreateProjectView: View {
         Section {
             TextField("Project name", text: Binding(
                 get: { title },
-                set: { value in title = value; if !slugEdited { slug = value.modrinthSlug } }
+                set: { value in
+                    title = String(value.prefix(65))
+                    if !slugEdited { slug = value.modrinthSlug }
+                }
             ))
             .focused($focusedField, equals: .title)
             .textContentType(.name)
             .submitLabel(.next)
             .onSubmit { focusedField = .slug }
+            if shouldShowValidationErrors && title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                validationLabel("Enter a project name.")
+            } else if title.count > 64 {
+                validationLabel("Use no more than 64 characters for the project name.")
+            }
 
             TextField("Modrinth URL slug", text: Binding(
                 get: { slug },
-                set: { slugEdited = true; slug = $0.lowercased().replacingOccurrences(of: " ", with: "-") }
+                set: {
+                    slugEdited = true
+                    slug = String($0.lowercased().replacingOccurrences(of: " ", with: "-").prefix(65))
+                }
             ))
             .ryntraNoAutocapitalization()
             .autocorrectionDisabled()
             .focused($focusedField, equals: .slug)
             .submitLabel(.next)
             .onSubmit { focusedField = .summary }
+            if shouldShowValidationErrors && slug.isEmpty {
+                validationLabel("Add the project address. It is generated from the name automatically.")
+            } else if !slug.isEmpty && !slug.isValidModrinthSlug {
+                validationLabel("Use 3–64 supported letters, numbers, or URL-safe symbols.")
+            }
 
             LabeledContent("Public URL") {
                 Text("modrinth.com/project/\(slug.isEmpty ? "…" : slug)")
@@ -446,6 +462,12 @@ private struct CreateProjectView: View {
                 .lineLimit(1...3)
                 .focused($focusedField, equals: .summary)
                 .submitLabel(.done)
+
+            if shouldShowValidationErrors && summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                validationLabel("Add a short summary so people understand the project.")
+            } else if summary.count > 256 {
+                validationLabel("Use no more than 256 characters for the summary.")
+            }
 
             HStack {
                 Text(summary.isEmpty ? "Explain why someone should install it." : "Shown in search and project lists.")
@@ -854,16 +876,22 @@ private struct CreateProjectView: View {
                     .frame(minHeight: 240)
                     .focused($focusedField, equals: .description)
                     .accessibilityLabel("Full project description")
+                    .overlay {
+                        if shouldShowValidationErrors && projectBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.red, lineWidth: 1)
+                        }
+                    }
             }
             if projectBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Label("A full description is required", systemImage: "info.circle")
+                Label("Add a full description before creating the draft.", systemImage: shouldShowValidationErrors ? "exclamationmark.circle.fill" : "info.circle")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(shouldShowValidationErrors ? Color.red : Color.secondary)
             }
         } header: {
             Text("Project page")
         } footer: {
-            Text("GitHub Flavored Markdown is supported. Cover the main features, installation steps, requirements, and compatibility.")
+            Text("Explain the main features, installation, requirements, and compatibility.")
         }
 
         Section {
@@ -895,9 +923,46 @@ private struct CreateProjectView: View {
         switch step {
         case 0:
             return !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && title.count <= 64 &&
-                (3...64).contains(slug.count) && !summary.isEmpty && summary.count <= 256 && !projectType.isEmpty
+                slug.isValidModrinthSlug && !summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+                summary.count <= 256 && !projectType.isEmpty
         case 1: return !licenseID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         default: return !projectBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && linksAreValid
+        }
+    }
+
+    private var shouldShowValidationErrors: Bool { validationAttemptedSteps.contains(step) }
+
+    private func validationLabel(_ message: LocalizedStringKey) -> some View {
+        Label(message, systemImage: "exclamationmark.circle.fill")
+            .font(.caption)
+            .foregroundStyle(.red)
+    }
+
+    private func continueOrCreate() {
+        focusedField = nil
+        guard canContinue else {
+            validationAttemptedSteps.insert(step)
+            errorMessage = String(localized: "Complete the required fields highlighted below.")
+            switch step {
+            case 0:
+                if title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || title.count > 64 {
+                    focusedField = .title
+                } else if !slug.isValidModrinthSlug {
+                    focusedField = .slug
+                } else {
+                    focusedField = .summary
+                }
+            case 1: focusedField = .license
+            default: focusedField = .description
+            }
+            return
+        }
+
+        errorMessage = nil
+        if step < 2 {
+            changeStep(to: step + 1)
+        } else {
+            Task { await create() }
         }
     }
 
@@ -1003,7 +1068,24 @@ private struct CreateProjectView: View {
                 wikiUrl: wikiURL.nilIfEmpty, discordUrl: discordURL.nilIfEmpty, icon: icon
             )
             onCreated(try await model.createProject(request: request))
-        } catch { errorMessage = error.localizedDescription }
+        } catch { errorMessage = projectCreationErrorMessage(error) }
+    }
+
+    private func projectCreationErrorMessage(_ error: Error) -> String {
+        let details = error.localizedDescription.lowercased()
+        if details.contains("token") && (details.contains("invalid") || details.contains("expired")) {
+            return String(localized: "Your Modrinth session expired. Sign in again, then retry.")
+        }
+        if details.contains("permission") || details.contains("forbidden") {
+            return String(localized: "Your Modrinth account does not have permission to create projects.")
+        }
+        if details.contains("too many requests") || details.contains("429") {
+            return String(localized: "Modrinth is receiving too many requests. Wait a moment and try again.")
+        }
+        if details.contains("initial_versions") || details.contains("parsing") || details.contains("serialization") || details.contains("json") {
+            return String(localized: "The draft could not be created because Modrinth returned an unexpected response. Your entries are saved, so try again.")
+        }
+        return String(localized: "Modrinth could not create the project. Check the highlighted fields and try again.")
     }
 }
 
@@ -1022,6 +1104,10 @@ private extension String {
 
     var isWebURL: Bool {
         hasPrefix("https://") || hasPrefix("http://")
+    }
+
+    var isValidModrinthSlug: Bool {
+        range(of: "^[A-Za-z0-9_!@$()`.+,\\\"'\\-]{3,64}$", options: .regularExpression) != nil
     }
 
     var humanizedIdentifier: String {

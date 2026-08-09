@@ -185,7 +185,7 @@ internal fun VersionEditorDialog(
                     }
                 }
                 item(key = "version-changelog", contentType = "markdown") {
-                    VersionEditorSection("Changelog", "Write GitHub Flavored Markdown and verify it before publishing") {
+                    VersionEditorSection("Changelog", "Describe the changes clearly and verify the preview before publishing") {
                         MarkdownEditor(
                             markdown = changelog,
                             mode = changelogMode,
