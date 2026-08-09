@@ -699,11 +699,13 @@ private struct CreateProjectView: View {
                 }
 
                 if !query.isEmpty && !hasExactMatch {
-                    Section("Custom identifier") {
+                    Section {
                         Button("Use “\(query)”") {
                             licenseID = query
                             showingLicensePicker = false
                         }
+                    } header: {
+                        Text("Custom identifier")
                     } footer: {
                         Text("Use a custom identifier only when you know Modrinth accepts it.")
                     }
