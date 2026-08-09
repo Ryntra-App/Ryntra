@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.HorizontalDivider
@@ -33,6 +34,7 @@ import com.composables.icons.lucide.ExternalLink
 import com.composables.icons.lucide.Globe
 import com.composables.icons.lucide.Heart
 import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Share2
 import com.ryntra.mobile.R
 import com.ryntra.mobile.ui.dashboard.projects.StatusLabel
 import com.ryntra.mobile.ui.components.displayTypeLabel
@@ -82,7 +84,7 @@ internal fun LoadingMembers() {
 }
 
 @Composable
-internal fun ProjectIdentity(project: Project) {
+internal fun ProjectIdentity(project: Project, onCreateShareCard: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 22.dp)) {
         Box(
             contentAlignment = Alignment.Center,
@@ -115,6 +117,13 @@ internal fun ProjectIdentity(project: Project) {
                     modifier = Modifier.padding(top = 6.dp),
                 )
             }
+        }
+        FilledTonalIconButton(onClick = onCreateShareCard) {
+            Icon(
+                Lucide.Share2,
+                contentDescription = stringResource(R.string.share_card_action),
+                modifier = Modifier.size(20.dp),
+            )
         }
     }
 }

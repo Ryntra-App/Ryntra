@@ -75,6 +75,7 @@ import com.ryntra.mobile.ui.dashboard.project.overview.ProjectIdentity
 import com.ryntra.mobile.ui.dashboard.project.overview.ProjectMetrics
 import com.ryntra.mobile.ui.dashboard.project.overview.ProjectResource
 import com.ryntra.mobile.ui.dashboard.project.overview.ResourceRow
+import com.ryntra.mobile.ui.dashboard.project.sharecard.ShareCardStudio
 import com.ryntra.mobile.ui.dashboard.project.versions.LoadingVersions
 import com.ryntra.mobile.ui.dashboard.project.versions.VersionCard
 import com.ryntra.mobile.ui.dashboard.project.versions.VersionEditorDialog
@@ -175,6 +176,7 @@ fun ProjectDetailScreen(
     var moderationReplyTargetId by rememberSaveable(project.id) { mutableStateOf<String?>(null) }
     var isConfirmingSubmission by remember(project.id) { mutableStateOf(false) }
     var isConfirmingDeletion by remember(project.id) { mutableStateOf(false) }
+    var isCreatingShareCard by remember(project.id) { mutableStateOf(false) }
     var editBaseline by remember(project.id) { mutableStateOf(ProjectEditDraft.from(project)) }
     var editDraft by remember(project.id) { mutableStateOf(editBaseline) }
     var pendingTab by remember(project.id) { mutableStateOf<ProjectDetailTab?>(null) }
@@ -241,7 +243,9 @@ fun ProjectDetailScreen(
             bottom = if (selectedTab == ProjectDetailTab.Edit && hasUnsavedChanges) 116.dp else 36.dp,
         ),
     ) {
-        item(key = "identity", contentType = "identity") { ProjectIdentity(project) }
+        item(key = "identity", contentType = "identity") {
+            ProjectIdentity(project, onCreateShareCard = { isCreatingShareCard = true })
+        }
         item(key = "tabs", contentType = "tabs") {
             ProjectDetailTabs(
                 selected = selectedTab,
@@ -639,6 +643,13 @@ fun ProjectDetailScreen(
                 onClearProjectActionStatus()
             },
             onConfirm = { onDeleteProject(project.id) },
+        )
+    }
+    if (isCreatingShareCard) {
+        ShareCardStudio(
+            project = project,
+            versions = versions,
+            onDismiss = { isCreatingShareCard = false },
         )
     }
 }
