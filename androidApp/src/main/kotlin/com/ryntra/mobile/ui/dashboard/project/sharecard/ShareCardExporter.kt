@@ -32,7 +32,11 @@ internal suspend fun Context.createShareCardUri(
         .trim('-')
         .ifBlank { "project" }
         .take(48)
-    val output = File(directory, "$safeSlug-share-card.png")
+    directory.listFiles { file ->
+        file.name == "$safeSlug-share-card.png" || file.name.startsWith("$safeSlug-share-card-")
+    }
+        ?.forEach(File::delete)
+    val output = File(directory, "$safeSlug-share-card-${System.currentTimeMillis()}.png")
     FileOutputStream(output, false).use { stream ->
         check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)) {
             "Could not encode the share card."
