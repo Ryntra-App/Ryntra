@@ -322,6 +322,7 @@ fun DashboardScreen(
                         onLoadModeration = onLoadProjectModeration,
                         onSendModerationReply = onSendModerationReply,
                         onDeleteModerationMessage = onDeleteModerationMessage,
+                        loadProjectCreationMetadata = onLoadProjectCreationMetadata,
                         onUnsavedChangesChanged = { hasUnsavedProjectChanges = it },
                     )
                     }

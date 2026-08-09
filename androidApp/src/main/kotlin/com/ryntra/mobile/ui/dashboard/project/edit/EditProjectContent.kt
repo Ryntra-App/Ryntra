@@ -9,7 +9,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -27,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,9 +68,13 @@ import com.ryntra.mobile.ui.components.RyntraSecondaryButton
 import com.ryntra.mobile.ui.components.RyntraTextField
 import com.ryntra.mobile.ui.components.RyntraSectionLabel
 import com.ryntra.mobile.ui.dashboard.project.gallery.ProjectGalleryManageSection
+import com.ryntra.mobile.ui.dashboard.project.create.LicenseSelector
 import com.ryntra.mobile.ui.dashboard.project.markdown.MarkdownEditor
 import com.ryntra.mobile.ui.dashboard.project.markdown.MarkdownEditorMode
+import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.shared.model.Project
+import com.ryntra.shared.model.ProjectCreationMetadata
+import com.ryntra.shared.model.ProjectLicense
 import com.ryntra.shared.model.ProjectFileUpload
 import com.ryntra.shared.model.ProjectUploadLimits
 import kotlinx.coroutines.Dispatchers
@@ -87,6 +96,7 @@ internal fun EditProjectContent(
     onDeleteGalleryImage: (String) -> Unit,
     onSetGalleryBanner: (String) -> Unit,
     onModifyGalleryImage: (url: String, title: String, description: String, ordering: Int?) -> Unit,
+    loadProjectCreationMetadata: suspend () -> ProjectCreationMetadata,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -96,9 +106,21 @@ internal fun EditProjectContent(
     var publishingExpanded by rememberSaveable(project.id) { mutableStateOf(false) }
     var linksExpanded by rememberSaveable(project.id) { mutableStateOf(false) }
     var localUploadError by remember { mutableStateOf<String?>(null) }
+    var licenses by remember(project.id) { mutableStateOf<List<ProjectLicense>>(emptyList()) }
+    var isLoadingLicenses by remember(project.id) { mutableStateOf(true) }
+    var licenseLoadError by remember(project.id) { mutableStateOf(false) }
+    var licenseLoadGeneration by remember(project.id) { mutableStateOf(0) }
     var isReadingImage by remember { mutableStateOf(false) }
     val imageUnreadable = stringResource(R.string.project_edit_image_unreadable)
     val iconTooLarge = stringResource(R.string.project_edit_icon_too_large)
+    LaunchedEffect(project.id, licenseLoadGeneration) {
+        isLoadingLicenses = true
+        licenseLoadError = false
+        runCatching { loadProjectCreationMetadata().licenses }
+            .onSuccess { licenses = it }
+            .onFailure { licenseLoadError = true }
+        isLoadingLicenses = false
+    }
     val iconLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri ?: return@rememberLauncherForActivityResult
         isReadingImage = true
@@ -228,13 +250,37 @@ internal fun EditProjectContent(
                 }
             }
             Spacer(Modifier.height(18.dp))
-            EditField(
-                stringResource(R.string.project_edit_license_id),
-                draft.licenseId,
-                { onDraftChange(draft.copy(licenseId = it)) },
-                "MIT",
-                Lucide.FileText,
-            )
+            if (isLoadingLicenses) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
+                    Text(
+                        stringResource(R.string.project_create_loading),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            } else {
+                LicenseSelector(
+                    licenses = licenses,
+                    selectedId = draft.licenseId,
+                    onSelect = { onDraftChange(draft.copy(licenseId = it)) },
+                )
+            }
+            if (licenseLoadError) {
+                RyntraSecondaryButton(
+                    text = stringResource(R.string.project_create_retry),
+                    icon = Lucide.Settings2,
+                    onClick = { licenseLoadGeneration += 1 },
+                )
+                Text(
+                    stringResource(R.string.project_create_load_error),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
         }
 
         EditSection(
@@ -271,11 +317,16 @@ private fun EditSection(
     onToggle: () -> Unit,
     content: @Composable () -> Unit,
 ) {
-    val chevronRotation by animateFloatAsState(if (expanded) 180f else 0f, label = "Edit section")
+    val motion = RyntraDesign.motion
+    val chevronRotation by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        animationSpec = tween(motion.duration(140)),
+        label = "Edit section",
+    )
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth().animateContentSize(),
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Column {
             Row(
@@ -293,7 +344,13 @@ private fun EditSection(
                     modifier = Modifier.rotate(chevronRotation),
                 )
             }
-            AnimatedVisibility(visible = expanded) {
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically(animationSpec = tween(motion.duration(170))) +
+                    fadeIn(animationSpec = tween(motion.duration(120))),
+                exit = shrinkVertically(animationSpec = tween(motion.duration(120))) +
+                    fadeOut(animationSpec = tween(motion.duration(80))),
+            ) {
                 Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 18.dp)) { content() }
             }
         }

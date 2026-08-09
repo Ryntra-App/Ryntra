@@ -323,7 +323,14 @@ private struct CreateProjectView: View {
             if let metadata { categoryPicker(metadata) }
         }
         .sheet(isPresented: $showingLicensePicker) {
-            if let metadata { licensePicker(metadata) }
+            if let metadata {
+                ProjectLicensePickerView(
+                    licenses: metadata.licenses,
+                    licenseID: $licenseID,
+                    query: $licenseQuery,
+                    onDismiss: { showingLicensePicker = false }
+                )
+            }
         }
         .task { await loadMetadata() }
         .onChange(of: selectedPhoto) { item in
@@ -602,28 +609,11 @@ private struct CreateProjectView: View {
         }
 
         Section {
-            Button { showingLicensePicker = true } label: {
-                HStack(alignment: .top, spacing: 12) {
-                    Image(systemName: "doc.text")
-                        .foregroundStyle(Color.ryntraGreen)
-                        .frame(width: 22)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(selectedLicenseName(metadata))
-                            .foregroundStyle(.primary)
-                        Text(licenseID)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(Color.ryntraGreen)
-                        Text(licenseDescription(licenseID))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(3)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-                }
-            }
+            ProjectLicenseSelectionButton(
+                licenses: metadata.licenses,
+                licenseID: licenseID,
+                onOpen: { showingLicensePicker = true }
+            )
         } header: {
             Text("License")
         } footer: {
@@ -640,10 +630,6 @@ private struct CreateProjectView: View {
         return names.count > 3
             ? String(format: String(localized: "%@ and %d more"), visible, names.count - 3)
             : visible
-    }
-
-    private func selectedLicenseName(_ metadata: ProjectCreationMetadata) -> String {
-        metadata.licenses.first { $0.id.caseInsensitiveCompare(licenseID) == .orderedSame }?.name ?? licenseID
     }
 
     private func categoryPicker(_ metadata: ProjectCreationMetadata) -> some View {
@@ -685,78 +671,6 @@ private struct CreateProjectView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { showingCategoryPicker = false }
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
-    }
-
-    private func licensePicker(_ metadata: ProjectCreationMetadata) -> some View {
-        let query = licenseQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-        let matches = metadata.licenses
-            .filter { license in
-                query.isEmpty || license.id.localizedCaseInsensitiveContains(query) ||
-                    (license.name?.localizedCaseInsensitiveContains(query) ?? false)
-            }
-            .sorted { left, right in
-                let leftSelected = left.id.caseInsensitiveCompare(licenseID) == .orderedSame
-                let rightSelected = right.id.caseInsensitiveCompare(licenseID) == .orderedSame
-                if leftSelected != rightSelected { return leftSelected }
-                return (left.name ?? left.id).localizedCaseInsensitiveCompare(right.name ?? right.id) == .orderedAscending
-            }
-        let hasExactMatch = metadata.licenses.contains { $0.id.caseInsensitiveCompare(query) == .orderedSame }
-
-        return NavigationStack {
-            List {
-                Section {
-                    ForEach(matches, id: \.id) { license in
-                        Button {
-                            licenseID = license.id
-                            showingLicensePicker = false
-                        } label: {
-                            HStack(alignment: .top, spacing: 12) {
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(license.name ?? license.id)
-                                        .foregroundStyle(.primary)
-                                    Text(license.id)
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(Color.ryntraGreen)
-                                    Text(licenseDescription(license.id))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                if license.id.caseInsensitiveCompare(licenseID) == .orderedSame {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(Color.ryntraGreen)
-                                }
-                            }
-                        }
-                        .accessibilityAddTraits(license.id.caseInsensitiveCompare(licenseID) == .orderedSame ? .isSelected : [])
-                    }
-                } footer: {
-                    Text("License summaries are not legal advice. Review the complete terms before publishing.")
-                }
-
-                if !query.isEmpty && !hasExactMatch {
-                    Section {
-                        Button("Use “\(query)”") {
-                            licenseID = query
-                            showingLicensePicker = false
-                        }
-                    } header: {
-                        Text("Custom identifier")
-                    } footer: {
-                        Text("Use a custom identifier only when you know Modrinth accepts it.")
-                    }
-                }
-            }
-            .navigationTitle("Choose a license")
-            .searchable(text: $licenseQuery, prompt: "Search by name or SPDX ID")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { showingLicensePicker = false }
                 }
             }
         }
@@ -828,33 +742,6 @@ private struct CreateProjectView: View {
             }
         default:
             return String(localized: "Use this tag when it accurately describes the project’s main content.")
-        }
-    }
-
-    private func licenseDescription(_ id: String) -> String {
-        let normalized = id.uppercased()
-        switch normalized {
-        case "MIT": return String(localized: "Permissive: reuse, modification and commercial use are allowed when the copyright and license notice are kept.")
-        case let value where value.hasPrefix("APACHE-"):
-            return String(localized: "Permissive, with an explicit patent grant. Keep the license, notices and mark significant changes.")
-        case let value where value.hasPrefix("AGPL-"):
-            return String(localized: "Strong copyleft that also requires source availability when modified software is offered over a network.")
-        case let value where value.hasPrefix("LGPL-"):
-            return String(localized: "Weak copyleft: linking is allowed, while changes to the covered component must remain available under the LGPL.")
-        case let value where value.hasPrefix("GPL-"):
-            return String(localized: "Strong copyleft: distributed derivatives must remain under the GPL and provide their source code.")
-        case let value where value.hasPrefix("MPL-"):
-            return String(localized: "File-level copyleft: modified covered files stay open, while separate files may use another license.")
-        case let value where value.hasPrefix("BSD-") || value == "0BSD":
-            return String(localized: "Permissive: reuse and commercial use are generally allowed when the copyright notice and conditions are kept.")
-        case "CC0-1.0":
-            return String(localized: "A public-domain dedication intended to waive copyright restrictions as far as legally possible.")
-        case let value where value.hasPrefix("CC-BY"):
-            return String(localized: "Reuse and modification are allowed with attribution. Some variants add share-alike or non-commercial restrictions.")
-        case "ARR", "ALL-RIGHTS-RESERVED":
-            return String(localized: "All rights reserved: others receive no permission to reuse or modify the project without your consent.")
-        default:
-            return String(localized: "Terms vary. Check permissions for modification, redistribution, source code and commercial use.")
         }
     }
 
@@ -1118,6 +1005,157 @@ private struct CreateProjectView: View {
             return String(format: String(localized: "Modrinth rejected the draft: %@"), error.localizedDescription)
         }
         return String(localized: "Modrinth could not create the project. Check the highlighted fields and try again.")
+    }
+}
+
+struct ProjectLicenseSelectionButton: View {
+    let licenses: [ProjectLicense]
+    let licenseID: String
+    let onOpen: () -> Void
+
+    private var selectedName: String {
+        licenses.first { $0.id.caseInsensitiveCompare(licenseID) == .orderedSame }?.name ?? licenseID
+    }
+
+    var body: some View {
+        Button(action: onOpen) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "doc.text")
+                    .foregroundStyle(Color.ryntraGreen)
+                    .frame(width: 22)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(selectedName)
+                        .foregroundStyle(.primary)
+                    Text(licenseID)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.ryntraGreen)
+                    Text(projectLicenseDescription(licenseID))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(3)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+struct ProjectLicensePickerView: View {
+    let licenses: [ProjectLicense]
+    @Binding var licenseID: String
+    @Binding var query: String
+    let onDismiss: () -> Void
+
+    private var normalizedQuery: String {
+        query.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var matches: [ProjectLicense] {
+        licenses
+            .filter { license in
+                normalizedQuery.isEmpty || license.id.localizedCaseInsensitiveContains(normalizedQuery) ||
+                    (license.name?.localizedCaseInsensitiveContains(normalizedQuery) ?? false)
+            }
+            .sorted { left, right in
+                let leftSelected = left.id.caseInsensitiveCompare(licenseID) == .orderedSame
+                let rightSelected = right.id.caseInsensitiveCompare(licenseID) == .orderedSame
+                if leftSelected != rightSelected { return leftSelected }
+                return (left.name ?? left.id).localizedCaseInsensitiveCompare(right.name ?? right.id) == .orderedAscending
+            }
+    }
+
+    private var hasExactMatch: Bool {
+        licenses.contains { $0.id.caseInsensitiveCompare(normalizedQuery) == .orderedSame }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(matches, id: \.id) { license in
+                        Button {
+                            licenseID = license.id
+                            onDismiss()
+                        } label: {
+                            HStack(alignment: .top, spacing: 12) {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(license.name ?? license.id)
+                                        .foregroundStyle(.primary)
+                                    Text(license.id)
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(Color.ryntraGreen)
+                                    Text(projectLicenseDescription(license.id))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                if license.id.caseInsensitiveCompare(licenseID) == .orderedSame {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(Color.ryntraGreen)
+                                }
+                            }
+                        }
+                        .accessibilityAddTraits(license.id.caseInsensitiveCompare(licenseID) == .orderedSame ? .isSelected : [])
+                    }
+                } footer: {
+                    Text("License summaries are not legal advice. Review the complete terms before publishing.")
+                }
+
+                if !normalizedQuery.isEmpty && !hasExactMatch {
+                    Section {
+                        Button("Use “\(normalizedQuery)”") {
+                            licenseID = normalizedQuery
+                            onDismiss()
+                        }
+                    } header: {
+                        Text("Custom identifier")
+                    } footer: {
+                        Text("Use a custom identifier only when you know Modrinth accepts it.")
+                    }
+                }
+            }
+            .navigationTitle("Choose a license")
+            .searchable(text: $query, prompt: "Search by name or SPDX ID")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", action: onDismiss)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+}
+
+func projectLicenseDescription(_ id: String) -> String {
+    let normalized = id.uppercased()
+    switch normalized {
+    case "MIT": return String(localized: "Permissive: reuse, modification and commercial use are allowed when the copyright and license notice are kept.")
+    case let value where value.hasPrefix("APACHE-"):
+        return String(localized: "Permissive, with an explicit patent grant. Keep the license, notices and mark significant changes.")
+    case let value where value.hasPrefix("AGPL-"):
+        return String(localized: "Strong copyleft that also requires source availability when modified software is offered over a network.")
+    case let value where value.hasPrefix("LGPL-"):
+        return String(localized: "Weak copyleft: linking is allowed, while changes to the covered component must remain available under the LGPL.")
+    case let value where value.hasPrefix("GPL-"):
+        return String(localized: "Strong copyleft: distributed derivatives must remain under the GPL and provide their source code.")
+    case let value where value.hasPrefix("MPL-"):
+        return String(localized: "File-level copyleft: modified covered files stay open, while separate files may use another license.")
+    case let value where value.hasPrefix("BSD-") || value == "0BSD":
+        return String(localized: "Permissive: reuse and commercial use are generally allowed when the copyright notice and conditions are kept.")
+    case "CC0-1.0":
+        return String(localized: "A public-domain dedication intended to waive copyright restrictions as far as legally possible.")
+    case let value where value.hasPrefix("CC-BY"):
+        return String(localized: "Reuse and modification are allowed with attribution. Some variants add share-alike or non-commercial restrictions.")
+    case "ARR", "ALL-RIGHTS-RESERVED":
+        return String(localized: "All rights reserved: others receive no permission to reuse or modify the project without your consent.")
+    default:
+        return String(localized: "Terms vary. Check permissions for modification, redistribution, source code and commercial use.")
     }
 }
 

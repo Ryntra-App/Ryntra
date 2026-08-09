@@ -4,6 +4,8 @@ import SwiftUI
 
 struct EditProjectView: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @AppStorage("reduceMotion") private var appReduceMotion = false
     let project: Project
     let saveRequest: Int
     let onSaved: () async -> Void
@@ -22,6 +24,11 @@ struct EditProjectView: View {
     @State private var localError: String?
     @State private var isEditingDescription = false
     @State private var expandedSections: Set<EditProjectSection> = [.main]
+    @State private var licenses: [ProjectLicense] = []
+    @State private var isLoadingLicenses = false
+    @State private var licenseLoadError: String?
+    @State private var isShowingLicensePicker = false
+    @State private var licenseQuery = ""
 
     init(
         project: Project,
@@ -92,7 +99,30 @@ struct EditProjectView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                field("License ID", text: $licenseId, systemImage: "doc.text")
+                if !licenses.isEmpty {
+                    ProjectLicenseSelectionButton(
+                        licenses: licenses,
+                        licenseID: licenseId,
+                        onOpen: { isShowingLicensePicker = true }
+                    )
+                    Text("Choose what other people may do with your project. These summaries are a quick guide, so read the full terms before publishing.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else if isLoadingLicenses {
+                    HStack(spacing: 10) {
+                        ProgressView()
+                        Text("Loading Modrinth options…")
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(licenseLoadError ?? String(localized: "Could not load Modrinth options"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Button("Retry") { Task { await loadLicenses() } }
+                            .buttonStyle(.bordered)
+                    }
+                }
             }
 
             editSection(.links, title: "Links", systemImage: "link") {
@@ -122,6 +152,15 @@ struct EditProjectView: View {
         .sheet(isPresented: $isEditingDescription) {
             MarkdownProjectEditor(text: $bodyText)
         }
+        .sheet(isPresented: $isShowingLicensePicker) {
+            ProjectLicensePickerView(
+                licenses: licenses,
+                licenseID: $licenseId,
+                query: $licenseQuery,
+                onDismiss: { isShowingLicensePicker = false }
+            )
+        }
+        .task(id: project.id) { await loadLicenses() }
     }
 
     @MainActor
@@ -216,29 +255,59 @@ struct EditProjectView: View {
         onEditingStateChanged(hasChanges, canSave)
     }
 
+    @MainActor
+    private func loadLicenses() async {
+        isLoadingLicenses = true
+        licenseLoadError = nil
+        do {
+            let metadata = try await model.loadProjectCreationMetadata()
+            licenses = metadata.licenses
+        } catch {
+            licenseLoadError = error.localizedDescription
+        }
+        isLoadingLicenses = false
+    }
+
     private func editSection<Content: View>(
         _ section: EditProjectSection,
         title: String,
         systemImage: String,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        DisclosureGroup(
-            isExpanded: Binding(
-                get: { expandedSections.contains(section) },
-                set: { isExpanded in
-                    if isExpanded { expandedSections.insert(section) }
-                    else { expandedSections.remove(section) }
+        let isExpanded = expandedSections.contains(section)
+        return VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(
+                    RyntraMotion.resolved(
+                        .easeOut(duration: 0.16),
+                        reduceMotion: systemReduceMotion || appReduceMotion
+                    )
+                ) {
+                    if isExpanded { expandedSections.remove(section) }
+                    else { expandedSections.insert(section) }
                 }
-            )
-        ) {
-            VStack(alignment: .leading, spacing: 14) {
-                content()
+            } label: {
+                HStack(spacing: 12) {
+                    Label(NSLocalizedString(title, comment: "Project editor section"), systemImage: systemImage)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                }
+                .contentShape(Rectangle())
             }
-            .padding(.top, 14)
-        } label: {
-            Label(NSLocalizedString(title, comment: "Project editor section"), systemImage: systemImage)
-                .font(.headline)
-                .foregroundStyle(.primary)
+            .buttonStyle(.plain)
+
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 14) {
+                    content()
+                }
+                .padding(.top, 14)
+                .transition(.opacity)
+            }
         }
         .padding(16)
         .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))

@@ -83,6 +83,7 @@ import com.ryntra.mobile.ui.dashboard.projects.DeleteProjectDialog
 import com.ryntra.shared.model.MarkdownParser
 import com.ryntra.shared.model.MarkdownBlock
 import com.ryntra.shared.model.Project
+import com.ryntra.shared.model.ProjectCreationMetadata
 import com.ryntra.shared.model.CreateVersionRequest
 import com.ryntra.shared.model.ProjectDependency
 import com.ryntra.shared.model.ProjectFileUpload
@@ -137,6 +138,7 @@ fun ProjectDetailScreen(
     onLoadModeration: (String, Boolean) -> Unit = { _, _ -> },
     onSendModerationReply: (String, String, String?) -> Unit = { _, _, _ -> },
     onDeleteModerationMessage: (String, String) -> Unit = { _, _ -> },
+    loadProjectCreationMetadata: suspend () -> ProjectCreationMetadata = { error("Unavailable") },
     onUnsavedChangesChanged: (Boolean) -> Unit = {},
 ) {
     val uriHandler = LocalUriHandler.current
@@ -388,6 +390,7 @@ fun ProjectDetailScreen(
                         onModifyGalleryImage = { url, title, description, ordering ->
                             onModifyGalleryImage(project.id, url, title, description, ordering)
                         },
+                        loadProjectCreationMetadata = loadProjectCreationMetadata,
                     )
                 }
                 if (canDeleteProject) {

@@ -388,7 +388,7 @@ private fun CategorySelector(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun LicenseSelector(
+internal fun LicenseSelector(
     licenses: List<ProjectLicense>,
     selectedId: String,
     onSelect: (String) -> Unit,
@@ -590,7 +590,7 @@ private fun FormSection(
 }
 
 @Composable
-private fun licenseDescription(id: String): String {
+internal fun licenseDescription(id: String): String {
     val normalized = id.uppercase()
     return stringResource(
         when {
