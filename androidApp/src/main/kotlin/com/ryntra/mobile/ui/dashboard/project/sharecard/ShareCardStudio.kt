@@ -2,6 +2,9 @@ package com.ryntra.mobile.ui.dashboard.project.sharecard
 
 import android.content.Context
 import android.util.Log
+import android.view.View
+import android.view.ViewParent
+import android.view.Window
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -55,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Share2
 import com.composables.icons.lucide.X
@@ -71,7 +75,6 @@ internal fun ShareCardStudio(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    val rootView = LocalView.current
     val scope = rememberCoroutineScope()
     var format by rememberSaveable(project.id) { mutableStateOf(ShareCardFormat.Square) }
     var template by rememberSaveable(project.id) { mutableStateOf(ShareCardTemplate.Release) }
@@ -94,6 +97,8 @@ internal fun ShareCardStudio(
         onDismissRequest = { if (!isExporting) onDismiss() },
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
+        val rootView = LocalView.current
+        val dialogWindow = remember(rootView) { rootView.findDialogWindow() }
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -131,14 +136,17 @@ internal fun ShareCardStudio(
                             )
                         }
                         Button(
-                            enabled = isPreviewReady && !isExporting && headline.isNotBlank(),
+                            enabled = isPreviewReady && dialogWindow != null && !isExporting && headline.isNotBlank(),
                             onClick = {
                                 scope.launch {
                                     isExporting = true
                                     exportError = null
                                     try {
                                         val uri = context.createShareCardUri(
-                                            bitmap = rootView.captureRegion(previewBounds.toIntRect()),
+                                            bitmap = rootView.captureRegion(
+                                                bounds = previewBounds.toIntRect(),
+                                                window = checkNotNull(dialogWindow),
+                                            ),
                                             projectSlug = project.slug ?: project.id,
                                         )
                                         context.openShareCardChooser(
@@ -367,3 +375,16 @@ private fun Rect.toIntRect(): IntRect = IntRect(
     right = right.toInt(),
     bottom = bottom.toInt(),
 )
+
+private fun View.findDialogWindow(): Window? {
+    var current: Any? = this
+    while (current != null) {
+        if (current is DialogWindowProvider) return current.window
+        current = when (current) {
+            is View -> current.parent
+            is ViewParent -> current.parent
+            else -> null
+        }
+    }
+    return null
+}

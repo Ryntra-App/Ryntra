@@ -1,9 +1,7 @@
 package com.ryntra.mobile.ui.dashboard.project.sharecard
 
-import android.app.Activity
 import android.content.ClipData
 import android.content.Context
-import android.content.ContextWrapper
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Rect
@@ -12,6 +10,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.view.PixelCopy
+import android.view.Window
 import androidx.compose.ui.unit.IntRect
 import androidx.core.content.FileProvider
 import java.io.File
@@ -46,16 +45,15 @@ internal suspend fun Context.createShareCardUri(
     )
 }
 
-internal suspend fun View.captureRegion(bounds: IntRect): Bitmap = suspendCancellableCoroutine { continuation ->
+internal suspend fun View.captureRegion(
+    bounds: IntRect,
+    window: Window,
+): Bitmap = suspendCancellableCoroutine { continuation ->
     check(width > 0 && height > 0) { "The share card is not laid out yet." }
     val left = bounds.left.coerceIn(0, width - 1)
     val top = bounds.top.coerceIn(0, height - 1)
     val regionWidth = bounds.width.coerceAtMost(width - left).coerceAtLeast(1)
     val regionHeight = bounds.height.coerceAtMost(height - top).coerceAtLeast(1)
-    val activity = context.findActivity()
-        ?: return@suspendCancellableCoroutine continuation.resumeWithException(
-            IllegalStateException("The share card window is unavailable."),
-        )
     val location = IntArray(2)
     getLocationInWindow(location)
     val source = Rect(
@@ -66,7 +64,7 @@ internal suspend fun View.captureRegion(bounds: IntRect): Bitmap = suspendCancel
     )
     val bitmap = Bitmap.createBitmap(regionWidth, regionHeight, Bitmap.Config.ARGB_8888)
     PixelCopy.request(
-        activity.window,
+        window,
         source,
         bitmap,
         { result ->
@@ -81,12 +79,6 @@ internal suspend fun View.captureRegion(bounds: IntRect): Bitmap = suspendCancel
         },
         Handler(Looper.getMainLooper()),
     )
-}
-
-private fun Context.findActivity(): Activity? = when (this) {
-    is Activity -> this
-    is ContextWrapper -> baseContext.findActivity()
-    else -> null
 }
 
 internal fun Context.openShareCardChooser(
