@@ -410,6 +410,22 @@ final class AppModel: ObservableObject {
         }
     }
 
+    func submitProjectForModeration(project: Project) async throws {
+        try await performProjectAction(
+            success: NSLocalizedString("Project submitted for review", comment: "Project action result")
+        ) {
+            try await controller.submitProjectForModeration(projectIdOrSlug: project.id)
+        }
+    }
+
+    func deleteProject(project: Project) async throws {
+        try await performProjectAction(
+            success: NSLocalizedString("Project deleted", comment: "Project action result")
+        ) {
+            try await controller.deleteProject(projectIdOrSlug: project.id)
+        }
+    }
+
     func addGalleryImage(
         project: Project,
         file: ProjectFileUpload,

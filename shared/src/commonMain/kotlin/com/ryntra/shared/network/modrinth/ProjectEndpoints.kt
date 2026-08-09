@@ -49,6 +49,12 @@ internal class ProjectEndpoints(
         }.ensureSuccess()
     }
 
+    suspend fun delete(projectIdOrSlug: String, token: String) {
+        client.delete("project/$projectIdOrSlug") {
+            authorize(token)
+        }.ensureSuccess()
+    }
+
     suspend fun create(request: CreateProjectRequest, token: String): Project {
         val errors = ProjectCreationRules.validate(request)
         require(errors.isEmpty()) { errors.joinToString("\n") }

@@ -79,6 +79,7 @@ fun RyntraTextField(
     enabled: Boolean = true,
     singleLine: Boolean = true,
     minLines: Int = 1,
+    maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     isError: Boolean = false,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
@@ -90,6 +91,7 @@ fun RyntraTextField(
             enabled = enabled,
             singleLine = singleLine,
             minLines = minLines,
+            maxLines = maxLines,
             isError = isError,
             placeholder = { Text(placeholder, maxLines = if (singleLine) 1 else minLines) },
             // Multi-line fields keep icons top-aligned; Material centers leadingIcon by default.
@@ -144,6 +146,7 @@ fun RyntraTextField(
         enabled = enabled,
         singleLine = singleLine,
         minLines = minLines,
+        maxLines = maxLines,
         textStyle = RyntraDesign.body.merge(TextStyle(color = colors.labelPrimary)),
         cursorBrush = SolidColor(colors.accent),
         visualTransformation = visualTransformation,

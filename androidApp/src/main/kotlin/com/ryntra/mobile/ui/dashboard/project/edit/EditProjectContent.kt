@@ -8,6 +8,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,22 +27,23 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.composables.icons.lucide.Check
 import com.ryntra.mobile.R
+import com.composables.icons.lucide.ChevronDown
 import com.composables.icons.lucide.FileText
 import com.composables.icons.lucide.Github
 import com.composables.icons.lucide.Globe
@@ -49,12 +53,12 @@ import com.composables.icons.lucide.Info
 import com.composables.icons.lucide.Link
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.MessageSquareText
-import com.composables.icons.lucide.Save
+import com.composables.icons.lucide.Images
+import com.composables.icons.lucide.Settings2
 import com.composables.icons.lucide.Trash2
 import com.composables.icons.lucide.Upload
 import com.ryntra.mobile.ProjectActionState
 import com.ryntra.mobile.ProjectUpdateState
-import com.ryntra.mobile.ui.components.RyntraPrimaryButton
 import com.ryntra.mobile.ui.components.RyntraSecondaryButton
 import com.ryntra.mobile.ui.components.RyntraTextField
 import com.ryntra.mobile.ui.components.RyntraSectionLabel
@@ -64,7 +68,6 @@ import com.ryntra.mobile.ui.dashboard.project.markdown.MarkdownEditorMode
 import com.ryntra.shared.model.Project
 import com.ryntra.shared.model.ProjectFileUpload
 import com.ryntra.shared.model.ProjectUploadLimits
-import com.ryntra.shared.model.ProjectUpdate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -74,10 +77,10 @@ import java.io.InputStream
 @Composable
 internal fun EditProjectContent(
     project: Project,
+    draft: ProjectEditDraft,
     projectUpdate: ProjectUpdateState,
     actionState: ProjectActionState,
-    onUpdate: (ProjectUpdate) -> Unit,
-    onClearStatus: () -> Unit,
+    onDraftChange: (ProjectEditDraft) -> Unit,
     onChangeIcon: (ProjectFileUpload) -> Unit,
     onDeleteIcon: () -> Unit,
     onAddGalleryImage: (ProjectFileUpload, Boolean, String, String) -> Unit,
@@ -87,16 +90,11 @@ internal fun EditProjectContent(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var title by remember(project.id, project.title) { mutableStateOf(project.title) }
-    var description by remember(project.id, project.description) { mutableStateOf(project.description) }
-    var body by remember(project.id, project.body) { mutableStateOf(project.body) }
-    var sourceUrl by remember(project.id, project.sourceUrl) { mutableStateOf(project.sourceUrl.orEmpty()) }
-    var issuesUrl by remember(project.id, project.issuesUrl) { mutableStateOf(project.issuesUrl.orEmpty()) }
-    var wikiUrl by remember(project.id, project.wikiUrl) { mutableStateOf(project.wikiUrl.orEmpty()) }
-    var discordUrl by remember(project.id, project.discordUrl) { mutableStateOf(project.discordUrl.orEmpty()) }
-    var status by remember(project.id, project.status) { mutableStateOf(project.status) }
-    var licenseId by remember(project.id, project.license?.id) { mutableStateOf(project.license?.id.orEmpty()) }
     var bodyEditorMode by remember(project.id) { mutableStateOf(MarkdownEditorMode.Write) }
+    var mainExpanded by rememberSaveable(project.id) { mutableStateOf(true) }
+    var mediaExpanded by rememberSaveable(project.id) { mutableStateOf(false) }
+    var publishingExpanded by rememberSaveable(project.id) { mutableStateOf(false) }
+    var linksExpanded by rememberSaveable(project.id) { mutableStateOf(false) }
     var localUploadError by remember { mutableStateOf<String?>(null) }
     var isReadingImage by remember { mutableStateOf(false) }
     val imageUnreadable = stringResource(R.string.project_edit_image_unreadable)
@@ -115,141 +113,190 @@ internal fun EditProjectContent(
             }
         }
     }
-    LaunchedEffect(projectUpdate.isSuccess) {
-        if (projectUpdate.isSuccess) onClearStatus()
-    }
-
-    Column(modifier = Modifier.padding(bottom = 24.dp)) {
-        EditHeading(stringResource(R.string.project_edit_icon))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.size(72.dp),
-            ) {
-                if (project.iconUrl != null) {
-                    AsyncImage(project.iconUrl, contentDescription = null, contentScale = ContentScale.Crop)
-                } else {
-                    Box(contentAlignment = Alignment.Center) { Icon(Lucide.Image, contentDescription = null) }
-                }
-            }
-            Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                RyntraSecondaryButton(
-                    text = if (isReadingImage) {
-                        stringResource(R.string.project_edit_reading_image)
-                    } else {
-                        stringResource(R.string.project_edit_upload_icon)
-                    },
-                    icon = Lucide.Upload,
-                    enabled = !isReadingImage && !actionState.isRunning,
-                    onClick = { iconLauncher.launch(arrayOf("image/png", "image/jpeg", "image/webp", "image/gif")) },
-                )
-                if (project.iconUrl != null) {
-                    Spacer(Modifier.height(8.dp))
-                    RyntraSecondaryButton(
-                        stringResource(R.string.project_edit_remove_icon),
-                        Lucide.Trash2,
-                        onDeleteIcon,
-                        isDestructive = true,
-                    )
-                }
-            }
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(bottom = 24.dp)) {
+        EditSection(
+            title = stringResource(R.string.project_edit_main),
+            summary = stringResource(R.string.project_edit_main_hint),
+            icon = Lucide.FileText,
+            expanded = mainExpanded,
+            onToggle = { mainExpanded = !mainExpanded },
+        ) {
+            EditField(
+                stringResource(R.string.project_edit_title),
+                draft.title,
+                { onDraftChange(draft.copy(title = it)) },
+                stringResource(R.string.project_edit_title_hint),
+                Lucide.Hash,
+            )
+            EditField(
+                stringResource(R.string.project_edit_summary),
+                draft.summary,
+                { onDraftChange(draft.copy(summary = it)) },
+                stringResource(R.string.project_edit_summary_hint),
+                Lucide.Info,
+            )
+            EditLabel(stringResource(R.string.project_edit_description_md))
+            MarkdownEditor(
+                markdown = draft.description,
+                mode = bodyEditorMode,
+                placeholder = stringResource(R.string.project_edit_description_hint),
+                onMarkdownChange = { onDraftChange(draft.copy(description = it)) },
+                onModeChange = { bodyEditorMode = it },
+            )
         }
 
-        EditHeading(stringResource(R.string.project_edit_main))
-        EditField(stringResource(R.string.project_edit_title), title, { title = it }, stringResource(R.string.project_edit_title_hint), Lucide.Hash)
-        EditField(stringResource(R.string.project_edit_summary), description, { description = it }, stringResource(R.string.project_edit_summary_hint), Lucide.Info)
-        EditLabel(stringResource(R.string.project_edit_description_md))
-        MarkdownEditor(
-            markdown = body,
-            mode = bodyEditorMode,
-            placeholder = "# About this project\n\nDescribe features, installation, and compatibility.",
-            onMarkdownChange = { body = it },
-            onModeChange = { bodyEditorMode = it },
-        )
-
-        EditHeading(stringResource(R.string.project_edit_gallery))
-        ProjectGalleryManageSection(
-            gallery = project.gallery,
-            isBusy = actionState.isRunning,
-            actionState = actionState,
-            onAdd = onAddGalleryImage,
-            onDelete = onDeleteGalleryImage,
-            onSetBanner = onSetGalleryBanner,
-            onSaveMeta = onModifyGalleryImage,
-        )
-
-        EditHeading(stringResource(R.string.project_edit_status_license))
-        EditLabel(stringResource(R.string.project_edit_status))
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-            listOf(project.status, "draft", "unlisted", "archived").distinct().forEach { value ->
-                val statusLabel = when (value.lowercase()) {
-                    "draft" -> stringResource(R.string.project_status_draft)
-                    "unlisted" -> stringResource(R.string.project_status_unlisted)
-                    "archived" -> stringResource(R.string.project_status_archived)
-                    "approved" -> stringResource(R.string.project_status_approved)
-                    "processing" -> stringResource(R.string.project_status_processing)
-                    else -> value.replaceFirstChar(Char::uppercase)
-                }
+        EditSection(
+            title = stringResource(R.string.project_edit_media),
+            summary = stringResource(R.string.project_edit_media_hint),
+            icon = Lucide.Images,
+            expanded = mediaExpanded,
+            onToggle = { mediaExpanded = !mediaExpanded },
+        ) {
+            EditLabel(stringResource(R.string.project_edit_icon))
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
-                    color = if (status == value) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                    shape = RoundedCornerShape(7.dp),
-                    modifier = Modifier.clickable { status = value },
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.size(72.dp),
                 ) {
-                    Text(statusLabel, modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp), maxLines = 1)
+                    if (project.iconUrl != null) {
+                        AsyncImage(project.iconUrl, contentDescription = null, contentScale = ContentScale.Crop)
+                    } else {
+                        Box(contentAlignment = Alignment.Center) { Icon(Lucide.Image, contentDescription = null) }
+                    }
+                }
+                Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+                    RyntraSecondaryButton(
+                        text = if (isReadingImage) {
+                            stringResource(R.string.project_edit_reading_image)
+                        } else {
+                            stringResource(R.string.project_edit_upload_icon)
+                        },
+                        icon = Lucide.Upload,
+                        enabled = !isReadingImage && !actionState.isRunning,
+                        onClick = { iconLauncher.launch(arrayOf("image/png", "image/jpeg", "image/webp", "image/gif")) },
+                    )
+                    if (project.iconUrl != null) {
+                        Spacer(Modifier.height(8.dp))
+                        RyntraSecondaryButton(
+                            stringResource(R.string.project_edit_remove_icon),
+                            Lucide.Trash2,
+                            onDeleteIcon,
+                            isDestructive = true,
+                        )
+                    }
                 }
             }
+            EditHeading(stringResource(R.string.project_edit_gallery))
+            ProjectGalleryManageSection(
+                gallery = project.gallery,
+                isBusy = actionState.isRunning,
+                actionState = actionState,
+                onAdd = onAddGalleryImage,
+                onDelete = onDeleteGalleryImage,
+                onSetBanner = onSetGalleryBanner,
+                onSaveMeta = onModifyGalleryImage,
+            )
         }
-        Spacer(Modifier.height(18.dp))
-        EditField(stringResource(R.string.project_edit_license_id), licenseId, { licenseId = it }, "MIT", Lucide.FileText)
 
-        EditHeading(stringResource(R.string.project_edit_links))
-        EditField(stringResource(R.string.project_edit_source), sourceUrl, { sourceUrl = it }, "https://github.com/...", Lucide.Github)
-        EditField(stringResource(R.string.project_edit_issues), issuesUrl, { issuesUrl = it }, "https://github.com/.../issues", Lucide.Link)
-        EditField(stringResource(R.string.project_edit_wiki), wikiUrl, { wikiUrl = it }, "https://...", Lucide.Globe)
-        EditField(stringResource(R.string.project_edit_discord), discordUrl, { discordUrl = it }, "https://discord.gg/...", Lucide.MessageSquareText)
+        EditSection(
+            title = stringResource(R.string.project_edit_status_license),
+            summary = stringResource(R.string.project_edit_status_license_hint),
+            icon = Lucide.Settings2,
+            expanded = publishingExpanded,
+            onToggle = { publishingExpanded = !publishingExpanded },
+        ) {
+            EditLabel(stringResource(R.string.project_edit_status))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                listOf(project.status, "draft", "unlisted", "archived").distinct().forEach { value ->
+                    val statusLabel = when (value.lowercase()) {
+                        "draft" -> stringResource(R.string.project_status_draft)
+                        "unlisted" -> stringResource(R.string.project_status_unlisted)
+                        "archived" -> stringResource(R.string.project_status_archived)
+                        "approved" -> stringResource(R.string.project_status_approved)
+                        "processing" -> stringResource(R.string.project_status_processing)
+                        else -> value.replaceFirstChar(Char::uppercase)
+                    }
+                    Surface(
+                        color = if (draft.status == value) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (draft.status == value) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.clickable { onDraftChange(draft.copy(status = value)) },
+                    ) {
+                        Text(statusLabel, modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp), maxLines = 1)
+                    }
+                }
+            }
+            Spacer(Modifier.height(18.dp))
+            EditField(
+                stringResource(R.string.project_edit_license_id),
+                draft.licenseId,
+                { onDraftChange(draft.copy(licenseId = it)) },
+                "MIT",
+                Lucide.FileText,
+            )
+        }
+
+        EditSection(
+            title = stringResource(R.string.project_edit_links),
+            summary = stringResource(R.string.project_edit_links_hint),
+            icon = Lucide.Link,
+            expanded = linksExpanded,
+            onToggle = { linksExpanded = !linksExpanded },
+        ) {
+            EditField(stringResource(R.string.project_edit_source), draft.sourceUrl, { onDraftChange(draft.copy(sourceUrl = it)) }, "https://github.com/...", Lucide.Github)
+            EditField(stringResource(R.string.project_edit_issues), draft.issuesUrl, { onDraftChange(draft.copy(issuesUrl = it)) }, "https://github.com/.../issues", Lucide.Link)
+            EditField(stringResource(R.string.project_edit_wiki), draft.wikiUrl, { onDraftChange(draft.copy(wikiUrl = it)) }, "https://...", Lucide.Globe)
+            EditField(stringResource(R.string.project_edit_discord), draft.discordUrl, { onDraftChange(draft.copy(discordUrl = it)) }, "https://discord.gg/...", Lucide.MessageSquareText)
+        }
 
         (localUploadError ?: projectUpdate.errorMessage ?: actionState.errorMessage)?.let {
-            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 12.dp))
+            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
         }
         if (actionState.isRunning) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
                 Text(stringResource(R.string.project_edit_updating_assets), modifier = Modifier.padding(start = 8.dp))
             }
         }
+    }
+}
 
-        val hasChanges = title != project.title || description != project.description || body != project.body ||
-            sourceUrl != project.sourceUrl.orEmpty() || issuesUrl != project.issuesUrl.orEmpty() ||
-            wikiUrl != project.wikiUrl.orEmpty() || discordUrl != project.discordUrl.orEmpty() ||
-            status != project.status || licenseId != project.license?.id.orEmpty()
-
-        RyntraPrimaryButton(
-            text = if (projectUpdate.isSuccess) {
-                stringResource(R.string.project_edit_saved)
-            } else {
-                stringResource(R.string.project_edit_save)
-            },
-            icon = if (projectUpdate.isSuccess) Lucide.Check else Lucide.Save,
-            enabled = hasChanges && !projectUpdate.isSaving && title.isNotBlank() && description.isNotBlank(),
-            isLoading = projectUpdate.isSaving,
-            modifier = Modifier.fillMaxWidth(),
-            onClick = {
-                onUpdate(
-                    ProjectUpdate(
-                        title = title.takeIf { it != project.title },
-                        description = description.takeIf { it != project.description },
-                        body = body.takeIf { it != project.body },
-                        sourceUrl = sourceUrl.takeIf { it != project.sourceUrl.orEmpty() },
-                        issuesUrl = issuesUrl.takeIf { it != project.issuesUrl.orEmpty() },
-                        wikiUrl = wikiUrl.takeIf { it != project.wikiUrl.orEmpty() },
-                        discordUrl = discordUrl.takeIf { it != project.discordUrl.orEmpty() },
-                        status = status.takeIf { it != project.status },
-                        licenseId = licenseId.takeIf { it != project.license?.id.orEmpty() },
-                    )
+@Composable
+private fun EditSection(
+    title: String,
+    summary: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    val chevronRotation by animateFloatAsState(if (expanded) 180f else 0f, label = "Edit section")
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth().animateContentSize(),
+    ) {
+        Column {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth().clickable(onClick = onToggle).padding(16.dp),
+            ) {
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                Column(modifier = Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                    Text(title, style = MaterialTheme.typography.titleMedium)
+                    Text(summary, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                }
+                Icon(
+                    Lucide.ChevronDown,
+                    contentDescription = stringResource(if (expanded) R.string.project_edit_collapse else R.string.project_edit_expand),
+                    modifier = Modifier.rotate(chevronRotation),
                 )
-            },
-        )
+            }
+            AnimatedVisibility(visible = expanded) {
+                Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 18.dp)) { content() }
+            }
+        }
     }
 }
 

@@ -19,6 +19,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -130,6 +134,8 @@ fun DashboardScreen(
     onLoadAnalytics: (Int) -> Unit = {},
     onChangeProjectIcon: (String, ProjectFileUpload) -> Unit = { _, _ -> },
     onDeleteProjectIcon: (String) -> Unit = {},
+    onSubmitProjectForModeration: (String) -> Unit = {},
+    onDeleteProject: (String) -> Unit = {},
     onAddGalleryImage: (String, ProjectFileUpload, Boolean, String, String) -> Unit = { _, _, _, _, _ -> },
     onDeleteGalleryImage: (String, String) -> Unit = { _, _ -> },
     onSetGalleryBanner: (String, String) -> Unit = { _, _ -> },
@@ -176,6 +182,8 @@ fun DashboardScreen(
     var visibleError by remember { mutableStateOf<String?>(null) }
     var retainedProjectDetail by remember { mutableStateOf<ProjectDetailState?>(null) }
     var retainedOrganizationDetail by remember { mutableStateOf<OrganizationDetailState?>(null) }
+    var hasUnsavedProjectChanges by remember { mutableStateOf(false) }
+    var isConfirmingProjectClose by remember { mutableStateOf(false) }
     val tabStateHolder = rememberSaveableStateHolder()
     val hazeState = rememberHazeState()
     val colors = RyntraDesign.colors
@@ -189,6 +197,18 @@ fun DashboardScreen(
         isProfileVisible -> DashboardLayer.Profile
         isNotificationsVisible -> DashboardLayer.Notifications
         else -> DashboardLayer.Tabs
+    }
+    val requestCloseProject = {
+        if (hasUnsavedProjectChanges) {
+            isConfirmingProjectClose = true
+        } else {
+            onCloseProject()
+        }
+    }
+
+    LaunchedEffect(projectDetail?.project?.id) {
+        hasUnsavedProjectChanges = false
+        isConfirmingProjectClose = false
     }
 
     LaunchedEffect(projectDetail) {
@@ -213,7 +233,7 @@ fun DashboardScreen(
     }
     BackHandler(enabled = isProfileVisible || isNotificationsVisible || projectDetail != null || organizationDetail != null) {
         when {
-            projectDetail != null -> onCloseProject()
+            projectDetail != null -> requestCloseProject()
             organizationDetail != null -> onCloseOrganization()
             isProfileVisible -> isProfileVisible = false
             isNotificationsVisible -> isNotificationsVisible = false
@@ -283,6 +303,8 @@ fun DashboardScreen(
                         memberSearch = memberSearch,
                         onChangeProjectIcon = onChangeProjectIcon,
                         onDeleteProjectIcon = onDeleteProjectIcon,
+                        onSubmitProjectForModeration = onSubmitProjectForModeration,
+                        onDeleteProject = onDeleteProject,
                         onAddGalleryImage = onAddGalleryImage,
                         onDeleteGalleryImage = onDeleteGalleryImage,
                         onSetGalleryBanner = onSetGalleryBanner,
@@ -300,6 +322,7 @@ fun DashboardScreen(
                         onLoadModeration = onLoadProjectModeration,
                         onSendModerationReply = onSendModerationReply,
                         onDeleteModerationMessage = onDeleteModerationMessage,
+                        onUnsavedChangesChanged = { hasUnsavedProjectChanges = it },
                     )
                     }
                     DashboardLayer.Organization -> (organizationDetail ?: retainedOrganizationDetail)?.let { detail ->
@@ -313,6 +336,7 @@ fun DashboardScreen(
                         projectAction = projectAction,
                         memberSearch = memberSearch,
                         onProjectClick = onProjectClick,
+                        onDeleteProject = onDeleteProject,
                         onSearchMember = onSearchMember,
                         onInviteMember = onInviteMember,
                         onUpdateMember = onUpdateMember,
@@ -378,6 +402,7 @@ fun DashboardScreen(
                             )
                             DashboardDestination.Projects -> ProjectsScreen(
                                 projects = dashboard.projects,
+                                projectAction = projectAction,
                                 sortMode = preferences.projectSortMode,
                                 favoriteProjectIds = preferences.favoriteProjectIds,
                                 showFavoriteProjects = preferences.showFavoriteProjects,
@@ -385,6 +410,8 @@ fun DashboardScreen(
                                 onSortModeChange = onSortModeChange,
                                 onToggleFavoriteProject = onToggleFavoriteProject,
                                 onProjectClick = onProjectClick,
+                                onDeleteProject = onDeleteProject,
+                                onClearProjectActionStatus = onClearProjectActionStatus,
                                 onCreateProject = { isCreatingProject = true },
                             )
                             DashboardDestination.Organizations -> OrganizationsScreen(
@@ -416,7 +443,7 @@ fun DashboardScreen(
                 navigationDescription = if (isDetailVisible) stringResource(R.string.nav_back) else null,
                 onNavigationClick = {
                     when {
-                        projectDetail != null -> onCloseProject()
+                        projectDetail != null -> requestCloseProject()
                         organizationDetail != null -> onCloseOrganization()
                         isProfileVisible -> isProfileVisible = false
                         isNotificationsVisible -> isNotificationsVisible = false
@@ -480,5 +507,29 @@ fun DashboardScreen(
                 )
             }
         }
+    }
+
+    if (isConfirmingProjectClose) {
+        AlertDialog(
+            onDismissRequest = { isConfirmingProjectClose = false },
+            title = { Text(stringResource(R.string.project_edit_discard_title)) },
+            text = { Text(stringResource(R.string.project_edit_discard_message)) },
+            dismissButton = {
+                TextButton(onClick = { isConfirmingProjectClose = false }) {
+                    Text(stringResource(R.string.project_edit_keep_editing))
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        hasUnsavedProjectChanges = false
+                        isConfirmingProjectClose = false
+                        onCloseProject()
+                    },
+                ) {
+                    Text(stringResource(R.string.project_edit_discard), color = MaterialTheme.colorScheme.error)
+                }
+            },
+        )
     }
 }

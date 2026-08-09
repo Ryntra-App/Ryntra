@@ -57,6 +57,7 @@ internal fun MarkdownEditor(
             leadingIconDescription = null,
             singleLine = false,
             minLines = minLines,
+            maxLines = Int.MAX_VALUE,
             enabled = enabled,
             isError = isError,
             modifier = Modifier.fillMaxWidth().padding(top = 10.dp),

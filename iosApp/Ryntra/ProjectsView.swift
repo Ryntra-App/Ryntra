@@ -19,6 +19,7 @@ struct ProjectsView: View {
 
     @State private var query = ""
     @State private var isCreatingProject = false
+    @State private var projectPendingDeletion: Project?
 
     private var sortMode: ProjectSortMode {
         ProjectSortMode(rawValue: storedSortMode) ?? .popular
@@ -77,7 +78,12 @@ struct ProjectsView: View {
                     .contentShape(Rectangle())
                     .onTapGesture { onProjectTap(project) }
                     .ryntraHoverHighlight()
-                    .ryntraProjectContextMenu(project)
+                    .ryntraProjectContextMenu(
+                        project,
+                        onOpen: { onProjectTap(project) },
+                        canDelete: true,
+                        onDelete: { projectPendingDeletion = project }
+                    )
                 }
             }
             }
@@ -101,6 +107,19 @@ struct ProjectsView: View {
                 onProjectTap(project)
             }
             .environmentObject(model)
+        }
+        .sheet(
+            isPresented: Binding(
+                get: { projectPendingDeletion != nil },
+                set: { if !$0 { projectPendingDeletion = nil } }
+            )
+        ) {
+            if let projectPendingDeletion {
+                ProjectDeleteSheet(project: projectPendingDeletion) {
+                    self.projectPendingDeletion = nil
+                }
+                .environmentObject(model)
+            }
         }
     }
 

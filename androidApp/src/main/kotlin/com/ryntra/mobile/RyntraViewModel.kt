@@ -840,6 +840,21 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
         refreshProjectAfterMutation(projectId, refreshVersions = false, refreshMembers = false)
     }
 
+    fun submitProjectForModeration(projectId: String) = runProjectAction(projectId, "Project submitted for review") {
+        controller.submitProjectForModeration(projectId)
+        refreshProjectAfterMutation(projectId, refreshVersions = false, refreshMembers = false)
+    }
+
+    fun deleteProject(projectId: String) = runProjectAction(projectId, "Project deleted") {
+        controller.deleteProject(projectId)
+        if (mutableProjectDetail.value?.project?.id == projectId) {
+            mutableProjectDetail.value = null
+        }
+        mutableOrganizationDetail.value = mutableOrganizationDetail.value?.let { detail ->
+            detail.copy(projects = detail.projects.filterNot { it.id == projectId })
+        }
+    }
+
     fun addGalleryImage(
         projectId: String,
         file: ProjectFileUpload,

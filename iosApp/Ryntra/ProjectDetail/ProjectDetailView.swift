@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ProjectDetailView: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
 
     @State private var project: Project
     let isReadOnly: Bool
@@ -17,6 +18,14 @@ struct ProjectDetailView: View {
     @State private var isLoadingMembers = false
     @State private var versionError: String?
     @State private var memberError: String?
+    @State private var isConfirmingSubmission = false
+    @State private var isDeletingProject = false
+    @State private var submissionError: String?
+    @State private var editHasChanges = false
+    @State private var editCanSave = false
+    @State private var editSaveRequest = 0
+    @State private var pendingExit: PendingProjectExit?
+    @State private var isConfirmingUnsavedChanges = false
 
     init(project: Project, isReadOnly: Bool = false) {
         _project = State(initialValue: project)
@@ -55,7 +64,20 @@ struct ProjectDetailView: View {
                         onReload: { await loadVersions() }
                     )
                 case .edit:
-                    EditProjectView(project: project, onSaved: { await reloadProject() })
+                    VStack(spacing: 16) {
+                        EditProjectView(
+                            project: project,
+                            saveRequest: editSaveRequest,
+                            onSaved: { await editDidSave() },
+                            onEditingStateChanged: { hasChanges, canSave in
+                                editHasChanges = hasChanges
+                                editCanSave = canSave
+                            }
+                        )
+                        if hasProjectPermission(7) {
+                            projectDeleteAction
+                        }
+                    }
                 case .members:
                     ProjectMembersManagementView(
                         project: project,
@@ -69,7 +91,12 @@ struct ProjectDetailView: View {
                 case .moderation:
                     ProjectModerationView(
                         project: project,
-                        currentUserID: model.currentAccountID
+                        currentUserID: model.currentAccountID,
+                        versionCount: Int32(versions.count),
+                        canSubmitProject: hasProjectPermission(2),
+                        isSubmittingProject: model.isProjectActionRunning,
+                        submissionError: submissionError ?? model.projectActionError,
+                        onSubmitProject: { isConfirmingSubmission = true }
                     )
                 }
             }
@@ -78,12 +105,77 @@ struct ProjectDetailView: View {
             .padding(.bottom, 36)
         }
         .ryntraScreenBackground(Color.ryntraBackground)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if selectedTab == .edit, editHasChanges {
+                editSaveBar
+            }
+        }
+        .interactiveDismissDisabled(selectedTab == .edit && editHasChanges)
+#if !os(macOS)
+        .navigationBarBackButtonHidden(selectedTab == .edit && editHasChanges)
+        .toolbar {
+            if selectedTab == .edit, editHasChanges {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button {
+                        pendingExit = .dismiss
+                        isConfirmingUnsavedChanges = true
+                    } label: {
+                        Label(NSLocalizedString("Back", comment: "Navigation action"), systemImage: "chevron.backward")
+                    }
+                }
+            }
+        }
+#endif
         .task(id: project.id) {
             async let loadedVersions: Void = loadVersions()
             async let loadedMembers: Void = loadMembersIfAllowed()
             async let loadedMarkdown = parseMarkdown(project.body)
             markdownBlocks = await loadedMarkdown
             _ = await (loadedVersions, loadedMembers)
+        }
+        .confirmationDialog(
+            NSLocalizedString("Submit to Modrinth moderation?", comment: "Project submission title"),
+            isPresented: $isConfirmingSubmission,
+            titleVisibility: .visible
+        ) {
+            Button(NSLocalizedString("Submit for review", comment: "Project submission action")) {
+                Task { await submitForModeration() }
+            }
+            Button(NSLocalizedString("Cancel", comment: "Cancel"), role: .cancel) {}
+        } message: {
+            Text(NSLocalizedString(
+                "Modrinth will review the project page, files, metadata and license before publishing it.",
+                comment: "Project submission confirmation"
+            ))
+        }
+        .confirmationDialog(
+            NSLocalizedString("Save changes before leaving?", comment: "Unsaved project changes"),
+            isPresented: $isConfirmingUnsavedChanges,
+            titleVisibility: .visible
+        ) {
+            Button(NSLocalizedString("Save changes", comment: "Save project")) {
+                guard editCanSave else { return }
+                editSaveRequest += 1
+            }
+            .disabled(!editCanSave)
+            Button(NSLocalizedString("Discard changes", comment: "Discard project edits"), role: .destructive) {
+                completePendingExit()
+            }
+            Button(NSLocalizedString("Keep editing", comment: "Keep project edits"), role: .cancel) {
+                pendingExit = nil
+            }
+        } message: {
+            Text(NSLocalizedString(
+                "Your project edits have not been saved.",
+                comment: "Unsaved project changes detail"
+            ))
+        }
+        .sheet(isPresented: $isDeletingProject) {
+            ProjectDeleteSheet(project: project) {
+                isDeletingProject = false
+                dismiss()
+            }
+            .environmentObject(model)
         }
     }
 
@@ -126,7 +218,7 @@ struct ProjectDetailView: View {
         HStack(spacing: 0) {
             ForEach(availableTabs, id: \.self) { tab in
                 Button {
-                    selectedTab = tab
+                    requestTab(tab)
                 } label: {
                     HStack(spacing: 5) {
                         Image(systemName: tab.symbol)
@@ -141,7 +233,7 @@ struct ProjectDetailView: View {
                     .frame(width: isScrollable ? 112 : nil)
                     .frame(height: 44)
                     .background(
-                        selectedTab == tab ? Color.ryntraSurfaceRaised : Color.clear,
+                        selectedTab == tab ? Color.ryntraGreen.opacity(0.10) : Color.clear,
                         in: RoundedRectangle(cornerRadius: 8)
                     )
                 }
@@ -211,6 +303,111 @@ struct ProjectDetailView: View {
         isReadOnly ? [.overview, .versions] : ProjectDetailTab.allCases
     }
 
+    @MainActor private func editDidSave() async {
+        await reloadProject()
+        editHasChanges = false
+        editCanSave = false
+        completePendingExit()
+    }
+
+    private func requestTab(_ tab: ProjectDetailTab) {
+        guard tab != selectedTab else { return }
+        if selectedTab == .edit, editHasChanges {
+            pendingExit = .tab(tab)
+            isConfirmingUnsavedChanges = true
+        } else {
+            selectedTab = tab
+        }
+    }
+
+    private func completePendingExit() {
+        guard let pendingExit else { return }
+        self.pendingExit = nil
+        editHasChanges = false
+        editCanSave = false
+        switch pendingExit {
+        case .tab(let tab): selectedTab = tab
+        case .dismiss: dismiss()
+        }
+    }
+
+    private var editSaveBar: some View {
+        VStack(spacing: 0) {
+            Divider()
+            Button {
+                editSaveRequest += 1
+            } label: {
+                HStack(spacing: 8) {
+                    if model.isProjectSaving {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        Image(systemName: "checkmark")
+                    }
+                    Text(NSLocalizedString(
+                        model.isProjectSaving ? "Saving…" : "Save changes",
+                        comment: "Project save action"
+                    ))
+                }
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: 44)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.ryntraGreen)
+            .disabled(!editCanSave || model.isProjectSaving)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+        }
+        .background(.regularMaterial)
+    }
+
+    private var currentMember: ProjectMember? {
+        members.first { $0.user.id == model.currentAccountID }
+            ?? organizationMembers.first { $0.user.id == model.currentAccountID }
+    }
+
+    private func hasProjectPermission(_ bit: Int32) -> Bool {
+        guard let currentMember else { return false }
+        if currentMember.isOwner { return true }
+        let permissions = (currentMember.permissions as? NSNumber)?.int32Value ?? 0
+        return permissions & (Int32(1) << bit) != 0
+    }
+
+    private var projectDeleteAction: some View {
+        Button(role: .destructive) {
+            isDeletingProject = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "trash")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(NSLocalizedString("Delete this project", comment: "Project destructive action"))
+                        .font(.body.weight(.medium))
+                    Text(NSLocalizedString(
+                        "Permanently remove the project, its versions and attached data.",
+                        comment: "Project destructive action hint"
+                    ))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(model.isProjectActionRunning)
+        .padding(.vertical, 10)
+    }
+
+    @MainActor private func submitForModeration() async {
+        submissionError = nil
+        do {
+            try await model.submitProjectForModeration(project: project)
+            await reloadProject()
+        } catch {
+            submissionError = error.localizedDescription
+        }
+    }
+
     private var identity: some View {
         HStack(alignment: .center, spacing: 14) {
             ProjectArtwork(project: project)
@@ -223,6 +420,14 @@ struct ProjectDetailView: View {
                 Text(project.displayTypeLabel)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                if let organizationName {
+                    Label(organizationName, systemImage: "building.2")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(projectAccessSummary)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
                 if project.status != "approved" {
                     Text(project.localizedStatusLabel)
                         .font(.caption2.weight(.semibold))
@@ -246,6 +451,24 @@ struct ProjectDetailView: View {
             RoundedRectangle(cornerRadius: 8)
                 .stroke(Color.ryntraSeparator, lineWidth: 0.5)
         }
+    }
+
+    private var projectAccessSummary: String {
+        guard let currentMember else {
+            return NSLocalizedString("Access unavailable", comment: "Project access")
+        }
+        if currentMember.isOwner {
+            return NSLocalizedString("Owner · full project access", comment: "Project access")
+        }
+        let permissions = (currentMember.permissions as? NSNumber)?.int32Value ?? 0
+        let permissionCount = (0..<10).filter { permissions & (Int32(1) << $0) != 0 }.count
+        if permissionCount == 0 {
+            return NSLocalizedString("View only", comment: "Project access")
+        }
+        return String.localizedStringWithFormat(
+            NSLocalizedString("%d project permissions", comment: "Project access count"),
+            permissionCount
+        )
     }
 
     private func metric(_ label: String, value: String, systemImage: String) -> some View {
@@ -459,4 +682,9 @@ private enum ProjectDetailTab: CaseIterable {
         case .moderation: return "text.bubble.fill"
         }
     }
+}
+
+private enum PendingProjectExit {
+    case tab(ProjectDetailTab)
+    case dismiss
 }

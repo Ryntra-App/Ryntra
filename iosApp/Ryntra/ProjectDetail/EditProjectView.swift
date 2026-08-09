@@ -5,7 +5,9 @@ import SwiftUI
 struct EditProjectView: View {
     @EnvironmentObject private var model: AppModel
     let project: Project
+    let saveRequest: Int
     let onSaved: () async -> Void
+    let onEditingStateChanged: (Bool, Bool) -> Void
 
     @State private var title: String
     @State private var summary: String
@@ -16,14 +18,21 @@ struct EditProjectView: View {
     @State private var discordUrl: String
     @State private var status: String
     @State private var licenseId: String
-    @State private var descriptionMode = 0
-    @State private var descriptionPreview: [MarkdownBlock] = []
     @State private var iconItem: PhotosPickerItem?
     @State private var localError: String?
+    @State private var isEditingDescription = false
+    @State private var expandedSections: Set<EditProjectSection> = [.main]
 
-    init(project: Project, onSaved: @escaping () async -> Void) {
+    init(
+        project: Project,
+        saveRequest: Int,
+        onSaved: @escaping () async -> Void,
+        onEditingStateChanged: @escaping (Bool, Bool) -> Void
+    ) {
         self.project = project
+        self.saveRequest = saveRequest
         self.onSaved = onSaved
+        self.onEditingStateChanged = onEditingStateChanged
         _title = State(initialValue: project.title)
         _summary = State(initialValue: project.description_)
         _bodyText = State(initialValue: project.body)
@@ -42,111 +51,76 @@ struct EditProjectView: View {
         status != project.status || licenseId != (project.license?.id ?? "")
     }
 
+    private var canSave: Bool {
+        hasChanges && !model.isProjectSaving && !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+            !summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            heading("Icon")
-            HStack(spacing: 12) {
-                RemoteImage(url: URL(string: project.iconUrl ?? "")) { image in
-                    image.resizable().scaledToFill()
-                } placeholder: {
-                    RoundedRectangle(cornerRadius: 8).fill(.quaternary)
-                        .overlay { Image(systemName: "photo") }
-                }
-                .frame(width: 72, height: 72)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                VStack(spacing: 8) {
-                    PhotosPicker(selection: $iconItem, matching: .images) {
-                        Label("Upload icon", systemImage: "square.and.arrow.up")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    if project.iconUrl != nil {
-                        Button(role: .destructive) {
-                            Task { await deleteIcon() }
-                        } label: {
-                            Label("Remove icon", systemImage: "trash").frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
-                    }
-                }
+        VStack(alignment: .leading, spacing: 14) {
+            editSection(.main, title: "Main information", systemImage: "pencil") {
+                iconEditor
+                field("Title", text: $title, systemImage: "tag")
+                field("Summary", text: $summary, systemImage: "info.circle")
             }
 
-            heading("Main information")
-            field("Title", text: $title, systemImage: "tag")
-            field("Summary", text: $summary, systemImage: "info.circle")
-            VStack(alignment: .leading, spacing: 8) {
-                label("Description (Markdown)")
-                Picker("Description mode", selection: $descriptionMode) {
-                    Text("Write").tag(0)
-                    Text("Preview").tag(1)
+            editSection(.description, title: "Full description", systemImage: "doc.text") {
+                Text(bodyText.isEmpty
+                    ? NSLocalizedString("No full description yet", comment: "Project description editor")
+                    : bodyText)
+                    .font(.subheadline)
+                    .foregroundStyle(bodyText.isEmpty ? Color.secondary : Color.primary)
+                    .lineLimit(4)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Button {
+                    isEditingDescription = true
+                } label: {
+                    Label(NSLocalizedString("Edit description", comment: "Project editor action"), systemImage: "square.and.pencil")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+            }
+
+            editSection(.gallery, title: "Gallery", systemImage: "photo.on.rectangle.angled") {
+                ProjectGalleryEditor(project: project, onSaved: onSaved)
+            }
+
+            editSection(.publishing, title: "Status and license", systemImage: "checkmark.seal") {
+                Picker("Status", selection: $status) {
+                    ForEach(Array(Set([project.status, "draft", "unlisted", "archived"])).sorted(), id: \.self) {
+                        Text(ProjectStatusSupport.statusLabel($0)).tag($0)
+                    }
                 }
                 .pickerStyle(.segmented)
-                if descriptionMode == 0 {
-                    TextEditor(text: $bodyText)
-                        .frame(minHeight: 190)
-                        .padding(8)
-                        .scrollContentBackground(.hidden)
-                        .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 8))
-                } else {
-                    VStack(alignment: .leading, spacing: 8) {
-                        if descriptionPreview.isEmpty {
-                            Text("Nothing to preview").font(.caption).foregroundStyle(.secondary)
-                        }
-                        ForEach(Array(descriptionPreview.enumerated()), id: \.offset) { _, block in
-                            MarkdownBlockView(block: block)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 190, alignment: .topLeading)
-                    .padding(12)
-                    .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 8))
-                }
-            }
-            .onChange(of: descriptionMode) { mode in
-                if mode == 1 {
-                    descriptionPreview = MarkdownParser.shared.parse(markdown: bodyText)
-                }
+                field("License ID", text: $licenseId, systemImage: "doc.text")
             }
 
-            heading("Gallery")
-            ProjectGalleryEditor(project: project, onSaved: onSaved)
-
-            heading("Status and license")
-            Picker("Status", selection: $status) {
-                ForEach(Array(Set([project.status, "draft", "unlisted", "archived"])).sorted(), id: \.self) {
-                    Text(ProjectStatusSupport.statusLabel($0)).tag($0)
-                }
+            editSection(.links, title: "Links", systemImage: "link") {
+                field("Source code", text: $sourceUrl, systemImage: "chevron.left.forwardslash.chevron.right")
+                field("Issue tracker", text: $issuesUrl, systemImage: "ant")
+                field("Wiki", text: $wikiUrl, systemImage: "book")
+                field("Discord", text: $discordUrl, systemImage: "bubble.left.and.bubble.right")
             }
-            .pickerStyle(.segmented)
-            field("License ID", text: $licenseId, systemImage: "doc.text")
-
-            heading("Links")
-            field("Source code", text: $sourceUrl, systemImage: "link")
-            field("Issue tracker", text: $issuesUrl, systemImage: "ant")
-            field("Wiki", text: $wikiUrl, systemImage: "book")
-            field("Discord", text: $discordUrl, systemImage: "bubble.left.and.bubble.right")
 
             if let error = localError ?? model.projectUpdateError ?? model.projectActionError {
                 Text(error).font(.caption).foregroundStyle(.red)
             }
 
-            Button { Task { await save() } } label: {
-                HStack {
-                    if model.isProjectSaving { ProgressView().tint(.white) }
-                    else { Image(systemName: model.projectUpdateSuccess ? "checkmark" : "square.and.arrow.down") }
-                    Text(LocalizedStringKey(model.projectUpdateSuccess ? "Saved" : "Save changes"))
-                }
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(hasChanges ? Color.ryntraGreen : Color.secondary.opacity(0.3), in: RoundedRectangle(cornerRadius: 8))
-                .foregroundStyle(.white)
-            }
-            .disabled(!hasChanges || model.isProjectSaving || title.isEmpty || summary.isEmpty)
         }
         .padding(.bottom, 24)
+        .onAppear { reportEditingState() }
+        .onChange(of: hasChanges) { _ in reportEditingState() }
+        .onChange(of: canSave) { _ in reportEditingState() }
+        .onChange(of: saveRequest) { _ in
+            guard canSave else { return }
+            Task { await save() }
+        }
         .onChange(of: iconItem) { item in
             guard let item else { return }
             Task { await uploadIcon(item) }
+        }
+        .sheet(isPresented: $isEditingDescription) {
+            MarkdownProjectEditor(text: $bodyText)
         }
     }
 
@@ -165,7 +139,10 @@ struct EditProjectView: View {
             licenseId: licenseId == (project.license?.id ?? "") ? nil : licenseId
         )
         await model.updateProject(projectId: project.id, update: update)
-        if model.projectUpdateError == nil { await onSaved() }
+        if model.projectUpdateError == nil {
+            onEditingStateChanged(false, false)
+            await onSaved()
+        }
     }
 
     @MainActor
@@ -190,8 +167,32 @@ struct EditProjectView: View {
         } catch { localError = error.localizedDescription }
     }
 
-    private func heading(_ title: String) -> some View {
-        Text(LocalizedStringKey(title)).font(.headline.bold()).padding(.top, 8)
+    private var iconEditor: some View {
+        HStack(spacing: 12) {
+            RemoteImage(url: URL(string: project.iconUrl ?? "")) { image in
+                image.resizable().scaledToFill()
+            } placeholder: {
+                RoundedRectangle(cornerRadius: 10).fill(.quaternary)
+                    .overlay { Image(systemName: "photo") }
+            }
+            .frame(width: 64, height: 64)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            VStack(spacing: 8) {
+                PhotosPicker(selection: $iconItem, matching: .images) {
+                    Label("Upload icon", systemImage: "square.and.arrow.up")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                if project.iconUrl != nil {
+                    Button(role: .destructive) {
+                        Task { await deleteIcon() }
+                    } label: {
+                        Label("Remove icon", systemImage: "trash").frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+        }
     }
 
     private func label(_ text: String) -> some View {
@@ -208,6 +209,72 @@ struct EditProjectView: View {
             .padding(.horizontal, 12)
             .frame(height: 46)
             .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 8))
+        }
+    }
+
+    private func reportEditingState() {
+        onEditingStateChanged(hasChanges, canSave)
+    }
+
+    private func editSection<Content: View>(
+        _ section: EditProjectSection,
+        title: String,
+        systemImage: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        DisclosureGroup(
+            isExpanded: Binding(
+                get: { expandedSections.contains(section) },
+                set: { isExpanded in
+                    if isExpanded { expandedSections.insert(section) }
+                    else { expandedSections.remove(section) }
+                }
+            )
+        ) {
+            VStack(alignment: .leading, spacing: 14) {
+                content()
+            }
+            .padding(.top, 14)
+        } label: {
+            Label(NSLocalizedString(title, comment: "Project editor section"), systemImage: systemImage)
+                .font(.headline)
+                .foregroundStyle(.primary)
+        }
+        .padding(16)
+        .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.ryntraSeparator, lineWidth: 0.5)
+        }
+    }
+}
+
+private enum EditProjectSection: Hashable {
+    case main
+    case description
+    case gallery
+    case publishing
+    case links
+}
+
+private struct MarkdownProjectEditor: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var text: String
+
+    var body: some View {
+        NavigationStack {
+            TextEditor(text: $text)
+                .font(.body)
+                .padding(.horizontal, 12)
+                .scrollContentBackground(.hidden)
+                .background(Color.ryntraBackground)
+                .navigationTitle(NSLocalizedString("Full description", comment: "Project editor title"))
+                .ryntraInlineNavigationTitle()
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(NSLocalizedString("Done", comment: "Finish editing")) { dismiss() }
+                    }
+                }
         }
     }
 }

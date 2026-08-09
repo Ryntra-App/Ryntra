@@ -314,6 +314,7 @@ struct OrganizationDetailView: View {
     @State private var isInviting = false
     @State private var editingMember: ProjectMember?
     @State private var localError: String?
+    @State private var projectPendingDeletion: Project?
 
     private var displayOrganization: Organization {
         detail ?? organization
@@ -340,6 +341,13 @@ struct OrganizationDetailView: View {
         return orgPerms & (Int32(1) << 1) != 0
             || orgPerms & (Int32(1) << 2) != 0
             || orgPerms & (Int32(1) << 3) != 0
+    }
+
+    private var canDeleteProjects: Bool {
+        guard let currentMember else { return false }
+        if currentMember.isOwner { return true }
+        let permissions = (currentMember.permissions as? NSNumber)?.int32Value ?? 0
+        return permissions & (Int32(1) << 7) != 0
     }
 
     var body: some View {
@@ -424,14 +432,30 @@ struct OrganizationDetailView: View {
                         Button {
                             onProjectTap(project)
                         } label: {
-                            ProjectRow(
-                                project: project,
-                                showDescription: true,
-                                showStatus: true,
-                                showsDisclosureIndicator: false
-                            )
+                            VStack(alignment: .leading, spacing: 7) {
+                                ProjectRow(
+                                    project: project,
+                                    showDescription: true,
+                                    showStatus: true,
+                                    showsDisclosureIndicator: false
+                                )
+                                HStack(spacing: 10) {
+                                    Label(displayOrganization.name, systemImage: "building.2")
+                                    Spacer(minLength: 0)
+                                    Label(projectAccessSummary, systemImage: projectAccessSymbol)
+                                }
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                            }
                         }
                         .buttonStyle(.plain)
+                        .ryntraProjectContextMenu(
+                            project,
+                            onOpen: { onProjectTap(project) },
+                            canDelete: canDeleteProjects,
+                            onDelete: { projectPendingDeletion = project }
+                        )
                     }
                 }
             } header: {
@@ -470,6 +494,20 @@ struct OrganizationDetailView: View {
                 }
             }
         }
+        .sheet(
+            isPresented: Binding(
+                get: { projectPendingDeletion != nil },
+                set: { if !$0 { projectPendingDeletion = nil } }
+            )
+        ) {
+            if let projectPendingDeletion {
+                ProjectDeleteSheet(project: projectPendingDeletion) {
+                    projects.removeAll { $0.id == projectPendingDeletion.id }
+                    self.projectPendingDeletion = nil
+                }
+                .environmentObject(model)
+            }
+        }
     }
 
     private var organizationHeader: some View {
@@ -496,6 +534,20 @@ struct OrganizationDetailView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
+
+            Label {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(NSLocalizedString("Your access", comment: "Organization access heading"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(organizationAccessSummary)
+                        .font(.subheadline.weight(.medium))
+                }
+            } icon: {
+                Image(systemName: currentMember?.isOwner == true ? "crown.fill" : "person.badge.key.fill")
+                    .foregroundStyle(Color.ryntraGreen)
+            }
+            .accessibilityElement(children: .combine)
 
             HStack(spacing: 10) {
                 metricChip(
@@ -541,6 +593,87 @@ struct OrganizationDetailView: View {
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity)
         .background(Color.ryntraSurfaceRaised, in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    private var projectAccessSymbol: String {
+        currentMember?.isOwner == true ? "crown.fill" : "key.fill"
+    }
+
+    private var projectAccessSummary: String {
+        guard let currentMember else {
+            return NSLocalizedString("Access unavailable", comment: "Organization project access")
+        }
+        if currentMember.isOwner {
+            return NSLocalizedString("Full project access", comment: "Organization project access")
+        }
+        let permissions = (currentMember.permissions as? NSNumber)?.int32Value ?? 0
+        let labels = projectPermissionNames.enumerated().compactMap { index, label in
+            permissions & (Int32(1) << index) != 0 ? label : nil
+        }
+        guard !labels.isEmpty else {
+            return NSLocalizedString("View only", comment: "Organization project access")
+        }
+        if labels.count <= 2 { return labels.joined(separator: ", ") }
+        return String.localizedStringWithFormat(
+            NSLocalizedString("%d project permissions", comment: "Organization project access count"),
+            labels.count
+        )
+    }
+
+    private var organizationAccessSummary: String {
+        guard let currentMember else {
+            return NSLocalizedString("Your permissions could not be loaded", comment: "Organization access")
+        }
+        if currentMember.isOwner {
+            return NSLocalizedString("Owner · full organization and project access", comment: "Organization access")
+        }
+        let organizationPermissions = (currentMember.organizationPermissions as? NSNumber)?.int32Value ?? 0
+        let organizationCount = (0..<organizationPermissionNames.count).filter {
+            organizationPermissions & (Int32(1) << $0) != 0
+        }.count
+        let projectPermissions = (currentMember.permissions as? NSNumber)?.int32Value ?? 0
+        let projectCount = (0..<projectPermissionNames.count).filter {
+            projectPermissions & (Int32(1) << $0) != 0
+        }.count
+        if organizationCount == 0, projectCount == 0 {
+            return NSLocalizedString("View-only member", comment: "Organization access")
+        }
+        return String.localizedStringWithFormat(
+            NSLocalizedString(
+                "%d organization permissions · %d project permissions",
+                comment: "Organization access counts"
+            ),
+            organizationCount,
+            projectCount
+        )
+    }
+
+    private var projectPermissionNames: [String] {
+        [
+            NSLocalizedString("Upload versions", comment: "Perm"),
+            NSLocalizedString("Delete versions", comment: "Perm"),
+            NSLocalizedString("Edit details", comment: "Perm"),
+            NSLocalizedString("Edit description", comment: "Perm"),
+            NSLocalizedString("Manage invites", comment: "Perm"),
+            NSLocalizedString("Remove members", comment: "Perm"),
+            NSLocalizedString("Edit members", comment: "Perm"),
+            NSLocalizedString("Delete project", comment: "Perm"),
+            NSLocalizedString("View analytics", comment: "Perm"),
+            NSLocalizedString("View payouts", comment: "Perm"),
+        ]
+    }
+
+    private var organizationPermissionNames: [String] {
+        [
+            NSLocalizedString("Edit organization", comment: "Perm"),
+            NSLocalizedString("Manage invites", comment: "Perm"),
+            NSLocalizedString("Remove members", comment: "Perm"),
+            NSLocalizedString("Edit members", comment: "Perm"),
+            NSLocalizedString("Add projects", comment: "Perm"),
+            NSLocalizedString("Remove projects", comment: "Perm"),
+            NSLocalizedString("Delete organization", comment: "Perm"),
+            NSLocalizedString("Edit default project permissions", comment: "Perm"),
+        ]
     }
 
     private func loadDetail() async {

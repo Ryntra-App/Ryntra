@@ -63,6 +63,9 @@ class ModrinthApi(
     suspend fun updateProject(projectIdOrSlug: String, update: ProjectUpdate, token: String) =
         projects.update(projectIdOrSlug, update, token)
 
+    suspend fun deleteProject(projectIdOrSlug: String, token: String) =
+        projects.delete(projectIdOrSlug, token)
+
     suspend fun createProject(request: CreateProjectRequest, token: String): Project = projects.create(request, token)
 
     suspend fun getProjectTypes(): List<String> = tags.projectTypes()

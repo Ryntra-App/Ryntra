@@ -67,8 +67,21 @@ extension Project {
 extension View {
     /// Right-click actions for a project row. Macs expect a context menu on
     /// anything clickable; on iOS the same menu appears on long press.
-    func ryntraProjectContextMenu(_ project: Project) -> some View {
+    func ryntraProjectContextMenu(
+        _ project: Project,
+        onOpen: (() -> Void)? = nil,
+        canDelete: Bool = false,
+        onDelete: (() -> Void)? = nil
+    ) -> some View {
         contextMenu {
+            if let onOpen {
+                Button(action: onOpen) {
+                    Label(
+                        NSLocalizedString("Open project", comment: "Project context action"),
+                        systemImage: "folder"
+                    )
+                }
+            }
             if let url = project.modrinthPageURL {
                 Button {
                     ryntraOpenExternalURL(url)
@@ -87,6 +100,102 @@ extension View {
                     )
                 }
             }
+            if canDelete, let onDelete {
+                Divider()
+                Button(role: .destructive, action: onDelete) {
+                    Label(
+                        NSLocalizedString("Delete this project", comment: "Project context action"),
+                        systemImage: "trash"
+                    )
+                }
+            }
+        }
+    }
+}
+
+struct ProjectDeleteSheet: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+
+    let project: Project
+    var onDeleted: () -> Void = {}
+
+    @State private var confirmation = ""
+    @State private var localError: String?
+
+    private var isConfirmed: Bool {
+        confirmation.trimmingCharacters(in: .whitespacesAndNewlines) == project.title
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Label {
+                        Text(NSLocalizedString(
+                            "All versions and attached data will be permanently removed. Links and dependent projects may stop working.",
+                            comment: "Project deletion warning"
+                        ))
+                    } icon: {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.red)
+                    }
+                }
+
+                Section {
+                    TextField(
+                        NSLocalizedString("Project name", comment: "Project deletion confirmation"),
+                        text: $confirmation
+                    )
+                    .disabled(model.isProjectActionRunning)
+                } header: {
+                    Text(String.localizedStringWithFormat(
+                        NSLocalizedString("Type “%@” to confirm", comment: "Project deletion confirmation hint"),
+                        project.title
+                    ))
+                }
+
+                if let error = localError ?? model.projectActionError {
+                    Section {
+                        Text(error).foregroundStyle(.red)
+                    }
+                }
+
+                Section {
+                    Button(role: .destructive) {
+                        Task { await deleteProject() }
+                    } label: {
+                        HStack {
+                            if model.isProjectActionRunning { ProgressView().controlSize(.small) }
+                            Text(model.isProjectActionRunning
+                                ? NSLocalizedString("Deleting…", comment: "Project deletion progress")
+                                : NSLocalizedString("Delete project permanently", comment: "Project deletion action"))
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .disabled(!isConfirmed || model.isProjectActionRunning)
+                }
+            }
+            .navigationTitle(NSLocalizedString("Delete project?", comment: "Project deletion title"))
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(NSLocalizedString("Cancel", comment: "Cancel")) { dismiss() }
+                        .disabled(model.isProjectActionRunning)
+                }
+            }
+        }
+        .interactiveDismissDisabled(model.isProjectActionRunning)
+        .onAppear { model.clearProjectActionStatus() }
+    }
+
+    @MainActor private func deleteProject() async {
+        localError = nil
+        do {
+            try await model.deleteProject(project: project)
+            onDeleted()
+            dismiss()
+        } catch {
+            localError = error.localizedDescription
         }
     }
 }

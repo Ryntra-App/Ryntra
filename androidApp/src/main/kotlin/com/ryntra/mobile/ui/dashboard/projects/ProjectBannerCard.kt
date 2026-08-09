@@ -3,6 +3,7 @@ package com.ryntra.mobile.ui.dashboard.projects
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,20 +49,46 @@ import com.ryntra.mobile.ui.theme.RyntraDesign
 internal fun ProjectBannerCard(
     model: ProjectRowModel,
     isFavorite: Boolean,
+    isSelected: Boolean = false,
     onFavoriteClick: (() -> Unit)?,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
 ) {
     val project = model.project
     val shape = RyntraDesign.contentShape
+    val containerColor by animateColorAsState(
+        targetValue = if (isSelected) {
+            MaterialTheme.colorScheme.surfaceContainerHigh
+        } else {
+            RyntraDesign.colors.surface
+        },
+        animationSpec = tween(RyntraDesign.motion.duration(160)),
+        label = "Project selection container",
+    )
+    val borderColor by animateColorAsState(
+        targetValue = if (isSelected) {
+            MaterialTheme.colorScheme.outlineVariant
+        } else {
+            RyntraDesign.colors.separator
+        },
+        animationSpec = tween(RyntraDesign.motion.duration(160)),
+        label = "Project selection border",
+    )
 
     Box(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(shape)
-                .background(RyntraDesign.colors.surface)
-                .border(0.75.dp, RyntraDesign.colors.separator, shape)
-                .clickable(onClick = onClick),
+                .background(containerColor)
+                .border(if (isSelected) 1.dp else 0.75.dp, borderColor, shape)
+                .then(
+                    if (onLongClick != null) {
+                        Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)
+                    } else {
+                        Modifier.clickable(onClick = onClick)
+                    },
+                ),
         ) {
             Box(
                 modifier = Modifier

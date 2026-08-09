@@ -1,11 +1,18 @@
 package com.ryntra.mobile.ui.dashboard.project
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,9 +21,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,11 +50,13 @@ import com.composables.icons.lucide.CalendarDays
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Monitor
 import com.composables.icons.lucide.Scale
+import com.composables.icons.lucide.Save
 import com.composables.icons.lucide.Server
 import com.ryntra.mobile.R
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.mobile.ui.components.RyntraEmptyState
 import com.ryntra.mobile.ui.dashboard.project.edit.EditProjectContent
+import com.ryntra.mobile.ui.dashboard.project.edit.ProjectEditDraft
 import com.ryntra.mobile.ui.dashboard.project.gallery.ProjectGalleryOverviewStrip
 import com.ryntra.mobile.ui.dashboard.project.gallery.ProjectGalleryViewerDialog
 import com.ryntra.mobile.ui.dashboard.project.markdown.MarkdownBlockView
@@ -65,6 +79,7 @@ import com.ryntra.mobile.ui.dashboard.project.versions.LoadingVersions
 import com.ryntra.mobile.ui.dashboard.project.versions.VersionCard
 import com.ryntra.mobile.ui.dashboard.project.versions.VersionEditorDialog
 import com.ryntra.mobile.ui.dashboard.project.versions.VersionsHeader
+import com.ryntra.mobile.ui.dashboard.projects.DeleteProjectDialog
 import com.ryntra.shared.model.MarkdownParser
 import com.ryntra.shared.model.MarkdownBlock
 import com.ryntra.shared.model.Project
@@ -103,6 +118,8 @@ fun ProjectDetailScreen(
     memberSearch: MemberSearchState = MemberSearchState(),
     onChangeProjectIcon: (String, ProjectFileUpload) -> Unit = { _, _ -> },
     onDeleteProjectIcon: (String) -> Unit = {},
+    onSubmitProjectForModeration: (String) -> Unit = {},
+    onDeleteProject: (String) -> Unit = {},
     onAddGalleryImage: (String, ProjectFileUpload, Boolean, String, String) -> Unit = { _, _, _, _, _ -> },
     onDeleteGalleryImage: (String, String) -> Unit = { _, _ -> },
     onSetGalleryBanner: (String, String) -> Unit = { _, _ -> },
@@ -120,6 +137,7 @@ fun ProjectDetailScreen(
     onLoadModeration: (String, Boolean) -> Unit = { _, _ -> },
     onSendModerationReply: (String, String, String?) -> Unit = { _, _, _ -> },
     onDeleteModerationMessage: (String, String) -> Unit = { _, _ -> },
+    onUnsavedChangesChanged: (Boolean) -> Unit = {},
 ) {
     val uriHandler = LocalUriHandler.current
     var selectedTab by rememberSaveable(project.id) { mutableStateOf(ProjectDetailTab.Overview) }
@@ -153,6 +171,12 @@ fun ProjectDetailScreen(
     var editingMember by remember(project.id) { mutableStateOf<ProjectMember?>(null) }
     var viewingGalleryImage by remember(project.id) { mutableStateOf<com.ryntra.shared.model.GalleryImage?>(null) }
     var moderationReplyTargetId by rememberSaveable(project.id) { mutableStateOf<String?>(null) }
+    var isConfirmingSubmission by remember(project.id) { mutableStateOf(false) }
+    var isConfirmingDeletion by remember(project.id) { mutableStateOf(false) }
+    var editBaseline by remember(project.id) { mutableStateOf(ProjectEditDraft.from(project)) }
+    var editDraft by remember(project.id) { mutableStateOf(editBaseline) }
+    var pendingTab by remember(project.id) { mutableStateOf<ProjectDetailTab?>(null) }
+    val hasUnsavedChanges = editDraft != editBaseline
     // Prefer project-team membership; fall back to org membership for permission checks.
     val currentMember = remember(members, organizationMembers, currentUserId) {
         members.firstOrNull { it.user.id == currentUserId }
@@ -160,8 +184,21 @@ fun ProjectDetailScreen(
     }
     val canCreateVersions = !isReadOnly && currentMember.hasPermission(0)
     val canDeleteVersions = !isReadOnly && currentMember.hasPermission(1)
+    val canSubmitProject = !isReadOnly && currentMember.hasPermission(2)
+    val canDeleteProject = !isReadOnly && currentMember.hasPermission(7)
     val canManageMembers = !isReadOnly && (currentMember.hasPermission(6) || currentMember?.isOwner == true)
     val teamId = project.team
+
+    LaunchedEffect(hasUnsavedChanges) {
+        onUnsavedChangesChanged(hasUnsavedChanges)
+    }
+
+    LaunchedEffect(projectUpdate.isSuccess) {
+        if (projectUpdate.isSuccess) {
+            editBaseline = editDraft
+            onClearProjectUpdateStatus()
+        }
+    }
 
     LaunchedEffect(isReadOnly) {
         if (isReadOnly && selectedTab !in setOf(ProjectDetailTab.Overview, ProjectDetailTab.Versions)) {
@@ -186,19 +223,34 @@ fun ProjectDetailScreen(
             editingVersion = null
             isInvitingMember = false
             editingMember = null
+            isConfirmingSubmission = false
+            isConfirmingDeletion = false
             onClearProjectActionStatus()
         }
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
-        contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 36.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            top = 12.dp,
+            end = 16.dp,
+            bottom = if (selectedTab == ProjectDetailTab.Edit && hasUnsavedChanges) 116.dp else 36.dp,
+        ),
     ) {
         item(key = "identity", contentType = "identity") { ProjectIdentity(project) }
         item(key = "tabs", contentType = "tabs") {
             ProjectDetailTabs(
                 selected = selectedTab,
                 isReadOnly = isReadOnly,
-                onSelect = { selectedTab = it },
+                onSelect = { requestedTab ->
+                    if (selectedTab == ProjectDetailTab.Edit && hasUnsavedChanges && requestedTab != ProjectDetailTab.Edit) {
+                        pendingTab = requestedTab
+                    } else {
+                        selectedTab = requestedTab
+                    }
+                },
                 modifier = Modifier.padding(bottom = 18.dp),
             )
         }
@@ -318,24 +370,34 @@ fun ProjectDetailScreen(
                 }
             }
 
-            ProjectDetailTab.Edit -> item {
-                EditProjectContent(
-                    project = project,
-                    projectUpdate = projectUpdate,
-                    onUpdate = { onUpdateProject(project.id, it) },
-                    onClearStatus = onClearProjectUpdateStatus,
-                    actionState = projectAction,
-                    onChangeIcon = { onChangeProjectIcon(project.id, it) },
-                    onDeleteIcon = { onDeleteProjectIcon(project.id) },
-                    onAddGalleryImage = { file, featured, title, description ->
-                        onAddGalleryImage(project.id, file, featured, title, description)
-                    },
-                    onDeleteGalleryImage = { onDeleteGalleryImage(project.id, it) },
-                    onSetGalleryBanner = { onSetGalleryBanner(project.id, it) },
-                    onModifyGalleryImage = { url, title, description, ordering ->
-                        onModifyGalleryImage(project.id, url, title, description, ordering)
-                    },
-                )
+            ProjectDetailTab.Edit -> {
+                item(key = "project-edit", contentType = "edit") {
+                    EditProjectContent(
+                        project = project,
+                        draft = editDraft,
+                        projectUpdate = projectUpdate,
+                        onDraftChange = { editDraft = it },
+                        actionState = projectAction,
+                        onChangeIcon = { onChangeProjectIcon(project.id, it) },
+                        onDeleteIcon = { onDeleteProjectIcon(project.id) },
+                        onAddGalleryImage = { file, featured, title, description ->
+                            onAddGalleryImage(project.id, file, featured, title, description)
+                        },
+                        onDeleteGalleryImage = { onDeleteGalleryImage(project.id, it) },
+                        onSetGalleryBanner = { onSetGalleryBanner(project.id, it) },
+                        onModifyGalleryImage = { url, title, description, ordering ->
+                            onModifyGalleryImage(project.id, url, title, description, ordering)
+                        },
+                    )
+                }
+                if (canDeleteProject) {
+                    item(key = "project-delete", contentType = "destructive-action") {
+                        ProjectDeleteAction(
+                            enabled = !projectAction.isRunning,
+                            onDelete = { isConfirmingDeletion = true },
+                        )
+                    }
+                }
             }
 
             ProjectDetailTab.Members -> {
@@ -394,7 +456,12 @@ fun ProjectDetailScreen(
                     project = project,
                     state = moderation,
                     currentUserId = currentUserId,
+                    versionCount = versions.size,
+                    canSubmitProject = canSubmitProject,
+                    isSubmittingProject = projectAction.isRunning && projectAction.targetId == project.id,
+                    submissionError = projectAction.errorMessage.takeIf { projectAction.targetId == project.id },
                     replyingToMessageId = moderationReplyTargetId,
+                    onSubmitProject = { isConfirmingSubmission = true },
                     onReplyToMessage = { moderationReplyTargetId = it },
                     onRefresh = { project.threadId?.let { threadId -> onLoadModeration(threadId, true) } },
                     onSendReply = { body, replyingTo ->
@@ -406,6 +473,80 @@ fun ProjectDetailScreen(
                 )
             }
         }
+    }
+
+        AnimatedVisibility(
+            visible = selectedTab == ProjectDetailTab.Edit && hasUnsavedChanges,
+            enter = slideInVertically { it } + fadeIn(),
+            exit = slideOutVertically { it } + fadeOut(),
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) {
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                tonalElevation = 3.dp,
+                shadowElevation = 3.dp,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            stringResource(R.string.project_edit_unsaved),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        if (!editDraft.canSave) {
+                            Text(
+                                stringResource(R.string.project_edit_required_hint),
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    }
+                    Button(
+                        enabled = editDraft.canSave && !projectUpdate.isSaving,
+                        onClick = { onUpdateProject(project.id, editDraft.toUpdate(editBaseline)) },
+                    ) {
+                        if (projectUpdate.isSaving) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        } else {
+                            androidx.compose.material3.Icon(Lucide.Save, contentDescription = null, modifier = Modifier.size(18.dp))
+                        }
+                        Text(stringResource(R.string.project_edit_save), modifier = Modifier.padding(start = 8.dp))
+                    }
+                }
+            }
+        }
+    }
+
+    pendingTab?.let { requestedTab ->
+        AlertDialog(
+            onDismissRequest = { pendingTab = null },
+            title = { Text(stringResource(R.string.project_edit_discard_title)) },
+            text = { Text(stringResource(R.string.project_edit_discard_message)) },
+            dismissButton = {
+                TextButton(onClick = { pendingTab = null }) {
+                    Text(stringResource(R.string.project_edit_keep_editing))
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        editDraft = editBaseline
+                        selectedTab = requestedTab
+                        pendingTab = null
+                    },
+                ) {
+                    Text(stringResource(R.string.project_edit_discard), color = MaterialTheme.colorScheme.error)
+                }
+            },
+        )
     }
 
     if (isCreatingVersion) {
@@ -471,6 +612,30 @@ fun ProjectDetailScreen(
             image = image,
             canManage = false,
             onDismiss = { viewingGalleryImage = null },
+        )
+    }
+    if (isConfirmingSubmission) {
+        SubmitProjectDialog(
+            project = project,
+            isSubmitting = projectAction.isRunning && projectAction.targetId == project.id,
+            errorMessage = projectAction.errorMessage.takeIf { projectAction.targetId == project.id },
+            onDismiss = {
+                isConfirmingSubmission = false
+                onClearProjectActionStatus()
+            },
+            onConfirm = { onSubmitProjectForModeration(project.id) },
+        )
+    }
+    if (isConfirmingDeletion) {
+        DeleteProjectDialog(
+            project = project,
+            isDeleting = projectAction.isRunning && projectAction.targetId == project.id,
+            errorMessage = projectAction.errorMessage.takeIf { projectAction.targetId == project.id },
+            onDismiss = {
+                isConfirmingDeletion = false
+                onClearProjectActionStatus()
+            },
+            onConfirm = { onDeleteProject(project.id) },
         )
     }
 }

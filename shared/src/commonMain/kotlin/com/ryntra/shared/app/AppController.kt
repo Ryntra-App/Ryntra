@@ -272,6 +272,30 @@ class AppController internal constructor(
         }
     }
 
+    suspend fun submitProjectForModeration(projectIdOrSlug: String) {
+        updateProject(
+            projectIdOrSlug,
+            com.ryntra.shared.model.ProjectUpdate(status = "processing"),
+        )
+    }
+
+    suspend fun deleteProject(projectIdOrSlug: String) {
+        val token = requireToken("deleting a project")
+        repository.deleteProject(projectIdOrSlug, token)
+        if (accessToken != token) return
+
+        mutableState.value = when (val current = mutableState.value) {
+            is AppState.Ready -> AppState.Ready(current.dashboard.withoutProject(projectIdOrSlug))
+            is AppState.Loading -> current.copy(
+                previousDashboard = current.previousDashboard?.withoutProject(projectIdOrSlug),
+            )
+            is AppState.Failed -> current.copy(
+                previousDashboard = current.previousDashboard?.withoutProject(projectIdOrSlug),
+            )
+            AppState.SignedOut -> AppState.SignedOut
+        }
+    }
+
     suspend fun loadProjectCreationMetadata(): ProjectCreationMetadata = repository.loadProjectCreationMetadata()
 
     suspend fun createProject(request: CreateProjectRequest): Project {
@@ -471,6 +495,11 @@ class AppController internal constructor(
             } else {
                 project
             }
+        })
+
+    private fun Dashboard.withoutProject(projectIdOrSlug: String): Dashboard =
+        copy(projects = projects.filterNot { project ->
+            project.id == projectIdOrSlug || project.slug == projectIdOrSlug
         })
 
 }

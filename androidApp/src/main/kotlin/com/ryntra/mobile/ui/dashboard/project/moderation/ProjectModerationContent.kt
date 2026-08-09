@@ -41,7 +41,6 @@ import com.ryntra.mobile.ui.components.RyntraPrimaryButton
 import com.ryntra.mobile.ui.components.RyntraSecondaryButton
 import com.ryntra.mobile.ui.dashboard.project.markdown.MarkdownEditor
 import com.ryntra.mobile.ui.dashboard.project.markdown.MarkdownEditorMode
-import com.ryntra.mobile.ui.dashboard.projects.StatusLabel
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.shared.model.ModerationMessage
 import com.ryntra.shared.model.ModerationThread
@@ -51,14 +50,29 @@ internal fun LazyListScope.moderationContentItems(
     project: Project,
     state: ProjectModerationState,
     currentUserId: String?,
+    versionCount: Int,
+    canSubmitProject: Boolean,
+    isSubmittingProject: Boolean,
+    submissionError: String?,
     replyingToMessageId: String?,
+    onSubmitProject: () -> Unit,
     onReplyToMessage: (String?) -> Unit,
     onRefresh: () -> Unit,
     onSendReply: (String, String?) -> Unit,
     onDeleteMessage: (String) -> Unit,
 ) {
+    item(key = "moderation-submission", contentType = "moderation-submission") {
+        ProjectSubmissionStatus(
+            project = project,
+            versionCount = versionCount,
+            canSubmit = canSubmitProject,
+            isSubmitting = isSubmittingProject,
+            errorMessage = submissionError,
+            onSubmit = onSubmitProject,
+        )
+    }
     item(key = "moderation-header", contentType = "moderation-header") {
-        ModerationHeader(project = project, isLoading = state.isLoading, onRefresh = onRefresh)
+        ModerationHeader(isLoading = state.isLoading, onRefresh = onRefresh)
     }
 
     if (project.threadId.isNullOrBlank()) {
@@ -119,20 +133,22 @@ internal fun LazyListScope.moderationContentItems(
         }
     }
 
-    item(key = "moderation-composer", contentType = "moderation-composer") {
-        ModerationComposer(
-            thread = thread,
-            replyingToMessageId = replyingToMessageId,
-            isSending = state.isSending,
-            replyGeneration = state.replyGeneration,
-            onCancelReply = { onReplyToMessage(null) },
-            onSend = onSendReply,
-        )
+    if (project.status.lowercase() !in setOf("draft", "private")) {
+        item(key = "moderation-composer", contentType = "moderation-composer") {
+            ModerationComposer(
+                thread = thread,
+                replyingToMessageId = replyingToMessageId,
+                isSending = state.isSending,
+                replyGeneration = state.replyGeneration,
+                onCancelReply = { onReplyToMessage(null) },
+                onSend = onSendReply,
+            )
+        }
     }
 }
 
 @Composable
-private fun ModerationHeader(project: Project, isLoading: Boolean, onRefresh: () -> Unit) {
+private fun ModerationHeader(isLoading: Boolean, onRefresh: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
@@ -143,18 +159,6 @@ private fun ModerationHeader(project: Project, isLoading: Boolean, onRefresh: ()
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
             )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(top = 6.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.moderation_status),
-                    color = RyntraDesign.colors.labelSecondary,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                StatusLabel(project.status)
-            }
         }
         IconButton(onClick = onRefresh, enabled = !isLoading) {
             if (isLoading) {

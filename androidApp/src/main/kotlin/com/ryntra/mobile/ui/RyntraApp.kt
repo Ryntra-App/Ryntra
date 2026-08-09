@@ -107,6 +107,8 @@ fun RyntraApp(viewModel: RyntraViewModel) {
                         onLoadAnalytics = viewModel::loadAnalytics,
                         onChangeProjectIcon = viewModel::changeProjectIcon,
                         onDeleteProjectIcon = viewModel::deleteProjectIcon,
+                        onSubmitProjectForModeration = viewModel::submitProjectForModeration,
+                        onDeleteProject = viewModel::deleteProject,
                         onAddGalleryImage = { projectId, file, featured, title, description ->
                             viewModel.addGalleryImage(projectId, file, featured, title, description)
                         },

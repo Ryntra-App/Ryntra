@@ -6,6 +6,11 @@ struct ProjectModerationView: View {
 
     let project: Project
     let currentUserID: String?
+    let versionCount: Int32
+    let canSubmitProject: Bool
+    let isSubmittingProject: Bool
+    let submissionError: String?
+    let onSubmitProject: () -> Void
 
     @State private var thread: ModerationThread?
     @State private var isLoading = false
@@ -19,6 +24,7 @@ struct ProjectModerationView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            submissionStatus
             header
 
             if project.threadId?.isEmpty != false {
@@ -36,7 +42,9 @@ struct ProjectModerationView: View {
                 }
                 if let thread {
                     messages(thread)
-                    composer(thread)
+                    if hasModerationSubmission {
+                        composer(thread)
+                    }
                 }
             }
         }
@@ -45,21 +53,133 @@ struct ProjectModerationView: View {
         }
     }
 
+    private var submissionReadiness: ProjectSubmissionReadiness {
+        project.moderationReadiness(versionCount: versionCount)
+    }
+
+    private var hasModerationSubmission: Bool {
+        project.threadId?.isEmpty == false || project.queued?.isEmpty == false ||
+            ["processing", "rejected", "withheld", "approved"].contains(project.status.lowercased())
+    }
+
+    private var submissionStatus: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(NSLocalizedString("Publication", comment: "Project submission section"))
+                .font(.headline)
+
+            HStack(spacing: 8) {
+                Text(NSLocalizedString("Project status", comment: "Moderation status"))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text(project.localizedStatusLabel)
+                    .font(.caption.weight(.semibold))
+            }
+
+            if let queued = project.queued, let submitted = moderationSubmissionDate(queued) {
+                Label(
+                    String.localizedStringWithFormat(
+                        NSLocalizedString("Submitted %@", comment: "Moderation submission date"),
+                        submitted
+                    ),
+                    systemImage: "clock"
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+
+            if project.canSubmitForModeration() {
+                if submissionReadiness.canSubmit {
+                    requirementRow(
+                        NSLocalizedString(
+                            "This project is ready to be sent to Modrinth moderation.",
+                            comment: "Project ready for review"
+                        ),
+                        isComplete: true
+                    )
+
+                    Button(action: onSubmitProject) {
+                        if isSubmittingProject {
+                            ProgressView().frame(maxWidth: .infinity)
+                        } else {
+                            Label(
+                                project.status == "draft"
+                                    ? NSLocalizedString("Submit for review", comment: "Project submission action")
+                                    : NSLocalizedString("Resubmit for review", comment: "Project submission action"),
+                                systemImage: "paperplane.fill"
+                            )
+                            .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.ryntraGreen)
+                    .disabled(!canSubmitProject || isSubmittingProject)
+                } else {
+                    Text(NSLocalizedString("Before submitting, add:", comment: "Missing submission requirements"))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    ForEach(submissionReadiness.missingRequirementKeys, id: \.self) { key in
+                        requirementRow(submissionRequirementLabel(key), isComplete: false)
+                    }
+                }
+
+                if !canSubmitProject && submissionReadiness.canSubmit {
+                    Text(NSLocalizedString(
+                        "You need permission to edit project details before you can submit it.",
+                        comment: "Project submission permission"
+                    ))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+            } else if project.status == "processing" {
+                requirementRow(
+                    NSLocalizedString(
+                        "This project is currently in Modrinth review.",
+                        comment: "Project review status"
+                    ),
+                    isComplete: true
+                )
+                Button {} label: {
+                    Label(NSLocalizedString("In review", comment: "Project status"), systemImage: "hourglass")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(true)
+            }
+
+            if let submissionError {
+                Text(submissionError)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+        }
+        .padding(.bottom, 10)
+        .overlay(alignment: .bottom) {
+            Divider()
+        }
+    }
+
+    private func requirementRow(_ text: String, isComplete: Bool) -> some View {
+        Label(text, systemImage: isComplete ? "checkmark.circle.fill" : "circle")
+            .font(.subheadline)
+            .foregroundStyle(isComplete ? Color.ryntraGreen : Color.secondary)
+    }
+
+    private func submissionRequirementLabel(_ key: String) -> String {
+        switch key {
+        case "version": return NSLocalizedString("At least one version", comment: "Submission requirement")
+        case "icon": return NSLocalizedString("Project icon", comment: "Submission requirement")
+        case "summary": return NSLocalizedString("Short summary", comment: "Submission requirement")
+        case "description": return NSLocalizedString("Full description", comment: "Submission requirement")
+        case "license": return NSLocalizedString("Project license", comment: "Submission requirement")
+        default: return key
+        }
+    }
+
     private var header: some View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(NSLocalizedString("Moderation messages", comment: "Moderation title"))
                     .font(.headline)
-                HStack(spacing: 8) {
-                    Text(NSLocalizedString("Project status", comment: "Moderation status"))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    Text(project.localizedStatusLabel)
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.secondary.opacity(0.14), in: RoundedRectangle(cornerRadius: 6))
-                }
             }
             Spacer()
             Button {
@@ -145,22 +265,16 @@ struct ProjectModerationView: View {
                 .padding(12)
                 .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 10))
             } else {
-                TextEditor(text: $draft)
-                    .frame(minHeight: 150)
-                    .padding(8)
-                    .scrollContentBackground(.hidden)
+                TextField(
+                    NSLocalizedString("Reply to the moderation team…", comment: "Moderation editor"),
+                    text: $draft,
+                    axis: .vertical
+                )
+                    .lineLimit(4...12)
+                    .padding(12)
                     .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 10))
                     .onChange(of: draft) { value in
                         if value.count > 10_000 { draft = String(value.prefix(10_000)) }
-                    }
-                    .overlay(alignment: .topLeading) {
-                        if draft.isEmpty {
-                            Text(NSLocalizedString("Reply to the moderation team…", comment: "Moderation editor"))
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, 13)
-                                .padding(.vertical, 16)
-                                .allowsHitTesting(false)
-                        }
                     }
             }
 
@@ -268,4 +382,18 @@ struct ProjectModerationView: View {
             errorMessage = error.localizedDescription
         }
     }
+
+    private func moderationSubmissionDate(_ value: String) -> String? {
+        guard let date = moderationISODateFormatters.lazy.compactMap({ $0.date(from: value) }).first else {
+            return nil
+        }
+        return date.formatted(date: .abbreviated, time: .shortened)
+    }
 }
+
+private let moderationISODateFormatters: [ISO8601DateFormatter] = {
+    let standard = ISO8601DateFormatter()
+    let fractional = ISO8601DateFormatter()
+    fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return [standard, fractional]
+}()

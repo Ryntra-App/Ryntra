@@ -58,6 +58,11 @@ data class Project(
     fun needsAttention(): Boolean = attentionState().needsAttention
 
     fun attentionState(): ProjectAttentionState = ProjectAttentionState.from(this)
+
+    fun moderationReadiness(versionCount: Int): ProjectSubmissionReadiness =
+        submissionReadiness(versionCount)
+
+    fun canSubmitForModeration(): Boolean = canEnterModeration()
 }
 
 @Serializable

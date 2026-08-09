@@ -78,6 +78,9 @@ class DashboardRepository(
     suspend fun updateProject(projectIdOrSlug: String, update: com.ryntra.shared.model.ProjectUpdate, token: String) =
         api.updateProject(projectIdOrSlug, update, token)
 
+    suspend fun deleteProject(projectIdOrSlug: String, token: String) =
+        api.deleteProject(projectIdOrSlug, token)
+
     suspend fun loadProjectCreationMetadata(): ProjectCreationMetadata = coroutineScope {
         val types = async { api.getProjectTypes() }
         val categories = async { api.getProjectCategories() }

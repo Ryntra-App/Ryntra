@@ -49,6 +49,9 @@ import com.ryntra.mobile.ui.dashboard.project.members.MemberEditorDialog
 import com.ryntra.mobile.ui.dashboard.project.members.MembersHeader
 import com.ryntra.mobile.ui.dashboard.project.members.ProjectMemberCard
 import com.ryntra.mobile.ui.dashboard.projects.ProjectBannerCard
+import com.ryntra.mobile.ui.dashboard.projects.DeleteProjectDialog
+import com.ryntra.mobile.ui.dashboard.projects.ProjectActionsSheet
+import com.ryntra.mobile.ui.dashboard.projects.modrinthPageUrl
 import com.ryntra.mobile.ui.dashboard.projects.toProjectRowModel
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.shared.model.Organization
@@ -56,8 +59,10 @@ import com.ryntra.shared.model.OrganizationPermissionBits
 import com.ryntra.shared.model.Project
 import com.ryntra.shared.model.ProjectMember
 import com.ryntra.shared.model.ProjectMemberUpdate
+import com.ryntra.shared.model.ProjectPermissionBits
 import com.ryntra.shared.model.canManageOrganizationMembers
 import com.ryntra.shared.model.hasOrganizationPermission
+import com.ryntra.shared.model.hasProjectPermission
 
 @Composable
 fun OrganizationDetailScreen(
@@ -70,6 +75,7 @@ fun OrganizationDetailScreen(
     projectAction: ProjectActionState = ProjectActionState(),
     memberSearch: MemberSearchState = MemberSearchState(),
     onProjectClick: (Project) -> Unit,
+    onDeleteProject: (String) -> Unit = {},
     onSearchMember: (String) -> Unit = {},
     onInviteMember: (String, String) -> Unit = { _, _ -> },
     onUpdateMember: (String, String, ProjectMemberUpdate) -> Unit = { _, _, _ -> },
@@ -90,11 +96,32 @@ fun OrganizationDetailScreen(
         (currentMember?.isOwner == true || currentMember.hasOrganizationPermission(OrganizationPermissionBits.ManageInvites))
     var isInviting by remember(organization.id) { mutableStateOf(false) }
     var editingMember by remember(organization.id) { mutableStateOf<ProjectMember?>(null) }
+    var actionProject by remember(organization.id) { mutableStateOf<Project?>(null) }
+    var deletingProject by remember(organization.id) { mutableStateOf<Project?>(null) }
+    val canDeleteProjects = currentMember.hasProjectPermission(ProjectPermissionBits.DeleteProject)
+    val projectAccess = when {
+        currentMember?.isOwner == true -> stringResource(R.string.organizations_access_owner)
+        currentMember == null -> stringResource(R.string.organizations_access_view)
+        else -> buildList {
+            if (currentMember.hasProjectPermission(ProjectPermissionBits.EditDetails) ||
+                currentMember.hasProjectPermission(ProjectPermissionBits.EditBody)
+            ) {
+                add(stringResource(R.string.organizations_access_edit))
+            }
+            if (currentMember.hasProjectPermission(ProjectPermissionBits.UploadVersion)) {
+                add(stringResource(R.string.organizations_access_releases))
+            }
+            if (currentMember.hasProjectPermission(ProjectPermissionBits.DeleteProject)) {
+                add(stringResource(R.string.organizations_access_delete))
+            }
+        }.ifEmpty { listOf(stringResource(R.string.organizations_access_view)) }.joinToString()
+    }
 
     LaunchedEffect(projectAction.successMessage) {
         if (projectAction.successMessage != null) {
             isInviting = false
             editingMember = null
+            deletingProject = null
             onClearProjectActionStatus()
         }
     }
@@ -260,6 +287,18 @@ fun OrganizationDetailScreen(
                 ),
                 modifier = Modifier.padding(top = 22.dp, bottom = 6.dp),
             )
+            Text(
+                text = stringResource(R.string.organizations_project_context, organization.name),
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = stringResource(R.string.organizations_project_access, currentMember?.role.orEmpty(), projectAccess),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 2.dp, bottom = 10.dp),
+            )
         }
 
         when {
@@ -294,8 +333,10 @@ fun OrganizationDetailScreen(
                         ProjectBannerCard(
                             model = project.toProjectRowModel(),
                             isFavorite = false,
+                            isSelected = actionProject?.id == project.id,
                             onFavoriteClick = null,
                             onClick = { onProjectClick(project) },
+                            onLongClick = { actionProject = project },
                         )
                     }
                 }
@@ -332,6 +373,38 @@ fun OrganizationDetailScreen(
                 },
             )
         }
+    }
+    actionProject?.let { project ->
+        ProjectActionsSheet(
+            project = project,
+            canDelete = canDeleteProjects,
+            onDismiss = { actionProject = null },
+            onOpen = {
+                actionProject = null
+                onProjectClick(project)
+            },
+            onOpenInBrowser = {
+                actionProject = null
+                uriHandler.openUri(project.modrinthPageUrl())
+            },
+            onDeleteRequest = {
+                actionProject = null
+                deletingProject = project
+                onClearProjectActionStatus()
+            },
+        )
+    }
+    deletingProject?.let { project ->
+        DeleteProjectDialog(
+            project = project,
+            isDeleting = projectAction.isRunning && projectAction.targetId == project.id,
+            errorMessage = projectAction.errorMessage.takeIf { projectAction.targetId == project.id },
+            onDismiss = {
+                deletingProject = null
+                onClearProjectActionStatus()
+            },
+            onConfirm = { onDeleteProject(project.id) },
+        )
     }
 }
 

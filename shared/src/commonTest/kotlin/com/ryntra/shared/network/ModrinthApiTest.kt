@@ -69,6 +69,24 @@ class ModrinthApiTest {
         assertEquals("draft", project.status)
         api.close()
     }
+
+    @Test
+    fun projectDeleteUsesAuthenticatedProjectEndpoint() = runTest {
+        val engine = MockEngine { request ->
+            assertEquals(HttpMethod.Delete, request.method)
+            assertEquals("/v2/project/project-1", request.url.encodedPath)
+            assertEquals("mrp_test", request.headers[HttpHeaders.Authorization])
+            respond(
+                content = "",
+                status = HttpStatusCode.NoContent,
+            )
+        }
+        val api = ModrinthApi(testClient(engine))
+
+        api.deleteProject("project-1", "mrp_test")
+
+        api.close()
+    }
     @Test
     fun versionOnlyDependencyIsResolvedToProjectMetadataInBatches() = runTest {
         val engine = MockEngine { request ->

@@ -16,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,7 +57,7 @@ internal fun ProjectDetailTabs(
     onSelect: (ProjectDetailTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = RyntraDesign.colors
+    val colors = MaterialTheme.colorScheme
     val outerShape = RoundedCornerShape(11.dp)
     val availableTabs = ProjectDetailTab.entries.filter { tab ->
         !isReadOnly || tab == ProjectDetailTab.Overview || tab == ProjectDetailTab.Versions
@@ -67,15 +68,15 @@ internal fun ProjectDetailTabs(
         modifier = modifier
             .fillMaxWidth()
             .clip(outerShape)
-            .background(colors.surface)
-            .border(0.75.dp, Color.White.copy(alpha = 0.08f), outerShape)
+            .background(colors.surfaceContainerLow)
+            .border(0.75.dp, colors.outlineVariant, outerShape)
             .then(if (isScrollable) Modifier.horizontalScroll(rememberScrollState()) else Modifier)
             .padding(3.dp),
     ) {
         availableTabs.forEach { tab ->
             val isSelected = selected == tab
             val itemShape = RoundedCornerShape(8.dp)
-            val contentColor = if (isSelected) colors.accent else colors.labelSecondary
+            val contentColor = if (isSelected) colors.onSecondaryContainer else colors.onSurfaceVariant
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
@@ -83,7 +84,7 @@ internal fun ProjectDetailTabs(
                     .then(if (isScrollable) Modifier.width(112.dp) else Modifier.weight(1f))
                     .height(44.dp)
                     .clip(itemShape)
-                    .background(if (isSelected) colors.surfaceRaised else Color.Transparent)
+                    .background(if (isSelected) colors.secondaryContainer else Color.Transparent)
                     .clickable(role = Role.Tab) { onSelect(tab) }
                     .semantics { this.selected = isSelected }
                     .padding(horizontal = 4.dp),
