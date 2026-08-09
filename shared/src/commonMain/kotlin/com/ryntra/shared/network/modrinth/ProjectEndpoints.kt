@@ -148,7 +148,9 @@ private data class CreateProjectPayload(
     @SerialName("issues_url") val issuesUrl: String? = null,
     @SerialName("wiki_url") val wikiUrl: String? = null,
     @SerialName("discord_url") val discordUrl: String? = null,
-    @SerialName("is_draft") val isDraft: Boolean = true,
+    // Keep this non-default: apiJson omits default values, while project creation must
+    // always be explicit about creating a private draft.
+    @SerialName("is_draft") val isDraft: Boolean,
     @SerialName("initial_versions") val initialVersions: List<String>,
 )
 

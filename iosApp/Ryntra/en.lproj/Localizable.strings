@@ -387,6 +387,7 @@
 "Your project starts as a private draft" = "Your project starts as a private draft";
 "Nothing is published until you add a version and submit the project for Modrinth review." = "Nothing is published until you add a version and submit the project for Modrinth review.";
 "Choose focused categories that genuinely describe the project. They determine where it appears in Modrinth browsing and search." = "Choose focused categories that genuinely describe the project. They determine where it appears in Modrinth browsing and search.";
+"Choose up to 3 focused categories that genuinely describe the project. They determine where it appears in Modrinth browsing and search." = "Choose up to 3 focused categories that genuinely describe the project. They determine where it appears in Modrinth browsing and search.";
 "Where does it run?" = "Where does it run?";
 "Set client and server support independently so users know exactly where they must install it." = "Set client and server support independently so users know exactly where they must install it.";
 "Choose a standard SPDX license, or enter an exact SPDX identifier such as MIT, Apache-2.0, or GPL-3.0-only." = "Choose a standard SPDX license, or enter an exact SPDX identifier such as MIT, Apache-2.0, or GPL-3.0-only.";
@@ -400,10 +401,14 @@
 "Explain the main features, installation, requirements, and compatibility." = "Explain the main features, installation, requirements, and compatibility.";
 "Enter a project name." = "Enter a project name.";
 "Use no more than 64 characters for the project name." = "Use no more than 64 characters for the project name.";
+"Use 3–64 characters for the project name." = "Use 3–64 characters for the project name.";
 "Add the project address. It is generated from the name automatically." = "Add the project address. It is generated from the name automatically.";
 "Use 3–64 supported letters, numbers, or URL-safe symbols." = "Use 3–64 supported letters, numbers, or URL-safe symbols.";
 "Add a short summary so people understand the project." = "Add a short summary so people understand the project.";
 "Use no more than 256 characters for the summary." = "Use no more than 256 characters for the summary.";
+"Use 3–256 characters for the summary." = "Use 3–256 characters for the summary.";
+"The full description cannot exceed 65,536 characters." = "The full description cannot exceed 65,536 characters.";
+"Modrinth rejected the draft: %@" = "Modrinth rejected the draft: %@";
 "Complete the required fields highlighted below." = "Complete the required fields highlighted below.";
 "Your Modrinth session expired. Sign in again, then retry." = "Your Modrinth session expired. Sign in again, then retry.";
 "Your Modrinth account does not have permission to create projects." = "Your Modrinth account does not have permission to create projects.";

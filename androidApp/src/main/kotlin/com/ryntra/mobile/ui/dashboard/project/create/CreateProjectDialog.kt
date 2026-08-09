@@ -2,6 +2,7 @@ package com.ryntra.mobile.ui.dashboard.project.create
 
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -60,6 +61,7 @@ import com.ryntra.shared.model.CreateProjectRequest
 import com.ryntra.shared.model.Project
 import com.ryntra.shared.model.ProjectCreationMetadata
 import com.ryntra.shared.model.ProjectFileUpload
+import com.ryntra.shared.network.ApiException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -301,16 +303,26 @@ private const val CREATE_PROJECT_STEP_COUNT = 3
 internal const val HIDDEN_PROJECT_TYPE = "minecraft_java_server"
 
 private fun android.content.Context.projectCreationErrorMessage(error: Throwable): String {
+    val apiError = error as? ApiException
+    if (apiError != null) {
+        Log.w(
+            "RyntraProjectCreate",
+            "Modrinth rejected project creation: status=${apiError.statusCode}, code=${apiError.errorCode}, description=${apiError.message}",
+        )
+    }
     val details = error.message.orEmpty().lowercase()
     return when {
-        "401" in details || "token" in details && ("invalid" in details || "expired" in details) ->
+        apiError?.statusCode == 401 || "401" in details || "token" in details && ("invalid" in details || "expired" in details) ->
             getString(R.string.project_create_error_session)
-        "403" in details || "permission" in details -> getString(R.string.project_create_error_permission)
-        "409" in details || "already exists" in details || "slug" in details && "taken" in details ->
+        apiError?.statusCode == 403 || "403" in details || "permission" in details -> getString(R.string.project_create_error_permission)
+        apiError?.statusCode == 409 || "409" in details || "already exists" in details ||
+            "slug" in details && ("taken" in details || "collision" in details) ->
             getString(R.string.project_create_error_slug_taken)
-        "429" in details || "too many requests" in details -> getString(R.string.project_create_error_rate_limit)
+        apiError?.statusCode == 429 || "429" in details || "too many requests" in details -> getString(R.string.project_create_error_rate_limit)
         "initial_versions" in details || "parsing" in details || "serialization" in details || "json" in details ->
             getString(R.string.project_create_error_response)
+        apiError != null && apiError.message.isNotBlank() ->
+            getString(R.string.project_create_error_rejected, apiError.message)
         else -> getString(R.string.project_create_submit_error)
     }
 }

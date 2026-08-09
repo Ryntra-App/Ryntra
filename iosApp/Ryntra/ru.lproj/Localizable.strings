@@ -387,6 +387,7 @@
 "Your project starts as a private draft" = "Проект начнёт работу как приватный черновик";
 "Nothing is published until you add a version and submit the project for Modrinth review." = "Ничего не будет опубликовано, пока вы не добавите версию и не отправите проект на модерацию Modrinth.";
 "Choose focused categories that genuinely describe the project. They determine where it appears in Modrinth browsing and search." = "Выберите только подходящие категории. Они определяют положение проекта в каталоге и поиске Modrinth.";
+"Choose up to 3 focused categories that genuinely describe the project. They determine where it appears in Modrinth browsing and search." = "Выберите до 3 подходящих категорий. Они определяют положение проекта в каталоге и поиске Modrinth.";
 "Where does it run?" = "Где работает проект?";
 "Set client and server support independently so users know exactly where they must install it." = "Отдельно укажите поддержку клиента и сервера, чтобы пользователи точно знали, куда устанавливать проект.";
 "Choose a standard SPDX license, or enter an exact SPDX identifier such as MIT, Apache-2.0, or GPL-3.0-only." = "Выберите стандартную лицензию SPDX или введите точный идентификатор, например MIT, Apache-2.0 или GPL-3.0-only.";
@@ -400,10 +401,14 @@
 "Explain the main features, installation, requirements, and compatibility." = "Расскажите об основных функциях, установке, требованиях и совместимости.";
 "Enter a project name." = "Введите название проекта.";
 "Use no more than 64 characters for the project name." = "Название проекта должно быть не длиннее 64 символов.";
+"Use 3–64 characters for the project name." = "Название проекта должно содержать от 3 до 64 символов.";
 "Add the project address. It is generated from the name automatically." = "Добавьте адрес проекта. Он создаётся из названия автоматически.";
 "Use 3–64 supported letters, numbers, or URL-safe symbols." = "Используйте от 3 до 64 поддерживаемых символов для адреса.";
 "Add a short summary so people understand the project." = "Добавьте краткое описание, чтобы люди поняли суть проекта.";
 "Use no more than 256 characters for the summary." = "Краткое описание должно быть не длиннее 256 символов.";
+"Use 3–256 characters for the summary." = "Краткое описание должно содержать от 3 до 256 символов.";
+"The full description cannot exceed 65,536 characters." = "Полное описание не может быть длиннее 65 536 символов.";
+"Modrinth rejected the draft: %@" = "Modrinth отклонил черновик: %@";
 "Complete the required fields highlighted below." = "Заполните обязательные поля, отмеченные ниже.";
 "Your Modrinth session expired. Sign in again, then retry." = "Сессия Modrinth истекла. Войдите снова и повторите попытку.";
 "Your Modrinth account does not have permission to create projects." = "У вашего аккаунта Modrinth нет разрешения на создание проектов.";

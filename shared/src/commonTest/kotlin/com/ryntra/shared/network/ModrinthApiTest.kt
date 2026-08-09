@@ -787,6 +787,7 @@ class ModrinthApiTest {
         }
 
         assertEquals(401, error.statusCode)
+        assertEquals("unauthorized", error.errorCode)
         assertEquals("The access token is invalid or expired.", error.message)
         api.close()
     }

@@ -506,13 +506,17 @@ internal fun ProjectPageStep(
             markdown = draft.body,
             mode = draft.editorMode,
             placeholder = stringResource(R.string.project_create_description_hint),
-            onMarkdownChange = { draft.body = it },
+            onMarkdownChange = { draft.body = it.take(ProjectCreationRules.BODY_MAX_LENGTH + 1) },
             onModeChange = { draft.editorMode = it },
-            isError = showValidationErrors && draft.body.isBlank(),
+            isError = showValidationErrors &&
+                (draft.body.isBlank() || draft.body.length > ProjectCreationRules.BODY_MAX_LENGTH),
         )
-        if (draft.body.isBlank()) {
+        if (draft.body.isBlank() || draft.body.length > ProjectCreationRules.BODY_MAX_LENGTH) {
             Text(
-                stringResource(R.string.project_create_description_required),
+                stringResource(
+                    if (draft.body.isBlank()) R.string.project_create_description_required
+                    else R.string.project_create_description_too_long,
+                ),
                 color = if (showValidationErrors) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall,
             )

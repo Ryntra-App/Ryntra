@@ -39,8 +39,12 @@ data class ProjectCreationMetadata(
 object ProjectCreationRules {
     const val SLUG_MIN_LENGTH = 3
     const val SLUG_MAX_LENGTH = 64
+    const val TITLE_MIN_LENGTH = 3
     const val TITLE_MAX_LENGTH = 64
+    const val DESCRIPTION_MIN_LENGTH = 3
     const val DESCRIPTION_MAX_LENGTH = 256
+    const val BODY_MAX_LENGTH = 65_536
+    const val CATEGORIES_MAX_COUNT = 3
     private val slugPattern = Regex("^[A-Za-z0-9_!@$()`.+,\\\"'\\-]{3,64}$")
     val environmentValues = listOf("required", "optional", "unsupported", "unknown")
 
@@ -49,13 +53,17 @@ object ProjectCreationRules {
         val title = request.title.trim()
         val description = request.description.trim()
         if (!isSlugValid(slug)) add("Slug must be 3–64 characters and contain only Modrinth-supported characters.")
-        if (title.isEmpty()) add("Project name cannot be empty.")
+        if (title.length < TITLE_MIN_LENGTH) add("Project name must be at least $TITLE_MIN_LENGTH characters.")
         if (title.length > TITLE_MAX_LENGTH) add("Project name must be $TITLE_MAX_LENGTH characters or fewer.")
-        if (description.isEmpty()) add("Add a short project summary.")
+        if (description.length < DESCRIPTION_MIN_LENGTH) add("Summary must be at least $DESCRIPTION_MIN_LENGTH characters.")
         if (description.length > DESCRIPTION_MAX_LENGTH) add("Summary must be $DESCRIPTION_MAX_LENGTH characters or fewer.")
         if (request.body.isBlank()) add("Add a full project description.")
+        if (request.body.length > BODY_MAX_LENGTH) add("Full description must be $BODY_MAX_LENGTH characters or fewer.")
         if (request.projectType.isBlank()) add("Select a project type.")
         if (request.licenseId.isBlank()) add("Select a license.")
+        if (request.categories.distinct().size > CATEGORIES_MAX_COUNT) {
+            add("Select no more than $CATEGORIES_MAX_COUNT primary categories.")
+        }
         if (request.clientSide !in environmentValues || request.serverSide !in environmentValues) {
             add("Select valid client and server support values.")
         }

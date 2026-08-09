@@ -481,9 +481,9 @@
     <string name="project_create_slug_error">Use 3–64 supported letters, numbers, or URL-safe symbols.</string>
     <string name="project_create_slug_required">Add the project address. It is generated from the name automatically.</string>
     <string name="project_create_name_required">Enter a project name.</string>
-    <string name="project_create_name_error">Use no more than 64 characters for the project name.</string>
+    <string name="project_create_name_error">Use 3–64 characters for the project name.</string>
     <string name="project_create_summary_required">Add a short summary so people understand the project.</string>
-    <string name="project_create_summary_error">Use no more than 256 characters for the summary.</string>
+    <string name="project_create_summary_error">Use 3–256 characters for the summary.</string>
     <string name="project_create_summary_hint">One clear sentence explaining why someone should install it</string>
     <string name="project_create_type_help">This controls available categories and where Modrinth lists the project.</string>
     <string name="project_create_artwork">Project icon</string>
@@ -496,7 +496,7 @@
     <string name="project_create_change_categories">Change categories · %1$d selected</string>
     <string name="project_create_categories_none">Optional. Add only the categories that clearly fit.</string>
     <string name="project_create_categories_summary_more">%1$s and %2$d more</string>
-    <string name="project_create_categories_picker_help">Select several focused categories. A shorter, more accurate list helps people find the project.</string>
+    <string name="project_create_categories_picker_help">Select up to 3 focused categories. A shorter, more accurate list helps people find the project.</string>
     <string name="project_create_search_categories">Search categories</string>
     <string name="project_create_category_group_categories">Themes and purpose</string>
     <string name="project_create_category_group_features">Affected features</string>
@@ -596,6 +596,7 @@
     <string name="project_create_description_help">Explain the main features, installation, requirements, and compatibility.</string>
     <string name="project_create_description_hint"># About\n\nWhat does the project do?\n\n## Installation\n\nExplain how to get started.</string>
     <string name="project_create_description_required">Add a full description before creating the draft.</string>
+    <string name="project_create_description_too_long">The full description cannot exceed 65,536 characters.</string>
     <string name="project_create_links_help">Help users find source code, support, documentation, and your community.</string>
     <string name="project_create_source">Source code</string>
     <string name="project_create_issues">Issue tracker</string>
@@ -611,6 +612,7 @@
     <string name="project_create_error_slug_taken">This project address is already in use. Return to the first step and choose another.</string>
     <string name="project_create_error_rate_limit">Modrinth is receiving too many requests. Wait a moment and try again.</string>
     <string name="project_create_error_response">The draft could not be created because Modrinth returned an unexpected response. Your entries are saved, so try again.</string>
+    <string name="project_create_error_rejected">Modrinth rejected the draft: %1$s</string>
     <string name="project_create_discard_title">Discard this draft?</string>
     <string name="project_create_discard_message">The information entered on this screen will be lost.</string>
     <string name="project_create_discard">Discard</string>

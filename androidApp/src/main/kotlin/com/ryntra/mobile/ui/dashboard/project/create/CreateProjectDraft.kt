@@ -34,13 +34,13 @@ internal class CreateProjectDraft {
         get() = title.isNotBlank() || summary.isNotBlank() || body.isNotBlank() || icon != null
 
     val isTitleValid: Boolean
-        get() = title.isNotBlank() && title.length <= ProjectCreationRules.TITLE_MAX_LENGTH
+        get() = title.trim().length in ProjectCreationRules.TITLE_MIN_LENGTH..ProjectCreationRules.TITLE_MAX_LENGTH
 
     val isSlugValid: Boolean
         get() = ProjectCreationRules.isSlugValid(slug)
 
     val isSummaryValid: Boolean
-        get() = summary.isNotBlank() && summary.length <= ProjectCreationRules.DESCRIPTION_MAX_LENGTH
+        get() = summary.trim().length in ProjectCreationRules.DESCRIPTION_MIN_LENGTH..ProjectCreationRules.DESCRIPTION_MAX_LENGTH
 
     val areLinksValid: Boolean
         get() = listOf(sourceUrl, issuesUrl, wikiUrl, discordUrl).all { it.isBlank() || it.isWebUrl() }
@@ -56,13 +56,18 @@ internal class CreateProjectDraft {
     }
 
     fun toggleCategory(category: String) {
-        categories = if (category in categories) categories - category else categories + category
+        categories = when {
+            category in categories -> categories - category
+            categories.size < ProjectCreationRules.CATEGORIES_MAX_COUNT -> categories + category
+            else -> categories
+        }
     }
 
     fun isStepValid(): Boolean = when (step) {
         0 -> isTitleValid && isSlugValid && isSummaryValid && projectType.isNotBlank()
         1 -> licenseId.isNotBlank()
-        else -> body.isNotBlank() && areLinksValid && ProjectCreationRules.validate(toRequest()).isEmpty()
+        else -> body.isNotBlank() && body.length <= ProjectCreationRules.BODY_MAX_LENGTH &&
+            areLinksValid && ProjectCreationRules.validate(toRequest()).isEmpty()
     }
 
     fun markValidationAttempted() {

@@ -38,7 +38,7 @@ internal suspend fun HttpResponse.ensureSuccess() {
         429 -> "Modrinth is receiving too many requests. Try again shortly."
         else -> apiError?.description ?: "Modrinth request failed (${status.value})."
     }
-    throw ApiException(status.value, safeMessage)
+    throw ApiException(status.value, safeMessage, apiError?.error)
 }
 
 @Serializable

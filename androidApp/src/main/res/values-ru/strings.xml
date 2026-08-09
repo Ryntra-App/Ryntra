@@ -485,9 +485,9 @@
     <string name="project_create_slug_error">Используйте от 3 до 64 поддерживаемых символов для адреса.</string>
     <string name="project_create_slug_required">Добавьте адрес проекта. Он создаётся из названия автоматически.</string>
     <string name="project_create_name_required">Введите название проекта.</string>
-    <string name="project_create_name_error">Название проекта должно быть не длиннее 64 символов.</string>
+    <string name="project_create_name_error">Название проекта должно содержать от 3 до 64 символов.</string>
     <string name="project_create_summary_required">Добавьте краткое описание, чтобы люди поняли суть проекта.</string>
-    <string name="project_create_summary_error">Краткое описание должно быть не длиннее 256 символов.</string>
+    <string name="project_create_summary_error">Краткое описание должно содержать от 3 до 256 символов.</string>
     <string name="project_create_summary_hint">Одно понятное предложение о том, зачем устанавливать проект</string>
     <string name="project_create_type_help">От типа зависят доступные категории и раздел проекта на Modrinth.</string>
     <string name="project_create_artwork">Иконка проекта</string>
@@ -500,7 +500,7 @@
     <string name="project_create_change_categories">Изменить категории · выбрано %1$d</string>
     <string name="project_create_categories_none">Необязательно. Добавляйте только действительно подходящие категории.</string>
     <string name="project_create_categories_summary_more">%1$s и ещё %2$d</string>
-    <string name="project_create_categories_picker_help">Можно выбрать несколько категорий. Короткий и точный список помогает людям найти проект.</string>
+    <string name="project_create_categories_picker_help">Выберите до 3 точных категорий. Короткий список помогает людям найти проект.</string>
     <string name="project_create_search_categories">Поиск категорий</string>
     <string name="project_create_category_group_categories">Тематика и назначение</string>
     <string name="project_create_category_group_features">Затрагиваемые элементы</string>
@@ -600,6 +600,7 @@
     <string name="project_create_description_help">Расскажите об основных функциях, установке, требованиях и совместимости.</string>
     <string name="project_create_description_hint"># О проекте\n\nЧто он умеет?\n\n## Установка\n\nОбъясните, как начать работу.</string>
     <string name="project_create_description_required">Добавьте полное описание перед созданием черновика.</string>
+    <string name="project_create_description_too_long">Полное описание не может быть длиннее 65 536 символов.</string>
     <string name="project_create_links_help">Помогите найти исходный код, поддержку, документацию и сообщество.</string>
     <string name="project_create_source">Исходный код</string>
     <string name="project_create_issues">Сообщить о проблеме</string>
@@ -615,6 +616,7 @@
     <string name="project_create_error_slug_taken">Этот адрес проекта уже занят. Вернитесь на первый шаг и выберите другой.</string>
     <string name="project_create_error_rate_limit">Modrinth получает слишком много запросов. Подождите немного и повторите попытку.</string>
     <string name="project_create_error_response">Черновик не создан из-за неожиданного ответа Modrinth. Введённые данные сохранены, попробуйте ещё раз.</string>
+    <string name="project_create_error_rejected">Modrinth отклонил черновик: %1$s</string>
     <string name="project_create_discard_title">Удалить этот черновик?</string>
     <string name="project_create_discard_message">Введённые на этом экране данные будут потеряны.</string>
     <string name="project_create_discard">Удалить</string>

@@ -22,5 +22,6 @@ class ProjectCreationPayloadTest {
         )
 
         assertContains(encoded, "\"initial_versions\":[]")
+        assertContains(encoded, "\"is_draft\":true")
     }
 }

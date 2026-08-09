@@ -426,8 +426,8 @@ private struct CreateProjectView: View {
             .onSubmit { focusedField = .slug }
             if shouldShowValidationErrors && title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 validationLabel("Enter a project name.")
-            } else if title.count > 64 {
-                validationLabel("Use no more than 64 characters for the project name.")
+            } else if (!title.isEmpty && title.trimmingCharacters(in: .whitespacesAndNewlines).count < 3) || title.count > 64 {
+                validationLabel("Use 3–64 characters for the project name.")
             }
 
             TextField("Modrinth URL slug", text: Binding(
@@ -465,8 +465,8 @@ private struct CreateProjectView: View {
 
             if shouldShowValidationErrors && summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 validationLabel("Add a short summary so people understand the project.")
-            } else if summary.count > 256 {
-                validationLabel("Use no more than 256 characters for the summary.")
+            } else if (!summary.isEmpty && summary.trimmingCharacters(in: .whitespacesAndNewlines).count < 3) || summary.count > 256 {
+                validationLabel("Use 3–256 characters for the summary.")
             }
 
             HStack {
@@ -564,7 +564,7 @@ private struct CreateProjectView: View {
                 if !categories.isEmpty { Text("\(categories.count) selected") }
             }
         } footer: {
-            Text("Choose focused categories that genuinely describe the project. They determine where it appears in Modrinth browsing and search.")
+            Text("Choose up to 3 focused categories that genuinely describe the project. They determine where it appears in Modrinth browsing and search.")
         }
 
         Section {
@@ -641,7 +641,7 @@ private struct CreateProjectView: View {
                         ForEach(grouped[header] ?? [], id: \.name) { category in
                             Button {
                                 if categories.contains(category.name) { categories.remove(category.name) }
-                                else { categories.insert(category.name) }
+                                else if categories.count < 3 { categories.insert(category.name) }
                             } label: {
                                 HStack(alignment: .top, spacing: 12) {
                                     VStack(alignment: .leading, spacing: 3) {
@@ -871,13 +871,17 @@ private struct CreateProjectView: View {
                 if blocks.isEmpty { Text("Nothing to preview yet.").foregroundStyle(.secondary) }
                 ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in MarkdownBlockView(block: block) }
             } else {
-                TextEditor(text: $projectBody)
+                TextEditor(text: Binding(
+                    get: { projectBody },
+                    set: { projectBody = String($0.prefix(65_537)) }
+                ))
                     .font(.body.monospaced())
                     .frame(minHeight: 240)
                     .focused($focusedField, equals: .description)
                     .accessibilityLabel("Full project description")
                     .overlay {
-                        if shouldShowValidationErrors && projectBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        if shouldShowValidationErrors &&
+                            (projectBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || projectBody.count > 65_536) {
                             RoundedRectangle(cornerRadius: 8)
                                 .stroke(Color.red, lineWidth: 1)
                         }
@@ -887,6 +891,10 @@ private struct CreateProjectView: View {
                 Label("Add a full description before creating the draft.", systemImage: shouldShowValidationErrors ? "exclamationmark.circle.fill" : "info.circle")
                     .font(.caption)
                     .foregroundStyle(shouldShowValidationErrors ? Color.red : Color.secondary)
+            } else if projectBody.count > 65_536 {
+                Label("The full description cannot exceed 65,536 characters.", systemImage: "exclamationmark.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.red)
             }
         } header: {
             Text("Project page")
@@ -922,11 +930,13 @@ private struct CreateProjectView: View {
     private var canContinue: Bool {
         switch step {
         case 0:
-            return !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && title.count <= 64 &&
-                slug.isValidModrinthSlug && !summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-                summary.count <= 256 && !projectType.isEmpty
+            return (3...64).contains(title.trimmingCharacters(in: .whitespacesAndNewlines).count) &&
+                slug.isValidModrinthSlug &&
+                (3...256).contains(summary.trimmingCharacters(in: .whitespacesAndNewlines).count) &&
+                !projectType.isEmpty
         case 1: return !licenseID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        default: return !projectBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && linksAreValid
+        default: return !projectBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+            projectBody.count <= 65_536 && linksAreValid
         }
     }
 
@@ -1084,6 +1094,9 @@ private struct CreateProjectView: View {
         }
         if details.contains("initial_versions") || details.contains("parsing") || details.contains("serialization") || details.contains("json") {
             return String(localized: "The draft could not be created because Modrinth returned an unexpected response. Your entries are saved, so try again.")
+        }
+        if !details.isEmpty && !details.contains("modrinth could not create") {
+            return String(format: String(localized: "Modrinth rejected the draft: %@"), error.localizedDescription)
         }
         return String(localized: "Modrinth could not create the project. Check the highlighted fields and try again.")
     }
