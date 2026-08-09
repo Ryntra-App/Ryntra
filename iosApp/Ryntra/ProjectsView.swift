@@ -192,6 +192,7 @@ struct ProjectsView: View {
 private struct CreateProjectView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let onCreated: (Project) -> Void
 
@@ -217,22 +218,25 @@ private struct CreateProjectView: View {
     @State private var showingMarkdownPreview = false
     @State private var isSubmitting = false
     @State private var errorMessage: String?
+    @State private var showingDiscardConfirmation = false
+    @State private var showingCategoryPicker = false
+    @State private var categoryQuery = ""
+    @State private var showingLicensePicker = false
+    @State private var licenseQuery = ""
+    @FocusState private var focusedField: Field?
 
     private let environments = ["required", "optional", "unsupported", "unknown"]
+
+    private enum Field: Hashable {
+        case title, slug, summary, license, description, source, issues, wiki, discord
+    }
 
     var bodyView: some View {
         NavigationStack {
             Group {
                 if let metadata {
                     Form {
-                        Section {
-                            Label(
-                                "Your project is created as a private draft. Add a release before submitting it for review.",
-                                systemImage: "lock.shield"
-                            )
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        }
+                        creationProgress
 
                         switch step {
                         case 0: basics(metadata)
@@ -241,9 +245,15 @@ private struct CreateProjectView: View {
                         }
 
                         if let errorMessage {
-                            Section { Text(errorMessage).foregroundStyle(.red) }
+                            Section {
+                                Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                                    .foregroundStyle(.red)
+                                    .accessibilityLabel("Error: \(errorMessage)")
+                            }
                         }
                     }
+                    .formStyle(.grouped)
+                    .scrollDismissesKeyboard(.interactively)
                 } else if let errorMessage {
                     VStack(spacing: 12) {
                         Image(systemName: "wifi.exclamationmark").font(.largeTitle).foregroundStyle(.secondary)
@@ -259,42 +269,42 @@ private struct CreateProjectView: View {
                     }
                 }
             }
-            .navigationTitle("Create project")
+            .navigationTitle("New project")
             .ryntraInlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", role: .cancel) { dismiss() }.disabled(isSubmitting)
-                }
-                ToolbarItem(placement: .principal) {
-                    VStack(spacing: 1) {
-                        Text("Create project").font(.headline)
-                        Text("\(step + 1) of 3").font(.caption2).foregroundStyle(.secondary)
+                    Button {
+                        if isDirty { showingDiscardConfirmation = true } else { dismiss() }
+                    } label: {
+                        Image(systemName: "xmark")
                     }
+                    .accessibilityLabel("Close project creation")
+                    .disabled(isSubmitting)
                 }
             }
             .safeAreaInset(edge: .bottom) {
                 if metadata != nil {
-                    HStack(spacing: 12) {
-                        if step > 0 {
-                            Button("Back") { step -= 1 }
-                                .buttonStyle(.bordered)
-                                .disabled(isSubmitting)
-                        }
-                        Button(step == 2 ? "Create draft" : "Continue") {
-                            if step < 2 { step += 1 } else { Task { await create() } }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.ryntraGreen)
-                        .frame(maxWidth: .infinity, alignment: .trailing)
-                        .disabled(!canContinue || isSubmitting)
-                        .overlay { if isSubmitting { ProgressView().tint(.white) } }
-                    }
-                    .padding()
-                    .background(.bar)
+                    bottomActions
                 }
             }
         }
         .interactiveDismissDisabled(isDirty || isSubmitting)
+        .confirmationDialog(
+            "Discard this draft?",
+            isPresented: $showingDiscardConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Discard draft", role: .destructive) { dismiss() }
+            Button("Keep editing", role: .cancel) {}
+        } message: {
+            Text("Everything entered on this screen will be lost.")
+        }
+        .sheet(isPresented: $showingCategoryPicker) {
+            if let metadata { categoryPicker(metadata) }
+        }
+        .sheet(isPresented: $showingLicensePicker) {
+            if let metadata { licensePicker(metadata) }
+        }
         .task { await loadMetadata() }
         .onChange(of: selectedPhoto) { item in
             guard let item else { return }
@@ -304,75 +314,531 @@ private struct CreateProjectView: View {
 
     var body: some View { bodyView }
 
+    private var creationProgress: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text("Step \(step + 1) of 3")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.ryntraGreen)
+                    Spacer()
+                    Text(stepTitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                ProgressView(value: Double(step + 1), total: 3)
+                    .tint(.ryntraGreen)
+                    .accessibilityLabel("Project creation progress")
+                    .accessibilityValue("Step \(step + 1) of 3")
+                Text(stepHeadline)
+                    .font(.title2.bold())
+                    .accessibilityAddTraits(.isHeader)
+                Text(stepHelp)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 4)
+        }
+        .listRowBackground(Color.clear)
+    }
+
+    private var bottomActions: some View {
+        HStack(spacing: 12) {
+            if step > 0 {
+                Button {
+                    focusedField = nil
+                    changeStep(to: step - 1)
+                } label: {
+                    Label("Back", systemImage: "chevron.left")
+                        .frame(minWidth: 76)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+                .disabled(isSubmitting)
+            }
+            Button {
+                focusedField = nil
+                if step < 2 { changeStep(to: step + 1) } else { Task { await create() } }
+            } label: {
+                HStack(spacing: 8) {
+                    if isSubmitting { ProgressView().tint(.white) }
+                    Text(step == 2 ? "Create private draft" : "Continue")
+                    if !isSubmitting { Image(systemName: step == 2 ? "paperplane.fill" : "chevron.right") }
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .tint(.ryntraGreen)
+            .disabled(!canContinue || isSubmitting)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 12)
+        .background(.bar)
+        .overlay(alignment: .top) { Divider() }
+    }
+
+    private var stepTitle: String {
+        switch step {
+        case 0: return String(localized: "Basics")
+        case 1: return String(localized: "Compatibility")
+        default: return String(localized: "Project page")
+        }
+    }
+
+    private var stepHeadline: String {
+        switch step {
+        case 0: return String(localized: "Give it an identity")
+        case 1: return String(localized: "Set expectations")
+        default: return String(localized: "Tell the full story")
+        }
+    }
+
+    private var stepHelp: String {
+        switch step {
+        case 0: return String(localized: "Choose how creators will recognize and find your project.")
+        case 1: return String(localized: "Explain where it works, how it is licensed, and how it should be discovered.")
+        default: return String(localized: "Write the page people will read before they download.")
+        }
+    }
+
+    private func changeStep(to newStep: Int) {
+        if reduceMotion {
+            step = newStep
+        } else {
+            withAnimation(.easeOut(duration: 0.2)) { step = newStep }
+        }
+    }
+
     @ViewBuilder
     private func basics(_ metadata: ProjectCreationMetadata) -> some View {
-        Section("Basics") {
+        Section {
             TextField("Project name", text: Binding(
                 get: { title },
                 set: { value in title = value; if !slugEdited { slug = value.modrinthSlug } }
             ))
+            .focused($focusedField, equals: .title)
+            .textContentType(.name)
+            .submitLabel(.next)
+            .onSubmit { focusedField = .slug }
+
             TextField("Modrinth URL slug", text: Binding(
                 get: { slug },
                 set: { slugEdited = true; slug = $0.lowercased().replacingOccurrences(of: " ", with: "-") }
             ))
             .ryntraNoAutocapitalization()
             .autocorrectionDisabled()
-            TextField("Short summary", text: $summary, axis: .vertical).lineLimit(2...4)
-            Picker("Project type", selection: $projectType) {
-                ForEach(metadata.projectTypes, id: \.self) { Text($0.capitalized).tag($0) }
+            .focused($focusedField, equals: .slug)
+            .submitLabel(.next)
+            .onSubmit { focusedField = .summary }
+
+            LabeledContent("Public URL") {
+                Text("modrinth.com/project/\(slug.isEmpty ? "…" : slug)")
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
+
+            TextField("Short summary", text: Binding(
+                get: { summary },
+                set: { summary = String($0.prefix(257)) }
+            ), axis: .vertical)
+                .lineLimit(1...3)
+                .focused($focusedField, equals: .summary)
+                .submitLabel(.done)
+
+            HStack {
+                Text(summary.isEmpty ? "Explain why someone should install it." : "Shown in search and project lists.")
+                Spacer()
+                Text("\(summary.count)/256")
+                    .monospacedDigit()
+            }
+            .font(.caption)
+            .foregroundStyle(summary.count > 256 ? Color.red : Color.secondary)
+
+            Picker("Project type", selection: $projectType) {
+                ForEach(metadata.projectTypes.filter { $0 != "minecraft_java_server" }, id: \.self) {
+                    Text($0.projectTypeDisplayName).tag($0)
+                }
+            }
+            Text(projectTypeDescription(projectType))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        } header: {
+            Text("Identity")
+        } footer: {
+            Text("These details appear in Modrinth search results. The project type controls which categories are available next.")
         }
-        Section("Artwork") {
+
+        Section {
             PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                Label(iconName ?? "Choose project icon", systemImage: icon == nil ? "photo.badge.plus" : "checkmark.circle.fill")
+                HStack(spacing: 14) {
+                    Image(systemName: icon == nil ? "photo.badge.plus" : "checkmark.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(icon == nil ? Color.ryntraGreen : Color.ryntraGreen)
+                        .frame(width: 44, height: 44)
+                        .background(Color.ryntraGreen.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(iconName ?? "Choose project icon")
+                            .foregroundStyle(.primary)
+                        Text(icon == nil ? "Square images work best" : "Ready to upload")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
             }
             if icon != nil {
                 Button("Remove selected icon", role: .destructive) { icon = nil; iconName = nil; selectedPhoto = nil }
             }
-            Text("PNG, JPEG, WebP or GIF · up to 256 KiB").font(.caption).foregroundStyle(.secondary)
+        } header: {
+            Text("Artwork")
+        } footer: {
+            Text("Optional. PNG, JPEG, WebP or GIF, up to 256 KiB. Use an image that remains recognizable at small sizes.")
+        }
+
+        Section {
+            Label("Your project starts as a private draft", systemImage: "lock.shield.fill")
+                .foregroundStyle(Color.ryntraGreen)
+        } footer: {
+            Text("Nothing is published until you add a version and submit the project for Modrinth review.")
         }
     }
 
     @ViewBuilder
     private func discoverability(_ metadata: ProjectCreationMetadata) -> some View {
-        Section("Categories") {
+        Section {
             let available = metadata.categories.filter { $0.projectType == projectType }
             if available.isEmpty {
                 Text("No categories are available for this type.").foregroundStyle(.secondary)
             } else {
-                ForEach(available, id: \.name) { category in
-                    Toggle(category.name.capitalized, isOn: Binding(
-                        get: { categories.contains(category.name) },
-                        set: { enabled in
-                            if enabled { categories.insert(category.name) } else { categories.remove(category.name) }
+                Button { showingCategoryPicker = true } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "tag")
+                            .foregroundStyle(Color.ryntraGreen)
+                            .frame(width: 22)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(categories.isEmpty ? "Choose categories" : "\(categories.count) selected")
+                                .foregroundStyle(.primary)
+                            Text(categorySelectionSummary)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
                         }
-                    ))
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                    }
                 }
             }
+        } header: {
+            HStack {
+                Text("Categories")
+                Spacer()
+                if !categories.isEmpty { Text("\(categories.count) selected") }
+            }
+        } footer: {
+            Text("Choose focused categories that genuinely describe the project. They determine where it appears in Modrinth browsing and search.")
         }
-        Section("Environment") {
+
+        Section {
             Picker("Client support", selection: $clientSide) {
-                ForEach(environments, id: \.self) { Text($0.capitalized).tag($0) }
+                ForEach(environments, id: \.self) { Text(environmentTitle($0)).tag($0) }
             }
             Picker("Server support", selection: $serverSide) {
-                ForEach(environments, id: \.self) { Text($0.capitalized).tag($0) }
+                ForEach(environments, id: \.self) { Text(environmentTitle($0)).tag($0) }
             }
+            environmentSummary("Client", value: clientSide, symbol: "desktopcomputer")
+            environmentSummary("Server", value: serverSide, symbol: "server.rack")
+        } header: {
+            Text("Where does it run?")
+        } footer: {
+            Text("Set client and server support independently so users know exactly where they must install it.")
         }
-        Section("License") {
-            Picker("SPDX license", selection: $licenseID) {
-                ForEach(metadata.licenses, id: \.id) { license in
-                    Text(license.name ?? license.id).tag(license.id)
+
+        Section {
+            Button { showingLicensePicker = true } label: {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: "doc.text")
+                        .foregroundStyle(Color.ryntraGreen)
+                        .frame(width: 22)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(selectedLicenseName(metadata))
+                            .foregroundStyle(.primary)
+                        Text(licenseID)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.ryntraGreen)
+                        Text(licenseDescription(licenseID))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(3)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
                 }
             }
-            TextField("Custom SPDX ID", text: $licenseID)
-                .ryntraNoAutocapitalization()
-                .autocorrectionDisabled()
+        } header: {
+            Text("License")
+        } footer: {
+            Text("Choose what other people may do with your project. These summaries are a quick guide, so read the full terms before publishing.")
+        }
+    }
+
+    private var categorySelectionSummary: String {
+        guard !categories.isEmpty else {
+            return String(localized: "Optional. Add only categories that clearly fit.")
+        }
+        let names = categories.map(\.humanizedIdentifier).sorted()
+        let visible = names.prefix(3).joined(separator: ", ")
+        return names.count > 3
+            ? String(format: String(localized: "%@ and %d more"), visible, names.count - 3)
+            : visible
+    }
+
+    private func selectedLicenseName(_ metadata: ProjectCreationMetadata) -> String {
+        metadata.licenses.first { $0.id.caseInsensitiveCompare(licenseID) == .orderedSame }?.name ?? licenseID
+    }
+
+    private func categoryPicker(_ metadata: ProjectCreationMetadata) -> some View {
+        let available = metadata.categories.filter { category in
+            category.projectType == projectType &&
+                (categoryQuery.isEmpty || category.name.localizedCaseInsensitiveContains(categoryQuery))
+        }
+        let grouped = Dictionary(grouping: available, by: \.header)
+
+        return NavigationStack {
+            List {
+                ForEach(grouped.keys.sorted(), id: \.self) { header in
+                    Section(categoryGroupTitle(header)) {
+                        ForEach(grouped[header] ?? [], id: \.name) { category in
+                            Button {
+                                if categories.contains(category.name) { categories.remove(category.name) }
+                                else { categories.insert(category.name) }
+                            } label: {
+                                HStack(alignment: .top, spacing: 12) {
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(category.name.humanizedIdentifier)
+                                            .foregroundStyle(.primary)
+                                        Text(categoryDescription(category))
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Image(systemName: categories.contains(category.name) ? "checkmark.circle.fill" : "circle")
+                                        .foregroundStyle(categories.contains(category.name) ? Color.ryntraGreen : Color.secondary)
+                                }
+                            }
+                            .accessibilityAddTraits(categories.contains(category.name) ? .isSelected : [])
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Categories")
+            .searchable(text: $categoryQuery, prompt: "Search categories")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { showingCategoryPicker = false }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func licensePicker(_ metadata: ProjectCreationMetadata) -> some View {
+        let query = licenseQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        let matches = metadata.licenses
+            .filter { license in
+                query.isEmpty || license.id.localizedCaseInsensitiveContains(query) ||
+                    (license.name?.localizedCaseInsensitiveContains(query) ?? false)
+            }
+            .sorted { left, right in
+                let leftSelected = left.id.caseInsensitiveCompare(licenseID) == .orderedSame
+                let rightSelected = right.id.caseInsensitiveCompare(licenseID) == .orderedSame
+                if leftSelected != rightSelected { return leftSelected }
+                return (left.name ?? left.id).localizedCaseInsensitiveCompare(right.name ?? right.id) == .orderedAscending
+            }
+        let hasExactMatch = metadata.licenses.contains { $0.id.caseInsensitiveCompare(query) == .orderedSame }
+
+        return NavigationStack {
+            List {
+                Section {
+                    ForEach(matches, id: \.id) { license in
+                        Button {
+                            licenseID = license.id
+                            showingLicensePicker = false
+                        } label: {
+                            HStack(alignment: .top, spacing: 12) {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(license.name ?? license.id)
+                                        .foregroundStyle(.primary)
+                                    Text(license.id)
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(Color.ryntraGreen)
+                                    Text(licenseDescription(license.id))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                if license.id.caseInsensitiveCompare(licenseID) == .orderedSame {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(Color.ryntraGreen)
+                                }
+                            }
+                        }
+                        .accessibilityAddTraits(license.id.caseInsensitiveCompare(licenseID) == .orderedSame ? .isSelected : [])
+                    }
+                } footer: {
+                    Text("License summaries are not legal advice. Review the complete terms before publishing.")
+                }
+
+                if !query.isEmpty && !hasExactMatch {
+                    Section {
+                        Button("Use “\(query)”") {
+                            licenseID = query
+                            showingLicensePicker = false
+                        }
+                    } header: {
+                        Text("Custom identifier")
+                    } footer: {
+                        Text("Use a custom identifier only when you know Modrinth accepts it.")
+                    }
+                }
+            }
+            .navigationTitle("Choose a license")
+            .searchable(text: $licenseQuery, prompt: "Search by name or SPDX ID")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { showingLicensePicker = false }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func categoryGroupTitle(_ header: String) -> String {
+        switch header.lowercased() {
+        case "features": return String(localized: "Affected features")
+        case "resolutions": return String(localized: "Texture resolution")
+        case "performance impact": return String(localized: "Performance impact")
+        default: return String(localized: "Themes and purpose")
+        }
+    }
+
+    private func categoryDescription(_ category: ProjectCategory) -> String {
+        let descriptions: [String: String] = [
+            "adventure": String(localized: "Exploration, progression, discoveries and new places to visit."),
+            "cursed": String(localized: "Intentionally strange, chaotic or unconventional content."),
+            "decoration": String(localized: "Decorative blocks, furniture and visual building details."),
+            "economy": String(localized: "Currencies, shops, trading and player economies."),
+            "equipment": String(localized: "Armor, tools, weapons and other usable gear."),
+            "food": String(localized: "Food, farming, cooking and related survival systems."),
+            "game-mechanics": String(localized: "Changes or expands the rules and systems of gameplay."),
+            "library": String(localized: "A technical dependency intended mainly for other projects."),
+            "magic": String(localized: "Spells, rituals, enchantments or supernatural systems."),
+            "management": String(localized: "Automation or tools for managing worlds, players and resources."),
+            "minigame": String(localized: "Adds a focused game mode or short repeatable activity."),
+            "mobs": String(localized: "Adds or changes creatures, bosses and their behavior."),
+            "optimization": String(localized: "Improves performance, memory use or loading speed."),
+            "social": String(localized: "Designed for multiplayer interaction, cooperation or communities."),
+            "multiplayer": String(localized: "Designed for multiplayer interaction, cooperation or communities."),
+            "storage": String(localized: "Adds inventories, containers or item and fluid storage systems."),
+            "technology": String(localized: "Machines, power networks, automation and technical progression."),
+            "transportation": String(localized: "New ways to move players, items or entities."),
+            "utility": String(localized: "Practical tools and quality-of-life improvements."),
+            "worldgen": String(localized: "Changes terrain, dimensions, biomes or generated structures."),
+            "challenging": String(localized: "Built around higher difficulty and demanding progression."),
+            "combat": String(localized: "Focuses on fighting, weapons, enemies or combat systems."),
+            "kitchen-sink": String(localized: "A broad modpack combining many systems without one narrow theme."),
+            "lightweight": String(localized: "A smaller pack intended to load quickly and run on modest hardware."),
+            "quests": String(localized: "Uses guided objectives, tasks and progression paths."),
+            "realistic": String(localized: "Aims for realistic materials, lighting or visual detail."),
+            "simplistic": String(localized: "Uses a clean, reduced and easy-to-read visual style."),
+            "themed": String(localized: "Uses one consistent artistic or gameplay theme."),
+            "tweaks": String(localized: "Makes focused adjustments rather than replacing the whole experience."),
+            "vanilla-like": String(localized: "Preserves Minecraft’s familiar style while refining it."),
+            "modded": String(localized: "Includes textures or assets for content added by mods.")
+        ]
+        if let description = descriptions[category.name.lowercased()] { return description }
+
+        switch category.header.lowercased() {
+        case "resolutions":
+            return String(format: String(localized: "Uses %@ textures. Higher resolutions usually need more memory."), category.name)
+        case "features":
+            let format = category.projectType == "shader"
+                ? String(localized: "Highlights the %@ visual effect.")
+                : String(localized: "Changes or adds %@ assets.")
+            return String(format: format, category.name.humanizedIdentifier)
+        case "performance impact":
+            switch category.name.lowercased() {
+            case "potato": return String(localized: "Designed for very low-end hardware and maximum frame rate.")
+            case "low": return String(localized: "Light performance cost, suitable for many integrated GPUs.")
+            case "medium": return String(localized: "Balanced visuals and performance for mid-range hardware.")
+            case "high": return String(localized: "Demanding effects intended for powerful graphics hardware.")
+            case "screenshot": return String(localized: "Prioritizes maximum visual quality over playable frame rate.")
+            default: return String(localized: "Use this tag when it accurately describes the project’s main content.")
+            }
+        default:
+            return String(localized: "Use this tag when it accurately describes the project’s main content.")
+        }
+    }
+
+    private func licenseDescription(_ id: String) -> String {
+        let normalized = id.uppercased()
+        switch normalized {
+        case "MIT": return String(localized: "Permissive: reuse, modification and commercial use are allowed when the copyright and license notice are kept.")
+        case let value where value.hasPrefix("APACHE-"):
+            return String(localized: "Permissive, with an explicit patent grant. Keep the license, notices and mark significant changes.")
+        case let value where value.hasPrefix("AGPL-"):
+            return String(localized: "Strong copyleft that also requires source availability when modified software is offered over a network.")
+        case let value where value.hasPrefix("LGPL-"):
+            return String(localized: "Weak copyleft: linking is allowed, while changes to the covered component must remain available under the LGPL.")
+        case let value where value.hasPrefix("GPL-"):
+            return String(localized: "Strong copyleft: distributed derivatives must remain under the GPL and provide their source code.")
+        case let value where value.hasPrefix("MPL-"):
+            return String(localized: "File-level copyleft: modified covered files stay open, while separate files may use another license.")
+        case let value where value.hasPrefix("BSD-") || value == "0BSD":
+            return String(localized: "Permissive: reuse and commercial use are generally allowed when the copyright notice and conditions are kept.")
+        case "CC0-1.0":
+            return String(localized: "A public-domain dedication intended to waive copyright restrictions as far as legally possible.")
+        case let value where value.hasPrefix("CC-BY"):
+            return String(localized: "Reuse and modification are allowed with attribution. Some variants add share-alike or non-commercial restrictions.")
+        case "ARR", "ALL-RIGHTS-RESERVED":
+            return String(localized: "All rights reserved: others receive no permission to reuse or modify the project without your consent.")
+        default:
+            return String(localized: "Terms vary. Check permissions for modification, redistribution, source code and commercial use.")
+        }
+    }
+
+    private func projectTypeDescription(_ type: String) -> String {
+        switch type.lowercased() {
+        case "mod":
+            return String(localized: "A modification installed through a loader such as Fabric, Forge, NeoForge or Quilt.")
+        case "modpack":
+            return String(localized: "A curated collection of mods and configuration distributed as one experience.")
+        case "resourcepack":
+            return String(localized: "Textures, sounds, models or other assets that change Minecraft’s presentation.")
+        case "shader":
+            return String(localized: "A shader pack that changes lighting, shadows, atmosphere and rendering effects.")
+        case "plugin":
+            return String(localized: "Server-side functionality for platforms such as Paper, Spigot, Bukkit or Velocity.")
+        case "datapack":
+            return String(localized: "Vanilla-compatible gameplay content loaded by a Minecraft world.")
+        default:
+            return String(localized: "Choose the type that determines where the project appears and which metadata is available.")
         }
     }
 
     @ViewBuilder
     private var content: some View {
-        Section("Full description · GitHub Flavored Markdown") {
+        Section {
             Picker("Description mode", selection: $showingMarkdownPreview) {
                 Text("Write").tag(false)
                 Text("Preview").tag(true)
@@ -386,32 +852,105 @@ private struct CreateProjectView: View {
                 TextEditor(text: $projectBody)
                     .font(.body.monospaced())
                     .frame(minHeight: 240)
+                    .focused($focusedField, equals: .description)
                     .accessibilityLabel("Full project description")
             }
+            if projectBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Label("A full description is required", systemImage: "info.circle")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            Text("Project page")
+        } footer: {
+            Text("GitHub Flavored Markdown is supported. Cover the main features, installation steps, requirements, and compatibility.")
         }
-        Section("Links · optional") {
-            TextField("Source URL", text: $sourceURL).ryntraURLKeyboard()
-            TextField("Issues URL", text: $issuesURL).ryntraURLKeyboard()
-            TextField("Wiki URL", text: $wikiURL).ryntraURLKeyboard()
-            TextField("Discord URL", text: $discordURL).ryntraURLKeyboard()
-        }
+
         Section {
-            Label("The draft stays private until you add a version and submit it to Modrinth moderation.", systemImage: "eye.slash")
-                .font(.subheadline).foregroundStyle(.secondary)
+            projectURLField("Source code", text: $sourceURL, field: .source)
+            projectURLField("Issue tracker", text: $issuesURL, field: .issues)
+            projectURLField("Documentation or wiki", text: $wikiURL, field: .wiki)
+            projectURLField("Discord invite", text: $discordURL, field: .discord)
+        } header: {
+            Text("Helpful links")
+        } footer: {
+            Text("Optional. Help users find your source code, support, documentation, and community. Links must start with https:// or http://.")
+        }
+
+        Section {
+            LabeledContent("Name", value: title)
+            LabeledContent("Type", value: projectType.projectTypeDisplayName)
+            LabeledContent("License", value: licenseID)
+            LabeledContent("Categories", value: categories.isEmpty ? "None" : "\(categories.count)")
+            Label("Ready to create as a private draft", systemImage: "checkmark.seal.fill")
+                .foregroundStyle(canContinue ? Color.ryntraGreen : Color.secondary)
+        } header: {
+            Text("Review")
+        } footer: {
+            Text("The draft remains private until you add a version and submit it to Modrinth moderation.")
         }
     }
 
     private var canContinue: Bool {
         switch step {
-        case 0: return !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && (3...64).contains(slug.count) && !summary.isEmpty && !projectType.isEmpty
+        case 0:
+            return !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && title.count <= 64 &&
+                (3...64).contains(slug.count) && !summary.isEmpty && summary.count <= 256 && !projectType.isEmpty
         case 1: return !licenseID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         default: return !projectBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && linksAreValid
         }
     }
 
+    @ViewBuilder
+    private func projectURLField(_ label: String, text: Binding<String>, field: Field) -> some View {
+        TextField(label, text: text)
+            .ryntraURLKeyboard()
+            .focused($focusedField, equals: field)
+            .submitLabel(field == .discord ? .done : .next)
+        if !text.wrappedValue.isEmpty && !text.wrappedValue.isWebURL {
+            Label("Enter a complete URL starting with https:// or http://", systemImage: "exclamationmark.circle.fill")
+                .font(.caption)
+                .foregroundStyle(.red)
+        }
+    }
+
+    private func environmentSummary(_ title: String, value: String, symbol: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: symbol)
+                .foregroundStyle(Color.ryntraGreen)
+                .frame(width: 22)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(title): \(environmentTitle(value))")
+                    .font(.subheadline.weight(.medium))
+                Text(environmentHelp(value))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func environmentTitle(_ value: String) -> String {
+        switch value {
+        case "required": return String(localized: "Required")
+        case "optional": return String(localized: "Optional")
+        case "unsupported": return String(localized: "Not supported")
+        default: return String(localized: "Not confirmed")
+        }
+    }
+
+    private func environmentHelp(_ value: String) -> String {
+        switch value {
+        case "required": return String(localized: "Users must install it here.")
+        case "optional": return String(localized: "Installation unlocks features but is not required.")
+        case "unsupported": return String(localized: "The project does not work here.")
+        default: return String(localized: "Compatibility has not been confirmed yet.")
+        }
+    }
+
     private var linksAreValid: Bool {
         [sourceURL, issuesURL, wikiURL, discordURL].allSatisfy { value in
-            value.isEmpty || value.hasPrefix("https://") || value.hasPrefix("http://")
+            value.isEmpty || value.isWebURL
         }
     }
 
@@ -422,7 +961,9 @@ private struct CreateProjectView: View {
         do {
             let loaded = try await model.loadProjectCreationMetadata()
             metadata = loaded
-            if projectType.isEmpty { projectType = loaded.projectTypes.first ?? "mod" }
+            if projectType.isEmpty || projectType == "minecraft_java_server" {
+                projectType = loaded.projectTypes.first(where: { $0 != "minecraft_java_server" }) ?? "mod"
+            }
         } catch { errorMessage = error.localizedDescription }
     }
 
@@ -477,6 +1018,28 @@ private extension String {
     var nilIfEmpty: String? {
         let value = trimmingCharacters(in: .whitespacesAndNewlines)
         return value.isEmpty ? nil : value
+    }
+
+    var isWebURL: Bool {
+        hasPrefix("https://") || hasPrefix("http://")
+    }
+
+    var humanizedIdentifier: String {
+        replacingOccurrences(of: "_", with: " ")
+            .replacingOccurrences(of: "-", with: " ")
+            .capitalized
+    }
+
+    var projectTypeDisplayName: String {
+        switch self {
+        case "mod": return String(localized: "Mod")
+        case "modpack": return String(localized: "Modpack")
+        case "resourcepack": return String(localized: "Resource pack")
+        case "shader": return String(localized: "Shader")
+        case "plugin": return String(localized: "Plugin")
+        case "datapack": return String(localized: "Data pack")
+        default: return String(localized: "Other")
+        }
     }
 }
 
