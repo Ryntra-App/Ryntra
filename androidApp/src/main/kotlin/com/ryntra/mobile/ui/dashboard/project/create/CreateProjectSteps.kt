@@ -407,6 +407,7 @@ internal fun LicenseSelector(
     )
     Text(
         stringResource(R.string.project_create_license_legal_note),
+        modifier = Modifier.padding(top = 8.dp),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
