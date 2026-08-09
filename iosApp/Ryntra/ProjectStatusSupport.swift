@@ -71,7 +71,8 @@ extension View {
         _ project: Project,
         onOpen: (() -> Void)? = nil,
         canDelete: Bool = false,
-        onDelete: (() -> Void)? = nil
+        onDelete: (() -> Void)? = nil,
+        onRequestDelete: (() -> Void)? = nil
     ) -> some View {
         contextMenu {
             if let onOpen {
@@ -103,6 +104,14 @@ extension View {
             if canDelete, let onDelete {
                 Divider()
                 Button(role: .destructive, action: onDelete) {
+                    Label(
+                        NSLocalizedString("Delete this project", comment: "Project context action"),
+                        systemImage: "trash"
+                    )
+                }
+            } else if let onRequestDelete {
+                Divider()
+                Button(role: .destructive, action: onRequestDelete) {
                     Label(
                         NSLocalizedString("Delete this project", comment: "Project context action"),
                         systemImage: "trash"

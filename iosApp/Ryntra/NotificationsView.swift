@@ -60,6 +60,7 @@ struct NotificationsView: View {
                         withAnimation(.easeInOut(duration: 0.2)) { isArchiveVisible.toggle() }
                     } label: {
                         Image(systemName: isArchiveVisible ? "tray" : "archivebox")
+                            .ryntraMinimumTouchTarget()
                     }
                     .foregroundStyle(isArchiveVisible ? Color.ryntraGreen : .secondary)
                     .accessibilityLabel(NSLocalizedString(
@@ -126,6 +127,10 @@ private struct NotificationRow: View {
             }
         }
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(isRead
+            ? NSLocalizedString("Read", comment: "Notification state")
+            : NSLocalizedString("Unread", comment: "Notification state"))
     }
 }
 

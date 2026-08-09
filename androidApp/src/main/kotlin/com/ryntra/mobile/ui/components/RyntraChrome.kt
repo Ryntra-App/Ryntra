@@ -45,13 +45,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.ryntra.mobile.R
 import com.composables.icons.lucide.Bell
 import com.composables.icons.lucide.Lucide
 import com.ryntra.mobile.preferences.GlassQuality
@@ -117,7 +120,7 @@ fun RyntraTopBar(
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(48.dp)
                     .clip(CircleShape)
                     .clickable(role = Role.Button, onClick = onNavigationClick),
             ) {
@@ -163,7 +166,7 @@ fun RyntraTopBar(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .padding(start = 6.dp)
-                    .size(44.dp)
+                    .size(48.dp)
                     .clip(CircleShape)
                     .background(colors.surfaceRaised)
                     .border(1.dp, Color.White.copy(alpha = 0.14f), CircleShape)
@@ -253,21 +256,27 @@ private fun NotificationBell(
     tint: Color,
     contentDescription: String,
 ) {
-    Box(modifier = Modifier.size(44.dp), contentAlignment = Alignment.Center) {
+    val resolvedDescription = if (unreadCount > 0) {
+        "$contentDescription, ${stringResource(R.string.notifications_unread_count, unreadCount)}"
+    } else {
+        contentDescription
+    }
+    Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
         IconButton(onClick = onClick) {
-            Icon(Lucide.Bell, contentDescription = contentDescription, tint = tint, modifier = Modifier.size(22.dp))
+            Icon(Lucide.Bell, contentDescription = resolvedDescription, tint = tint, modifier = Modifier.size(22.dp))
         }
         if (unreadCount > 0) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .size(if (unreadCount > 9) 18.dp else 15.dp)
-                    .background(RyntraDesign.colors.accent, CircleShape),
+                    .background(RyntraDesign.colors.accent, CircleShape)
+                    .clearAndSetSemantics {},
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = if (unreadCount > 9) "9+" else unreadCount.toString(),
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                 )
@@ -294,7 +303,7 @@ fun RyntraTabBar(
                 NavigationBarItem(
                     selected = selectedIndex == index,
                     onClick = { onSelect(index) },
-                    icon = { Icon(tab.icon, contentDescription = tab.label) },
+                    icon = { Icon(tab.icon, contentDescription = null) },
                     label = { Text(tab.label, maxLines = 1) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = MaterialTheme.colorScheme.primary,
@@ -344,7 +353,7 @@ private fun RowScope.RyntraTabItem(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val pressedScale by animateFloatAsState(
-        targetValue = if (isPressed) 0.95f else 1f,
+        targetValue = if (isPressed && !motion.isReduced) 0.95f else 1f,
         animationSpec = tween(durationMillis = motion.duration(120)),
         label = "Tab press",
     )

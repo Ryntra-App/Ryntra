@@ -136,10 +136,11 @@ struct ModerationMessageView: View {
                     if isDeleting {
                         ProgressView().controlSize(.small)
                     } else {
-                        Image(systemName: "trash")
+                        Image(systemName: "trash").ryntraMinimumTouchTarget()
                     }
                 }
                 .disabled(isDeleting)
+                .accessibilityLabel(NSLocalizedString("Delete reply", comment: "Moderation action"))
             }
         }
     }

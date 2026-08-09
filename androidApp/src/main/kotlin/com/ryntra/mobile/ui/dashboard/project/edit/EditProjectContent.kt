@@ -370,6 +370,7 @@ private fun EditField(
         value = value,
         onValueChange = onValueChange,
         placeholder = placeholder,
+        label = label,
         leadingIcon = icon,
         leadingIconDescription = null,
         modifier = Modifier.fillMaxWidth(),

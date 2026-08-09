@@ -3,24 +3,21 @@ package com.ryntra.mobile.ui.dashboard
 import androidx.annotation.StringRes
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -85,7 +82,6 @@ import com.ryntra.shared.model.CreateProjectRequest
 import com.ryntra.shared.model.ProjectCreationMetadata
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
-import kotlinx.coroutines.delay
 
 private enum class DashboardDestination(
     @StringRes val labelRes: Int,
@@ -110,6 +106,7 @@ fun DashboardScreen(
     dashboard: Dashboard,
     isRefreshing: Boolean = false,
     errorMessage: String? = null,
+    onRetryDashboard: () -> Unit = {},
     projectDetail: ProjectDetailState? = null,
     organizationDetail: OrganizationDetailState? = null,
     onProjectClick: (Project) -> Unit = {},
@@ -179,7 +176,7 @@ fun DashboardScreen(
     var isProfileVisible by rememberSaveable { mutableStateOf(false) }
     var isNotificationsVisible by rememberSaveable { mutableStateOf(false) }
     var isCreatingProject by rememberSaveable { mutableStateOf(false) }
-    var visibleError by remember { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
     var retainedProjectDetail by remember { mutableStateOf<ProjectDetailState?>(null) }
     var retainedOrganizationDetail by remember { mutableStateOf<OrganizationDetailState?>(null) }
     var hasUnsavedProjectChanges by remember { mutableStateOf(false) }
@@ -188,6 +185,7 @@ fun DashboardScreen(
     val hazeState = rememberHazeState()
     val colors = RyntraDesign.colors
     val motion = RyntraDesign.motion
+    val retryLabel = stringResource(R.string.common_retry)
     val isPlatformNative = RyntraDesign.isPlatformNative
     val detailTitle = projectDetail?.project?.title ?: organizationDetail?.organization?.name
     val isDetailVisible = isProfileVisible || isNotificationsVisible || projectDetail != null || organizationDetail != null
@@ -219,10 +217,14 @@ fun DashboardScreen(
     }
 
     LaunchedEffect(errorMessage) {
-        visibleError = errorMessage
-        if (errorMessage != null) {
-            delay(4_500)
-            visibleError = null
+        val message = errorMessage ?: return@LaunchedEffect
+        val result = snackbarHostState.showSnackbar(
+            message = message,
+            actionLabel = retryLabel,
+            withDismissAction = true,
+        )
+        if (result == SnackbarResult.ActionPerformed) {
+            onRetryDashboard()
         }
     }
 
@@ -253,7 +255,7 @@ fun DashboardScreen(
                     .then(if (isDetailVisible || isPlatformNative) Modifier else Modifier.hazeSource(hazeState))
                     .statusBarsPadding()
                     .navigationBarsPadding()
-                    .padding(top = 84.dp),
+                    .padding(top = if (isPlatformNative) 64.dp else 84.dp),
             ) {
                 AnimatedContent(
                     targetState = contentLayer,
@@ -324,6 +326,7 @@ fun DashboardScreen(
                         onDeleteModerationMessage = onDeleteModerationMessage,
                         loadProjectCreationMetadata = onLoadProjectCreationMetadata,
                         onUnsavedChangesChanged = { hasUnsavedProjectChanges = it },
+                        onRetry = { onProjectClick(detail.project) },
                     )
                     }
                     DashboardLayer.Organization -> (organizationDetail ?: retainedOrganizationDetail)?.let { detail ->
@@ -345,6 +348,7 @@ fun DashboardScreen(
                         onJoinTeam = onJoinTeam,
                         onTransferOwnership = onTransferOwnership,
                         onClearProjectActionStatus = onClearProjectActionStatus,
+                        onRetry = { onOrganizationClick(detail.organization) },
                     )
                     }
                     DashboardLayer.Profile -> AccountScreen(
@@ -476,26 +480,13 @@ fun DashboardScreen(
                     modifier = Modifier.align(Alignment.BottomCenter),
                 )
             }
-            AnimatedVisibility(
-                visible = visibleError != null,
-                enter = fadeIn(tween(motion.duration(180))) +
-                    slideInVertically(tween(motion.duration(180))) { it / 2 },
-                exit = fadeOut(tween(motion.duration(130))) +
-                    slideOutVertically(tween(motion.duration(130))) { it / 2 },
+            SnackbarHost(
+                hostState = snackbarHostState,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
                     .padding(start = 18.dp, end = 18.dp, bottom = 96.dp),
-            ) {
-                BasicText(
-                    text = visibleError.orEmpty(),
-                    style = RyntraDesign.body.copy(color = colors.labelPrimary),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(colors.surfaceRaised.copy(alpha = 0.98f), RoundedCornerShape(12.dp))
-                        .padding(horizontal = 16.dp, vertical = 13.dp),
-                )
-            }
+            )
             if (isCreatingProject) {
                 CreateProjectDialog(
                     loadMetadata = onLoadProjectCreationMetadata,

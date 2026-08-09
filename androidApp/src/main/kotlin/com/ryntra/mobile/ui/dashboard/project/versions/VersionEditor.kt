@@ -20,9 +20,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.composables.icons.lucide.Hash
+import com.ryntra.mobile.R
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.mobile.ui.dashboard.project.markdown.MarkdownEditor
 import com.ryntra.mobile.ui.dashboard.project.markdown.MarkdownEditorMode
@@ -62,6 +65,7 @@ internal fun VersionEditorDialog(
     var primaryFileIndex by remember(version?.id) { mutableIntStateOf(0) }
     var isReadingFiles by remember { mutableStateOf(false) }
     var fileError by remember { mutableStateOf<String?>(null) }
+    val fileReadError = stringResource(R.string.version_editor_file_read_error)
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         if (uris.isEmpty()) return@rememberLauncherForActivityResult
@@ -72,22 +76,21 @@ internal fun VersionEditorDialog(
                 files = selected
                 primaryFileIndex = primaryFileIndex.coerceIn(0, files.lastIndex.coerceAtLeast(0))
                 fileError = null
-            }.onFailure { fileError = it.message ?: "Unable to read the selected files." }
+            }.onFailure { fileError = fileReadError }
             isReadingFiles = false
         }
     }
 
     val warnings = buildList {
-        if (name.isBlank()) add("Add a release name")
-        if (versionNumber.isBlank()) add("Add a version number")
-        if (gameVersions.isEmpty()) add("Select at least one Minecraft version")
-        if (loaders.isEmpty()) add("Select at least one loader")
-        if (changelog.isBlank()) add("Describe the changes in this release")
-        if (version == null && files.isEmpty()) add("Attach at least one version file")
+        if (name.isBlank()) add(stringResource(R.string.version_editor_warning_name))
+        if (versionNumber.isBlank()) add(stringResource(R.string.version_editor_warning_number))
+        if (gameVersions.isEmpty()) add(stringResource(R.string.version_editor_warning_game_version))
+        if (loaders.isEmpty()) add(stringResource(R.string.version_editor_warning_loader))
+        if (changelog.isBlank()) add(stringResource(R.string.version_editor_warning_changelog))
+        if (version == null && files.isEmpty()) add(stringResource(R.string.version_editor_warning_file))
     }
-    val canSave = warnings.none { warning ->
-        warning != "Describe the changes in this release"
-    } && !isReadingFiles && !isSaving
+    val canSave = name.isNotBlank() && versionNumber.isNotBlank() && gameVersions.isNotEmpty() &&
+        loaders.isNotEmpty() && (version != null || files.isNotEmpty()) && !isReadingFiles && !isSaving
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -108,29 +111,38 @@ internal fun VersionEditorDialog(
                 modifier = Modifier.weight(1f),
             ) {
                 item(key = "version-basics", contentType = "form") {
-                    VersionEditorSection("Release information", "Name this build clearly for project users") {
-                        VersionEditorField("Name", name, { name = it }, "Release name")
+                    VersionEditorSection(
+                        stringResource(R.string.version_editor_release_info),
+                        stringResource(R.string.version_editor_release_info_hint),
+                    ) {
                         VersionEditorField(
-                            "Version number",
+                            stringResource(R.string.version_editor_name),
+                            name,
+                            { name = it },
+                            stringResource(R.string.version_editor_name_hint),
+                        )
+                        VersionEditorField(
+                            stringResource(R.string.version_editor_number),
                             versionNumber,
                             { versionNumber = it },
                             "1.0.0",
                             Modifier.padding(top = 14.dp),
+                            leadingIcon = com.composables.icons.lucide.Lucide.Hash,
                         )
                     }
                 }
                 item(key = "version-channel", contentType = "choices") {
-                    VersionEditorSection("Release channel", "Choose how stable this build is") {
+                    VersionEditorSection(stringResource(R.string.version_editor_channel), stringResource(R.string.version_editor_channel_hint)) {
                         ReleaseChannelPicker(versionType) { versionType = it }
                     }
                 }
                 item(key = "version-game", contentType = "choices") {
-                    VersionEditorSection("Minecraft versions", "Tap to select; add a version if it is not listed") {
+                    VersionEditorSection(stringResource(R.string.version_editor_game_versions), stringResource(R.string.version_editor_game_versions_hint)) {
                         ValueChoices(
                             values = suggestedGameVersions,
                             selected = gameVersions,
                             customValue = gameVersionInput,
-                            customPlaceholder = "For example 1.21.5",
+                            customPlaceholder = stringResource(R.string.version_editor_game_version_example),
                             onCustomValueChange = { gameVersionInput = it },
                             onToggle = { gameVersions = gameVersions.toggle(it) },
                             onAddCustom = {
@@ -144,12 +156,12 @@ internal fun VersionEditorDialog(
                     }
                 }
                 item(key = "version-loaders", contentType = "choices") {
-                    VersionEditorSection("Loaders", "Select every platform supported by this file") {
+                    VersionEditorSection(stringResource(R.string.version_editor_loaders), stringResource(R.string.version_editor_loaders_hint)) {
                         ValueChoices(
                             values = suggestedLoaders,
                             selected = loaders,
                             customValue = loaderInput,
-                            customPlaceholder = "For example fabric",
+                            customPlaceholder = stringResource(R.string.version_editor_loader_example),
                             onCustomValueChange = { loaderInput = it },
                             onToggle = { loaders = loaders.toggle(it) },
                             onAddCustom = {
@@ -163,7 +175,7 @@ internal fun VersionEditorDialog(
                     }
                 }
                 item(key = "version-dependencies", contentType = "dependencies") {
-                    VersionEditorSection("Dependencies", "Tap a dependency type to cycle required, optional, incompatible, and embedded") {
+                    VersionEditorSection(stringResource(R.string.version_editor_dependencies), stringResource(R.string.version_editor_dependencies_hint)) {
                         DependencyEditor(
                             dependencies = dependencies,
                             input = dependencyInput,
@@ -185,11 +197,11 @@ internal fun VersionEditorDialog(
                     }
                 }
                 item(key = "version-changelog", contentType = "markdown") {
-                    VersionEditorSection("Changelog", "Describe the changes clearly and verify the preview before publishing") {
+                    VersionEditorSection(stringResource(R.string.version_editor_changelog), stringResource(R.string.version_editor_changelog_hint)) {
                         MarkdownEditor(
                             markdown = changelog,
                             mode = changelogMode,
-                            placeholder = "## Changes\n- Added ...\n- Fixed ...",
+                            placeholder = stringResource(R.string.version_editor_changelog_placeholder),
                             onMarkdownChange = { changelog = it },
                             onModeChange = { changelogMode = it },
                         )
@@ -197,7 +209,7 @@ internal fun VersionEditorDialog(
                 }
                 if (version == null) {
                     item(key = "version-files", contentType = "files") {
-                        VersionEditorSection("Files", "Add one or more builds and select the primary download") {
+                        VersionEditorSection(stringResource(R.string.version_editor_files), stringResource(R.string.version_editor_files_hint)) {
                             VersionFilesEditor(
                                 files = files,
                                 primaryIndex = primaryFileIndex,
@@ -221,12 +233,12 @@ internal fun VersionEditorDialog(
                     }
                 }
                 item(key = "version-featured", contentType = "toggle") {
-                    VersionEditorSection("Visibility") {
+                    VersionEditorSection(stringResource(R.string.version_editor_visibility)) {
                         FeaturedToggle(featured) { featured = !featured }
                     }
                 }
                 item(key = "version-checklist", contentType = "checklist") {
-                    VersionEditorSection("Release checklist") {
+                    VersionEditorSection(stringResource(R.string.version_editor_checklist)) {
                         ReleaseChecklist(warnings)
                         (fileError ?: errorMessage)?.let { message ->
                             Text(

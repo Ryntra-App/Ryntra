@@ -20,6 +20,8 @@ struct ProjectsView: View {
     @State private var query = ""
     @State private var isCreatingProject = false
     @State private var projectPendingDeletion: Project?
+    @State private var deletePermissions: [String: Bool] = [:]
+    @State private var permissionError: String?
 
     private var sortMode: ProjectSortMode {
         ProjectSortMode(rawValue: storedSortMode) ?? .popular
@@ -60,29 +62,40 @@ struct ProjectsView: View {
             } else {
                 ForEach(filteredProjects, id: \.id) { project in
                     Group {
-                        if !showProjectBanners {
-                            ProjectRow(
-                                project: project,
-                                showDescription: false,
-                                onFavoriteTap: { toggleFavorite(project.id) }
-                            )
+                        if showProjectBanners {
+                            ZStack(alignment: .topTrailing) {
+                                Button { onProjectTap(project) } label: {
+                                    ProjectBannerCard(
+                                        project: project,
+                                        isFavorite: favoriteIds.contains(project.id),
+                                        onFavoriteTap: nil
+                                    )
+                                }
+                                .buttonStyle(.plain)
+
+                                favoriteButton(for: project)
+                                    .padding(8)
+                            }
                         } else {
-                            ProjectBannerCard(
-                                project: project,
-                                isFavorite: favoriteIds.contains(project.id),
-                                onFavoriteTap: { toggleFavorite(project.id) }
-                            )
+                            HStack(spacing: 4) {
+                                Button { onProjectTap(project) } label: {
+                                    ProjectRow(
+                                        project: project,
+                                        showDescription: false,
+                                        showsDisclosureIndicator: false
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                                favoriteButton(for: project)
+                            }
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    .contentShape(Rectangle())
-                    .onTapGesture { onProjectTap(project) }
                     .ryntraHoverHighlight()
                     .ryntraProjectContextMenu(
                         project,
                         onOpen: { onProjectTap(project) },
-                        canDelete: true,
-                        onDelete: { projectPendingDeletion = project }
+                        onRequestDelete: { Task { await requestProjectDeletion(project) } }
                     )
                 }
             }
@@ -120,6 +133,17 @@ struct ProjectsView: View {
                 }
                 .environmentObject(model)
             }
+        }
+        .alert(
+            NSLocalizedString("Can't delete project", comment: "Project permission error"),
+            isPresented: Binding(
+                get: { permissionError != nil },
+                set: { if !$0 { permissionError = nil } }
+            )
+        ) {
+            Button(NSLocalizedString("OK", comment: "Common action"), role: .cancel) {}
+        } message: {
+            Text(permissionError ?? "")
         }
     }
 
@@ -188,6 +212,22 @@ struct ProjectsView: View {
         .accessibilityLabel("\(label), \(value)")
     }
 
+    private func favoriteButton(for project: Project) -> some View {
+        let isFavorite = favoriteIds.contains(project.id)
+        return Button { toggleFavorite(project.id) } label: {
+            Image(systemName: isFavorite ? "star.fill" : "star")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(isFavorite ? Color.ryntraGreen : Color.secondary)
+                .ryntraMinimumTouchTarget()
+                .background(.regularMaterial, in: Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(NSLocalizedString(
+            isFavorite ? "Remove favorite" : "Add favorite",
+            comment: "Project favorite action"
+        ))
+    }
+
     private func toggleFavorite(_ projectId: String) {
         var updated = favoriteIds
         let update = {
@@ -204,6 +244,42 @@ struct ProjectsView: View {
             update()
         } else {
             withAnimation(RyntraMotion.control, update)
+        }
+    }
+
+    @MainActor
+    private func requestProjectDeletion(_ project: Project) async {
+        if let canDelete = deletePermissions[project.id] {
+            if canDelete {
+                projectPendingDeletion = project
+            } else {
+                permissionError = NSLocalizedString(
+                    "You don't have permission to delete this project.",
+                    comment: "Project permission error"
+                )
+            }
+            return
+        }
+        do {
+            let roster = try await model.loadProjectTeamRoster(project: project)
+            let member = roster.projectMembers.first { $0.user.id == model.currentAccountID }
+                ?? roster.organizationMembers.first { $0.user.id == model.currentAccountID }
+            let permissions = (member?.permissions as? NSNumber)?.int32Value ?? 0
+            let canDelete = member?.isOwner == true || permissions & (Int32(1) << 7) != 0
+            deletePermissions[project.id] = canDelete
+            if canDelete {
+                projectPendingDeletion = project
+            } else {
+                permissionError = NSLocalizedString(
+                    "You don't have permission to delete this project.",
+                    comment: "Project permission error"
+                )
+            }
+        } catch {
+            permissionError = NSLocalizedString(
+                "Could not verify project permissions. Check your connection and try again.",
+                comment: "Project permission error"
+            )
         }
     }
 }
@@ -1197,6 +1273,7 @@ private extension String {
         default: return String(localized: "Other")
         }
     }
+
 }
 
 struct ProjectRow: View {

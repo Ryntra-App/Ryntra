@@ -47,7 +47,7 @@ internal fun Project.modrinthPageUrl(): String {
 @Composable
 internal fun ProjectActionsSheet(
     project: Project,
-    canDelete: Boolean = true,
+    canDelete: Boolean = false,
     onDismiss: () -> Unit,
     onOpen: () -> Unit,
     onOpenInBrowser: () -> Unit,

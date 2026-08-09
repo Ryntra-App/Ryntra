@@ -3,6 +3,8 @@ package com.ryntra.mobile.ui.dashboard.project.versions
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,25 +12,29 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Check
-import com.composables.icons.lucide.Hash
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Package
 import com.composables.icons.lucide.Pencil
 import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.Trash2
+import com.ryntra.mobile.R
 import com.ryntra.mobile.ui.components.RyntraIcon
 import com.ryntra.mobile.ui.components.RyntraSectionLabel
 import com.ryntra.mobile.ui.components.RyntraTextField
@@ -64,13 +70,14 @@ internal fun VersionEditorField(
     onValueChange: (String) -> Unit,
     placeholder: String,
     modifier: Modifier = Modifier,
+    leadingIcon: ImageVector = Lucide.Pencil,
 ) {
     Text(label, color = RyntraDesign.colors.labelSecondary, style = MaterialTheme.typography.labelMedium)
     RyntraTextField(
         value = value,
         onValueChange = onValueChange,
         placeholder = placeholder,
-        leadingIcon = if (label == "Version number") Lucide.Hash else Lucide.Pencil,
+        leadingIcon = leadingIcon,
         leadingIconDescription = null,
         modifier = modifier.fillMaxWidth().padding(top = 6.dp),
     )
@@ -85,16 +92,16 @@ internal fun ReleaseChannelPicker(selected: String, onSelect: (String) -> Unit) 
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .weight(1f)
-                    .height(44.dp)
+                    .height(48.dp)
                     .background(
                         if (isSelected) RyntraDesign.colors.surfaceRaised else RyntraDesign.colors.surface,
                         RoundedCornerShape(8.dp),
                     )
                     .border(0.75.dp, RyntraDesign.colors.separator, RoundedCornerShape(8.dp))
-                    .clickable(role = Role.RadioButton) { onSelect(channel) },
+                    .selectable(selected = isSelected, role = Role.RadioButton) { onSelect(channel) },
             ) {
                 Text(
-                    channel.replaceFirstChar(Char::uppercase),
+                    stringResource(channelLabel(channel)),
                     color = if (isSelected) channelColor(channel) else RyntraDesign.colors.labelSecondary,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
@@ -132,7 +139,7 @@ internal fun ValueChoices(
             leadingIconDescription = null,
             modifier = Modifier.weight(1f),
         )
-        SmallActionButton(Lucide.Plus, "Add", onAddCustom, Modifier.padding(start = 8.dp))
+        SmallActionButton(Lucide.Plus, stringResource(R.string.version_editor_add), onAddCustom, Modifier.padding(start = 8.dp))
     }
 }
 
@@ -150,7 +157,8 @@ private fun ChoiceChip(value: String, selected: Boolean, onClick: () -> Unit) {
                 if (selected) RyntraDesign.colors.accent.copy(alpha = 0.48f) else RyntraDesign.colors.separator,
                 RoundedCornerShape(7.dp),
             )
-            .clickable(role = Role.Checkbox, onClick = onClick)
+            .toggleable(value = selected, role = Role.Checkbox, onValueChange = { onClick() })
+            .heightIn(min = 48.dp)
             .padding(horizontal = 9.dp, vertical = 7.dp),
     ) {
         if (selected) RyntraIcon(Lucide.Check, null, RyntraDesign.colors.accent, Modifier.size(14.dp))
@@ -187,28 +195,32 @@ internal fun DependencyEditor(
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
-                    dependency.dependencyType.replaceFirstChar(Char::uppercase),
+                    stringResource(dependencyTypeLabel(dependency.dependencyType)),
                     color = RyntraDesign.colors.accent,
                     style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.clickable { onChangeType(index) }.padding(top = 3.dp, end = 12.dp, bottom = 3.dp),
+                    modifier = Modifier
+                        .heightIn(min = 48.dp)
+                        .wrapContentHeight(Alignment.CenterVertically)
+                        .clickable(role = Role.Button) { onChangeType(index) }
+                        .padding(end = 12.dp),
                 )
             }
-            SmallActionButton(Lucide.Trash2, "Remove dependency", { onRemove(index) }, tintDestructive = true)
+            SmallActionButton(Lucide.Trash2, stringResource(R.string.version_editor_dependency_remove), { onRemove(index) }, tintDestructive = true)
         }
     }
     if (dependencies.isEmpty()) {
-        Text("No dependencies", color = RyntraDesign.colors.labelSecondary, style = MaterialTheme.typography.bodySmall)
+        Text(stringResource(R.string.version_editor_dependency_empty), color = RyntraDesign.colors.labelSecondary, style = MaterialTheme.typography.bodySmall)
     }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 10.dp)) {
         RyntraTextField(
             value = input,
             onValueChange = onInputChange,
-            placeholder = "Project ID or slug",
+            placeholder = stringResource(R.string.version_editor_dependency_placeholder),
             leadingIcon = Lucide.Package,
             leadingIconDescription = null,
             modifier = Modifier.weight(1f),
         )
-        SmallActionButton(Lucide.Plus, "Add dependency", onAdd, Modifier.padding(start = 8.dp))
+        SmallActionButton(Lucide.Plus, stringResource(R.string.version_editor_dependency_add), onAdd, Modifier.padding(start = 8.dp))
     }
 }
 
@@ -217,4 +229,17 @@ private fun channelColor(channel: String) = when (channel) {
     "release" -> RyntraDesign.colors.positive
     "beta" -> RyntraDesign.colors.warning
     else -> RyntraDesign.colors.destructive
+}
+
+private fun channelLabel(channel: String): Int = when (channel) {
+    "release" -> R.string.version_editor_channel_release
+    "beta" -> R.string.version_editor_channel_beta
+    else -> R.string.version_editor_channel_alpha
+}
+
+private fun dependencyTypeLabel(type: String): Int = when (type) {
+    "required" -> R.string.version_editor_dependency_required
+    "optional" -> R.string.version_editor_dependency_optional
+    "incompatible" -> R.string.version_editor_dependency_incompatible
+    else -> R.string.version_editor_dependency_embedded
 }

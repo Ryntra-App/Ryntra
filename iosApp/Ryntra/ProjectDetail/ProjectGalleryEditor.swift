@@ -45,7 +45,10 @@ struct ProjectGalleryEditor: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 20)
             } else {
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                LazyVGrid(
+                    columns: [GridItem(.adaptive(minimum: 150, maximum: 260), spacing: 10)],
+                    spacing: 10
+                ) {
                     ForEach(images, id: \.url) { image in
                         galleryTile(image)
                     }
@@ -307,9 +310,11 @@ private struct GalleryViewer: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(NSLocalizedString("Done", comment: "Gallery action")) { dismiss() }
+                        .disabled(isBusy)
                 }
             }
         }
+        .interactiveDismissDisabled(isBusy)
     }
 }
 
@@ -361,6 +366,7 @@ private struct GalleryMetadataEditor: View {
                     Section { Text(errorMessage).foregroundStyle(.red) }
                 }
             }
+            .ryntraInteractiveKeyboardDismissal()
             .navigationTitle(NSLocalizedString("Edit gallery image", comment: "Gallery title"))
             .ryntraInlineNavigationTitle()
             .disabled(isSaving)
@@ -375,6 +381,7 @@ private struct GalleryMetadataEditor: View {
                 }
             }
         }
+        .interactiveDismissDisabled(isSaving)
     }
 
     @MainActor

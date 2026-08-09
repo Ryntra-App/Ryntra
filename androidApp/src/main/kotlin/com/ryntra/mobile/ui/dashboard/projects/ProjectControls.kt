@@ -23,6 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ryntra.mobile.ui.components.formatExactCount
@@ -124,10 +127,11 @@ private fun SortSegment(
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .heightIn(min = 38.dp)
+            .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(background)
-            .clickable(onClick = onClick)
+            .clickable(role = Role.RadioButton, onClick = onClick)
+            .semantics { selected = isSelected }
             .padding(horizontal = 3.dp, vertical = 8.dp),
     ) {
         Text(

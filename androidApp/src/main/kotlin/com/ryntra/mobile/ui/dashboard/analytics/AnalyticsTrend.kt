@@ -326,7 +326,7 @@ private fun TrendControlButton(
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .height(36.dp)
+            .height(48.dp)
             .background(RyntraDesign.colors.surfaceRaised, shape)
             .border(0.75.dp, RyntraDesign.colors.separator, shape)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)

@@ -18,6 +18,10 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ryntra.mobile.ui.theme.RyntraDesign
@@ -51,7 +55,11 @@ internal fun RyntraProgressIndicator(color: Color, modifier: Modifier = Modifier
         )
         animatedRotation
     }
-    Canvas(modifier = modifier.rotate(rotation)) {
+    Canvas(
+        modifier = modifier
+            .semantics { progressBarRangeInfo = ProgressBarRangeInfo.Indeterminate }
+            .rotate(rotation),
+    ) {
         drawArc(
             color = color,
             startAngle = 20f,
@@ -74,6 +82,6 @@ internal fun RyntraSectionLabel(
             color = if (isPlatformNative) RyntraDesign.colors.labelSecondary else RyntraDesign.colors.accent,
             fontWeight = FontWeight.Bold,
         ),
-        modifier = modifier,
+        modifier = modifier.semantics { heading() },
     )
 }

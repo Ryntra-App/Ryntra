@@ -41,6 +41,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.composables.icons.lucide.Camera
@@ -275,6 +278,7 @@ internal fun ProfileEditor(
             value = username,
             onValueChange = { username = it },
             placeholder = stringResource(R.string.profile_username),
+            label = stringResource(R.string.profile_username),
             leadingIcon = Lucide.User,
             leadingIconDescription = null,
             enabled = !updateState.isSaving,
@@ -284,6 +288,7 @@ internal fun ProfileEditor(
             value = bio,
             onValueChange = { bio = it },
             placeholder = stringResource(R.string.profile_bio_hint),
+            label = stringResource(R.string.profile_bio_hint),
             leadingIcon = Lucide.FileText,
             leadingIconDescription = null,
             enabled = !updateState.isSaving,
@@ -300,7 +305,9 @@ internal fun ProfileEditor(
                 text = updateState.errorMessage.orEmpty(),
                 color = RyntraDesign.colors.destructive,
                 style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 9.dp),
+                modifier = Modifier
+                    .padding(top = 9.dp)
+                    .semantics { liveRegion = LiveRegionMode.Polite },
             )
         }
         RyntraPrimaryButton(

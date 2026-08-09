@@ -87,10 +87,15 @@ internal fun ProjectRow(
             .then(
                 when {
                     onClick != null && onLongClick != null -> Modifier.combinedClickable(
+                        onClickLabel = stringResource(R.string.project_action_open),
+                        onLongClickLabel = stringResource(R.string.project_action_more),
                         onClick = onClick,
                         onLongClick = onLongClick,
                     )
-                    onClick != null -> Modifier.clickable(onClick = onClick)
+                    onClick != null -> Modifier.clickable(
+                        onClickLabel = stringResource(R.string.project_action_open),
+                        onClick = onClick,
+                    )
                     else -> Modifier
                 },
             )

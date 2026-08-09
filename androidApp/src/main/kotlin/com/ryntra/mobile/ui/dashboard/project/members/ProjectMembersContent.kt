@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -106,7 +107,7 @@ internal fun ProjectMemberCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(member.user.username, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         if (member.isOwner) {
-                            Icon(Lucide.Crown, contentDescription = "Owner", tint = RyntraDesign.colors.positive, modifier = Modifier.padding(start = 7.dp).size(15.dp))
+                            Icon(Lucide.Crown, contentDescription = stringResource(R.string.project_members_owner), tint = RyntraDesign.colors.positive, modifier = Modifier.padding(start = 7.dp).size(15.dp))
                         }
                     }
                     Text(
@@ -126,11 +127,11 @@ internal fun ProjectMemberCard(
                 if (isBusy) {
                     CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
                 } else if (canManage && !member.isOwner) {
-                    IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) {
-                        Icon(Lucide.Pencil, contentDescription = null, modifier = Modifier.size(17.dp))
+                    IconButton(onClick = onEdit, modifier = Modifier.size(48.dp)) {
+                        Icon(Lucide.Pencil, contentDescription = stringResource(R.string.project_members_edit, member.user.username), modifier = Modifier.size(20.dp))
                     }
-                    IconButton(onClick = onRemove, modifier = Modifier.size(36.dp)) {
-                        Icon(Lucide.Trash2, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(17.dp))
+                    IconButton(onClick = onRemove, modifier = Modifier.size(48.dp)) {
+                        Icon(Lucide.Trash2, contentDescription = stringResource(R.string.member_remove_action), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
                     }
                 }
             }
@@ -141,7 +142,7 @@ internal fun ProjectMemberCard(
                         color = RyntraDesign.colors.positive,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
                         shape = RoundedCornerShape(7.dp),
-                        modifier = Modifier.padding(start = 8.dp).clickable(onClick = onJoin),
+                        modifier = Modifier.padding(start = 8.dp).heightIn(min = 48.dp).clickable(onClick = onJoin),
                     ) {
                         Text(
                             stringResource(R.string.project_members_accept),

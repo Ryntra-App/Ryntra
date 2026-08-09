@@ -84,9 +84,17 @@ internal fun ProjectBannerCard(
                 .border(if (isSelected) 1.dp else 0.75.dp, borderColor, shape)
                 .then(
                     if (onLongClick != null) {
-                        Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)
+                        Modifier.combinedClickable(
+                            onClickLabel = stringResource(R.string.project_action_open),
+                            onLongClickLabel = stringResource(R.string.project_action_more),
+                            onClick = onClick,
+                            onLongClick = onLongClick,
+                        )
                     } else {
-                        Modifier.clickable(onClick = onClick)
+                        Modifier.clickable(
+                            onClickLabel = stringResource(R.string.project_action_open),
+                            onClick = onClick,
+                        )
                     },
                 ),
         ) {
@@ -174,7 +182,7 @@ internal fun ProjectBannerCard(
                 label = "Favorite tint",
             )
             val favoriteScale by animateFloatAsState(
-                targetValue = if (isFavorite) 1.08f else 1f,
+                targetValue = if (isFavorite && !RyntraDesign.motion.isReduced) 1.08f else 1f,
                 animationSpec = tween(RyntraDesign.motion.duration(180)),
                 label = "Favorite scale",
             )

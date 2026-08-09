@@ -82,7 +82,7 @@ internal fun ProjectDetailTabs(
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier
                     .then(if (isScrollable) Modifier.width(112.dp) else Modifier.weight(1f))
-                    .height(44.dp)
+                    .height(48.dp)
                     .clip(itemShape)
                     .background(if (isSelected) colors.secondaryContainer else Color.Transparent)
                     .clickable(role = Role.Tab) { onSelect(tab) }

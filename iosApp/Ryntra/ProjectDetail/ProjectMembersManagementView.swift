@@ -21,10 +21,10 @@ struct ProjectMembersManagementView: View {
             ?? organizationMembers.first { $0.user.id == model.currentAccountID }
     }
 
-    private var canManageMembers: Bool {
+    private func hasProjectPermission(_ bit: Int32) -> Bool {
         guard let currentMember else { return false }
         let permissions = (currentMember.permissions as? NSNumber)?.int32Value ?? 0
-        return currentMember.isOwner || permissions & (Int32(1) << 6) != 0
+        return currentMember.isOwner || permissions & (Int32(1) << bit) != 0
     }
 
     private var isOrganizationProject: Bool {
@@ -44,12 +44,14 @@ struct ProjectMembersManagementView: View {
             HStack {
                 Text(NSLocalizedString("Members", comment: "Project tab")).font(.title3.bold())
                 Spacer()
-                if !isOrganizationProject, canManageMembers, project.team != nil {
+                if !isOrganizationProject, hasProjectPermission(4), project.team != nil {
                     Button { isInviting = true } label: {
-                        Image(systemName: "person.badge.plus").frame(width: 34, height: 34)
+                        Image(systemName: "person.badge.plus")
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.ryntraGreen)
+                    .ryntraMinimumTouchTarget()
+                    .accessibilityLabel(NSLocalizedString("Invite member", comment: "Member action"))
                 }
             }
 
@@ -70,7 +72,11 @@ struct ProjectMembersManagementView: View {
                 }
                 .padding(.vertical, 28)
             } else if let errorMessage, rosterMembers.isEmpty {
-                emptyState(NSLocalizedString("Members unavailable", comment: ""), errorMessage)
+                emptyState(
+                    NSLocalizedString("Members unavailable", comment: "Members error"),
+                    errorMessage,
+                    retry: onReload
+                )
             } else if rosterMembers.isEmpty {
                 emptyState(
                     NSLocalizedString("No members found", comment: ""),
@@ -81,7 +87,8 @@ struct ProjectMembersManagementView: View {
                     ForEach(rosterMembers, id: \.user.id) { member in
                         ManagedMemberCard(
                             member: member,
-                            canManage: !isOrganizationProject && canManageMembers,
+                            canEdit: !isOrganizationProject && hasProjectPermission(6),
+                            canRemove: !isOrganizationProject && hasProjectPermission(5),
                             isCurrentUser: member.user.id == model.currentAccountID,
                             onEdit: { editingMember = member },
                             onRemove: { Task { await remove(member) } },
@@ -120,10 +127,23 @@ struct ProjectMembersManagementView: View {
         }
     }
 
-    private func emptyState(_ title: String, _ message: String) -> some View {
+    private func emptyState(
+        _ title: String,
+        _ message: String,
+        retry: (() async -> Void)? = nil
+    ) -> some View {
         VStack(alignment: .leading, spacing: 7) {
             Text(LocalizedStringKey(title)).font(.headline)
             Text(LocalizedStringKey(message)).foregroundStyle(.secondary)
+            if let retry {
+                Button {
+                    Task { await retry() }
+                } label: {
+                    Label(NSLocalizedString("Retry", comment: "Common action"), systemImage: "arrow.clockwise")
+                }
+                .buttonStyle(.bordered)
+                .padding(.top, 4)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
@@ -151,11 +171,13 @@ struct ProjectMembersManagementView: View {
 
 struct ManagedMemberCard: View {
     let member: ProjectMember
-    let canManage: Bool
+    let canEdit: Bool
+    let canRemove: Bool
     let isCurrentUser: Bool
     let onEdit: () -> Void
     let onRemove: () -> Void
     let onJoin: () -> Void
+    @State private var isConfirmingRemoval = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -175,9 +197,21 @@ struct ManagedMemberCard: View {
                     Text(member.role).font(.subheadline).foregroundStyle(.secondary)
                 }
                 Spacer()
-                if canManage && !member.isOwner {
-                    Button(action: onEdit) { Image(systemName: "pencil") }
-                    Button(role: .destructive, action: onRemove) { Image(systemName: "trash") }
+                if !member.isOwner {
+                    if canEdit {
+                        Button(action: onEdit) {
+                            Image(systemName: "pencil").ryntraMinimumTouchTarget()
+                        }
+                        .accessibilityLabel(NSLocalizedString("Edit member", comment: "Member action"))
+                    }
+                    if canRemove {
+                        Button(role: .destructive) {
+                            isConfirmingRemoval = true
+                        } label: {
+                            Image(systemName: "trash").ryntraMinimumTouchTarget()
+                        }
+                        .accessibilityLabel(NSLocalizedString("Remove member", comment: "Member action"))
+                    }
                 }
             }
                 HStack {
@@ -191,6 +225,19 @@ struct ManagedMemberCard: View {
             }
             .padding(14)
             Divider()
+        }
+        .confirmationDialog(
+            NSLocalizedString("Remove this member?", comment: "Member removal confirmation"),
+            isPresented: $isConfirmingRemoval,
+            titleVisibility: .visible
+        ) {
+            Button(NSLocalizedString("Remove member", comment: "Member action"), role: .destructive, action: onRemove)
+            Button(NSLocalizedString("Cancel", comment: "Common action"), role: .cancel) {}
+        } message: {
+            Text(NSLocalizedString(
+                "They will lose access granted through this team.",
+                comment: "Member removal confirmation"
+            ))
         }
     }
 }
@@ -213,6 +260,11 @@ struct InviteMemberSheet: View {
                     TextField("Exact Modrinth username", text: $query)
                         .ryntraNoAutocapitalization()
                         .autocorrectionDisabled()
+                        .submitLabel(.search)
+                        .onSubmit {
+                            guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+                            Task { await search() }
+                        }
                     Button("Search") { Task { await search() } }
                         .disabled(query.trimmingCharacters(in: .whitespaces).isEmpty || isSearching)
                 }
@@ -232,6 +284,7 @@ struct InviteMemberSheet: View {
                 }
                 if let localError { Section { Text(localError).foregroundStyle(.red) } }
             }
+            .ryntraInteractiveKeyboardDismissal()
             .navigationTitle("Invite member")
             .ryntraInlineNavigationTitle()
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }

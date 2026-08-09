@@ -5,13 +5,16 @@ struct LoginView: View {
     @Environment(\.openURL) private var openURL
     @State private var token = ""
     @State private var isPatVisible = false
+    @FocusState private var isTokenFocused: Bool
 
     var isLoading = false
     var errorMessage: String?
 
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer()
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
+                    Spacer(minLength: 24)
             Image("RyntraLogo")
                 .resizable()
                 .scaledToFit()
@@ -19,7 +22,7 @@ struct LoginView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 20))
 
             Text("Ryntra")
-                .font(.system(size: 36, weight: .black))
+                .font(.largeTitle.bold())
                 .padding(.top, 18)
             Text("Your Modrinth workspace, native on mobile")
                 .font(.subheadline)
@@ -34,7 +37,7 @@ struct LoginView: View {
             } label: {
                 Group {
                     if isLoading {
-                        ProgressView().tint(.black)
+                        ProgressView().tint(Color.ryntraOnAccent)
                     } else {
                         Label("Continue with Modrinth", systemImage: "globe")
                             .fontWeight(.bold)
@@ -68,11 +71,15 @@ struct LoginView: View {
             if isPatVisible {
                 SecureField("Personal access token", text: $token)
                     .textContentType(.password)
+                    .ryntraNoAutocapitalization()
+                    .focused($isTokenFocused)
+                    .submitLabel(.go)
+                    .onSubmit { connectWithToken() }
                     .padding(14)
                     .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
 
                 Button {
-                    model.signIn(token: token)
+                    connectWithToken()
                 } label: {
                     Label("Connect to Modrinth", systemImage: "link")
                         .fontWeight(.bold)
@@ -88,8 +95,20 @@ struct LoginView: View {
                     .foregroundStyle(.secondary)
                     .padding(.top, 14)
             }
-            Spacer()
+                    Spacer(minLength: 24)
+                }
+                .frame(maxWidth: 560)
+                .frame(maxWidth: .infinity, minHeight: geometry.size.height)
+                .padding(.horizontal, 24)
+            }
+            .ryntraInteractiveKeyboardDismissal()
         }
-        .padding(.horizontal, 24)
+    }
+
+    private func connectWithToken() {
+        let value = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty, !isLoading else { return }
+        isTokenFocused = false
+        model.signIn(token: value)
     }
 }

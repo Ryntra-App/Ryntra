@@ -3,14 +3,19 @@ package com.ryntra.mobile.ui.login
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
@@ -24,11 +29,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.ryntra.mobile.R
 import com.ryntra.mobile.ui.components.RyntraPrimaryButton
 import com.ryntra.mobile.ui.components.RyntraSecondaryButton
@@ -47,18 +55,17 @@ fun LoginScreen(
     var token by rememberSaveable { mutableStateOf("") }
     var isPatVisible by rememberSaveable { mutableStateOf(false) }
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 24.dp),
-        contentAlignment = Alignment.Center,
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .imePadding()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp, vertical = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
             Image(
                 painter = painterResource(R.drawable.ryntra_logo),
                 contentDescription = null,
@@ -68,18 +75,18 @@ fun LoginScreen(
             )
             Spacer(Modifier.height(20.dp))
             Text(
-                text = "Ryntra",
+                text = stringResource(R.string.app_name),
                 color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 34.sp,
+                style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Black,
             )
             Text(
-                text = "Your Modrinth workspace, native on mobile",
+                text = stringResource(R.string.login_tagline),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 6.dp, bottom = 28.dp),
             )
             RyntraPrimaryButton(
-                text = "Continue with Modrinth",
+                text = stringResource(R.string.login_continue_modrinth),
                 icon = Lucide.Globe,
                 onClick = onStartOAuth,
                 enabled = !isLoading,
@@ -92,11 +99,12 @@ fun LoginScreen(
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 10.dp),
+                        .padding(top = 10.dp)
+                        .semantics { liveRegion = LiveRegionMode.Polite },
                 )
             }
             RyntraSecondaryButton(
-                text = if (isPatVisible) "Hide access token" else "Use personal access token",
+                text = stringResource(if (isPatVisible) R.string.login_hide_token else R.string.login_use_token),
                 icon = Lucide.KeyRound,
                 onClick = { isPatVisible = !isPatVisible },
                 enabled = !isLoading,
@@ -107,7 +115,8 @@ fun LoginScreen(
                     value = token,
                     onValueChange = { token = it },
                     enabled = !isLoading,
-                    placeholder = "Personal access token",
+                    placeholder = stringResource(R.string.login_token_placeholder),
+                    label = stringResource(R.string.login_token_label),
                     leadingIcon = Lucide.KeyRound,
                     leadingIconDescription = null,
                     visualTransformation = PasswordVisualTransformation(),
@@ -117,7 +126,7 @@ fun LoginScreen(
                         .padding(top = 12.dp),
                 )
                 RyntraSecondaryButton(
-                    text = "Sign in with PAT",
+                    text = stringResource(R.string.login_sign_in_token),
                     icon = Lucide.KeyRound,
                     onClick = { onSignIn(token) },
                     enabled = token.isNotBlank() && !isLoading,
@@ -126,12 +135,11 @@ fun LoginScreen(
                         .padding(top = 12.dp),
                 )
                 Text(
-                    text = "Stored encrypted with Android Keystore",
+                    text = stringResource(R.string.login_token_storage),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.padding(top = 14.dp),
                 )
             }
-        }
     }
 }

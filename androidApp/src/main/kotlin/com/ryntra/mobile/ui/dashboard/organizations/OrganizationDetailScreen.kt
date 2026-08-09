@@ -48,6 +48,7 @@ import com.ryntra.mobile.ui.dashboard.project.members.InviteMemberDialog
 import com.ryntra.mobile.ui.dashboard.project.members.MemberEditorDialog
 import com.ryntra.mobile.ui.dashboard.project.members.MembersHeader
 import com.ryntra.mobile.ui.dashboard.project.members.ProjectMemberCard
+import com.ryntra.mobile.ui.dashboard.project.DestructiveConfirmationDialog
 import com.ryntra.mobile.ui.dashboard.projects.ProjectBannerCard
 import com.ryntra.mobile.ui.dashboard.projects.DeleteProjectDialog
 import com.ryntra.mobile.ui.dashboard.projects.ProjectActionsSheet
@@ -83,6 +84,7 @@ fun OrganizationDetailScreen(
     onJoinTeam: (String) -> Unit = {},
     onTransferOwnership: (String, String) -> Unit = { _, _ -> },
     onClearProjectActionStatus: () -> Unit = {},
+    onRetry: () -> Unit = {},
 ) {
     val uriHandler = LocalUriHandler.current
     val displayMembers = members.ifEmpty { organization.acceptedMembers }
@@ -96,6 +98,7 @@ fun OrganizationDetailScreen(
         (currentMember?.isOwner == true || currentMember.hasOrganizationPermission(OrganizationPermissionBits.ManageInvites))
     var isInviting by remember(organization.id) { mutableStateOf(false) }
     var editingMember by remember(organization.id) { mutableStateOf<ProjectMember?>(null) }
+    var memberPendingRemoval by remember(organization.id) { mutableStateOf<ProjectMember?>(null) }
     var actionProject by remember(organization.id) { mutableStateOf<Project?>(null) }
     var deletingProject by remember(organization.id) { mutableStateOf<Project?>(null) }
     val canDeleteProjects = currentMember.hasProjectPermission(ProjectPermissionBits.DeleteProject)
@@ -121,6 +124,7 @@ fun OrganizationDetailScreen(
         if (projectAction.successMessage != null) {
             isInviting = false
             editingMember = null
+            memberPendingRemoval = null
             deletingProject = null
             onClearProjectActionStatus()
         }
@@ -268,9 +272,7 @@ fun OrganizationDetailScreen(
                             isCurrentUser = member.user.id == currentUserId,
                             isBusy = projectAction.isRunning && projectAction.targetId == member.user.id,
                             onEdit = { editingMember = member },
-                            onRemove = {
-                                teamId?.let { onRemoveMember(it, member.user.id) }
-                            },
+                            onRemove = { memberPendingRemoval = member },
                             onJoin = { teamId?.let(onJoinTeam) },
                         )
                     }
@@ -312,6 +314,8 @@ fun OrganizationDetailScreen(
                     RyntraEmptyState(
                         title = stringResource(R.string.organizations_projects_failed),
                         message = errorMessage,
+                        actionLabel = stringResource(R.string.common_retry),
+                        onAction = onRetry,
                     )
                 }
             }
@@ -371,6 +375,22 @@ fun OrganizationDetailScreen(
                     editingMember = null
                     onClearProjectActionStatus()
                 },
+            )
+        }
+    }
+    memberPendingRemoval?.let { member ->
+        teamId?.let { resolvedTeamId ->
+            DestructiveConfirmationDialog(
+                title = stringResource(R.string.member_remove_title),
+                message = stringResource(R.string.member_remove_message, member.user.username),
+                confirmLabel = stringResource(R.string.member_remove_action),
+                isRunning = projectAction.isRunning && projectAction.targetId == member.user.id,
+                errorMessage = projectAction.errorMessage.takeIf { projectAction.targetId == member.user.id },
+                onDismiss = {
+                    memberPendingRemoval = null
+                    onClearProjectActionStatus()
+                },
+                onConfirm = { onRemoveMember(resolvedTeamId, member.user.id) },
             )
         }
     }

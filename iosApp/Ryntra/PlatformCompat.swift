@@ -68,6 +68,18 @@ extension ToolbarItemPlacement {
 }
 
 extension View {
+    /// Keeps compact icon controls comfortably tappable without inflating
+    /// their visual artwork. AppKit uses its native control metrics.
+    @ViewBuilder
+    func ryntraMinimumTouchTarget() -> some View {
+#if os(macOS)
+        self
+#else
+        frame(minWidth: 44, minHeight: 44)
+            .contentShape(Rectangle())
+#endif
+    }
+
     /// Applies the inline navigation title style. macOS has a single title
     /// style, so this is a no-op there.
     @ViewBuilder
@@ -178,6 +190,17 @@ extension View {
         self
 #else
         keyboardType(.URL)
+#endif
+    }
+
+    /// Lets the software keyboard follow a drag while preserving the native
+    /// macOS scrolling behavior.
+    @ViewBuilder
+    func ryntraInteractiveKeyboardDismissal() -> some View {
+#if os(macOS)
+        self
+#else
+        scrollDismissesKeyboard(.interactively)
 #endif
     }
 }

@@ -21,6 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.FileText
@@ -81,12 +83,13 @@ private fun EditorModePicker(selected: MarkdownEditorMode, onSelect: (MarkdownEd
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .weight(1f)
-                    .height(38.dp)
+                    .height(48.dp)
                     .background(
                         if (selected == mode) RyntraDesign.colors.surfaceRaised else Color.Transparent,
                         RoundedCornerShape(7.dp),
                     )
-                    .clickable(role = Role.Tab) { onSelect(mode) },
+                    .clickable(role = Role.Tab) { onSelect(mode) }
+                    .semantics { this.selected = selected == mode },
             ) {
                 Text(
                     stringResource(

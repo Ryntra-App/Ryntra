@@ -4,8 +4,6 @@ import SwiftUI
 
 struct EditProjectView: View {
     @EnvironmentObject private var model: AppModel
-    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
-    @AppStorage("reduceMotion") private var appReduceMotion = false
     let project: Project
     let saveRequest: Int
     let onSaved: () async -> Void
@@ -29,6 +27,8 @@ struct EditProjectView: View {
     @State private var licenseLoadError: String?
     @State private var isShowingLicensePicker = false
     @State private var licenseQuery = ""
+    @State private var isTitleTouched = false
+    @State private var isSummaryTouched = false
 
     init(
         project: Project,
@@ -68,7 +68,15 @@ struct EditProjectView: View {
             editSection(.main, title: "Main information", systemImage: "pencil") {
                 iconEditor
                 field("Title", text: $title, systemImage: "tag")
+                    .onChange(of: title) { _ in isTitleTouched = true }
+                if isTitleTouched && title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    requiredFieldMessage
+                }
                 field("Summary", text: $summary, systemImage: "info.circle")
+                    .onChange(of: summary) { _ in isSummaryTouched = true }
+                if isSummaryTouched && summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    requiredFieldMessage
+                }
             }
 
             editSection(.description, title: "Full description", systemImage: "doc.text") {
@@ -98,7 +106,7 @@ struct EditProjectView: View {
                         Text(ProjectStatusSupport.statusLabel($0)).tag($0)
                     }
                 }
-                .pickerStyle(.segmented)
+                .pickerStyle(.menu)
                 if !licenses.isEmpty {
                     ProjectLicenseSelectionButton(
                         licenses: licenses,
@@ -126,10 +134,10 @@ struct EditProjectView: View {
             }
 
             editSection(.links, title: "Links", systemImage: "link") {
-                field("Source code", text: $sourceUrl, systemImage: "chevron.left.forwardslash.chevron.right")
-                field("Issue tracker", text: $issuesUrl, systemImage: "ant")
-                field("Wiki", text: $wikiUrl, systemImage: "book")
-                field("Discord", text: $discordUrl, systemImage: "bubble.left.and.bubble.right")
+                field("Source code", text: $sourceUrl, systemImage: "chevron.left.forwardslash.chevron.right", isURL: true)
+                field("Issue tracker", text: $issuesUrl, systemImage: "ant", isURL: true)
+                field("Wiki", text: $wikiUrl, systemImage: "book", isURL: true)
+                field("Discord", text: $discordUrl, systemImage: "bubble.left.and.bubble.right", isURL: true)
             }
 
             if let error = localError ?? model.projectUpdateError ?? model.projectActionError {
@@ -207,48 +215,75 @@ struct EditProjectView: View {
     }
 
     private var iconEditor: some View {
-        HStack(spacing: 12) {
-            RemoteImage(url: URL(string: project.iconUrl ?? "")) { image in
-                image.resizable().scaledToFill()
-            } placeholder: {
-                RoundedRectangle(cornerRadius: 10).fill(.quaternary)
-                    .overlay { Image(systemName: "photo") }
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                projectIcon
+                iconActions
             }
-            .frame(width: 64, height: 64)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            VStack(spacing: 8) {
-                PhotosPicker(selection: $iconItem, matching: .images) {
-                    Label("Upload icon", systemImage: "square.and.arrow.up")
-                        .frame(maxWidth: .infinity)
+            VStack(alignment: .leading, spacing: 12) {
+                projectIcon
+                iconActions
+            }
+        }
+    }
+
+    private var projectIcon: some View {
+        RemoteImage(url: URL(string: project.iconUrl ?? "")) { image in
+            image.resizable().scaledToFill()
+        } placeholder: {
+            RoundedRectangle(cornerRadius: 10).fill(.quaternary)
+                .overlay { Image(systemName: "photo") }
+        }
+        .frame(width: 64, height: 64)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    private var iconActions: some View {
+        VStack(spacing: 8) {
+            PhotosPicker(selection: $iconItem, matching: .images) {
+                Label("Upload icon", systemImage: "square.and.arrow.up")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            if project.iconUrl != nil {
+                Button(role: .destructive) {
+                    Task { await deleteIcon() }
+                } label: {
+                    Label("Remove icon", systemImage: "trash").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
-                if project.iconUrl != nil {
-                    Button(role: .destructive) {
-                        Task { await deleteIcon() }
-                    } label: {
-                        Label("Remove icon", systemImage: "trash").frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                }
             }
         }
     }
 
-    private func label(_ text: String) -> some View {
-        Text(LocalizedStringKey(text)).font(.caption.weight(.medium)).foregroundStyle(.secondary)
-    }
-
-    private func field(_ title: String, text: Binding<String>, systemImage: String) -> some View {
+    @ViewBuilder
+    private func field(_ title: String, text: Binding<String>, systemImage: String, isURL: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            label(title)
-            HStack(spacing: 12) {
-                Image(systemName: systemImage).foregroundStyle(.secondary).frame(width: 20)
+            Label(NSLocalizedString(title, comment: "Project field"), systemImage: systemImage)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+            if isURL {
                 TextField(NSLocalizedString(title, comment: "Project field"), text: text)
+                    .textFieldStyle(.roundedBorder)
+                    .ryntraURLKeyboard()
+                    .ryntraNoAutocapitalization()
+                    .autocorrectionDisabled()
+                    .frame(minHeight: 44)
+            } else {
+                TextField(NSLocalizedString(title, comment: "Project field"), text: text)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(minHeight: 44)
             }
-            .padding(.horizontal, 12)
-            .frame(height: 46)
-            .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 8))
         }
+    }
+
+    private var requiredFieldMessage: some View {
+        Label(
+            NSLocalizedString("Required field", comment: "Project editor validation"),
+            systemImage: "exclamationmark.circle.fill"
+        )
+        .font(.caption)
+        .foregroundStyle(.red)
     }
 
     private func reportEditingState() {
@@ -274,47 +309,25 @@ struct EditProjectView: View {
         systemImage: String,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        let isExpanded = expandedSections.contains(section)
-        return VStack(alignment: .leading, spacing: 0) {
-            Button {
-                withAnimation(
-                    RyntraMotion.resolved(
-                        .easeOut(duration: 0.16),
-                        reduceMotion: systemReduceMotion || appReduceMotion
-                    )
-                ) {
-                    if isExpanded { expandedSections.remove(section) }
-                    else { expandedSections.insert(section) }
+        DisclosureGroup(
+            isExpanded: Binding(
+                get: { expandedSections.contains(section) },
+                set: { isExpanded in
+                    if isExpanded { expandedSections.insert(section) }
+                    else { expandedSections.remove(section) }
                 }
-            } label: {
-                HStack(spacing: 12) {
-                    Label(NSLocalizedString(title, comment: "Project editor section"), systemImage: systemImage)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                    Spacer(minLength: 8)
-                    Image(systemName: "chevron.down")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
-                }
-                .contentShape(Rectangle())
+            )
+        ) {
+            VStack(alignment: .leading, spacing: 14) {
+                content()
             }
-            .buttonStyle(.plain)
-
-            if isExpanded {
-                VStack(alignment: .leading, spacing: 14) {
-                    content()
-                }
-                .padding(.top, 14)
-                .transition(.opacity)
-            }
+            .padding(.top, 14)
+        } label: {
+            Label(NSLocalizedString(title, comment: "Project editor section"), systemImage: systemImage)
+                .font(.headline)
         }
-        .padding(16)
-        .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.ryntraSeparator, lineWidth: 0.5)
-        }
+        .padding(.vertical, 10)
+        .overlay(alignment: .bottom) { Divider() }
     }
 }
 

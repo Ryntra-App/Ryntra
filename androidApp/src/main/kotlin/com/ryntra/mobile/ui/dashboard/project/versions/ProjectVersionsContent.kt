@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -75,6 +76,7 @@ internal fun VersionsHeader(canCreate: Boolean, onCreate: () -> Unit) {
                     .clip(RoundedCornerShape(9.dp))
                     .background(RyntraDesign.colors.surface)
                     .clickable(onClick = onCreate)
+                    .heightIn(min = 48.dp)
                     .padding(horizontal = 11.dp, vertical = 9.dp),
             ) {
                 RyntraIcon(Lucide.Plus, null, RyntraDesign.colors.accent, Modifier.size(18.dp))
@@ -131,13 +133,13 @@ internal fun VersionCard(
                 RyntraProgressIndicator(RyntraDesign.colors.accent, Modifier.size(20.dp))
             } else {
                 if (canEdit) {
-                    IconButton(onClick = onEdit, modifier = Modifier.size(38.dp)) {
-                        Icon(Lucide.Pencil, contentDescription = "Edit version", tint = RyntraDesign.colors.accent, modifier = Modifier.size(17.dp))
+                    IconButton(onClick = onEdit, modifier = Modifier.size(48.dp)) {
+                        Icon(Lucide.Pencil, contentDescription = stringResource(R.string.version_edit_action), tint = RyntraDesign.colors.accent, modifier = Modifier.size(20.dp))
                     }
                 }
                 if (canDelete) {
-                    IconButton(onClick = onDelete, modifier = Modifier.size(38.dp)) {
-                        Icon(Lucide.Trash2, contentDescription = "Delete version", tint = RyntraDesign.colors.destructive, modifier = Modifier.size(17.dp))
+                    IconButton(onClick = onDelete, modifier = Modifier.size(48.dp)) {
+                        Icon(Lucide.Trash2, contentDescription = stringResource(R.string.version_delete_action), tint = RyntraDesign.colors.destructive, modifier = Modifier.size(20.dp))
                     }
                 }
             }

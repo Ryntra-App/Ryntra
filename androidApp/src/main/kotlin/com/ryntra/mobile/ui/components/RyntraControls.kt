@@ -76,6 +76,7 @@ fun RyntraTextField(
     leadingIcon: ImageVector,
     leadingIconDescription: String?,
     modifier: Modifier = Modifier,
+    label: String? = null,
     enabled: Boolean = true,
     singleLine: Boolean = true,
     minLines: Int = 1,
@@ -93,6 +94,7 @@ fun RyntraTextField(
             minLines = minLines,
             maxLines = maxLines,
             isError = isError,
+            label = label?.let { fieldLabel -> { Text(fieldLabel) } },
             placeholder = { Text(placeholder, maxLines = if (singleLine) 1 else minLines) },
             // Multi-line fields keep icons top-aligned; Material centers leadingIcon by default.
             leadingIcon = if (singleLine) {
@@ -236,11 +238,11 @@ fun RyntraPrimaryButton(
         animationSpec = tween(RyntraDesign.motion.duration(160)),
         label = "Primary button content",
     )
-    val semanticsModifier = if (enabled) Modifier else Modifier.semantics { disabled() }
+    val semanticsModifier = if (enabled && !isLoading) Modifier else Modifier.semantics { disabled() }
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val pressedScale by animateFloatAsState(
-        targetValue = if (isPressed && enabled && !isLoading) 0.975f else 1f,
+        targetValue = if (isPressed && enabled && !isLoading && !RyntraDesign.motion.isReduced) 0.975f else 1f,
         animationSpec = tween(RyntraDesign.motion.duration(110)),
         label = "Primary button press",
     )
@@ -305,7 +307,7 @@ fun RyntraSecondaryButton(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val pressedScale by animateFloatAsState(
-        targetValue = if (isPressed && enabled) 0.975f else 1f,
+        targetValue = if (isPressed && enabled && !RyntraDesign.motion.isReduced) 0.975f else 1f,
         animationSpec = tween(RyntraDesign.motion.duration(110)),
         label = "Secondary button press",
     )

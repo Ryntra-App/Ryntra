@@ -119,6 +119,11 @@ extension Color {
         light: RyntraNativeColor(red: 0.00, green: 0.40, blue: 0.49, alpha: 1)
     )
 
+    static let ryntraOnAccent = adaptive(
+        dark: RyntraNativeColor(red: 0.02, green: 0.02, blue: 0.02, alpha: 1),
+        light: RyntraNativeColor(red: 0.98, green: 0.98, blue: 0.98, alpha: 1)
+    )
+
     static let ryntraBackground = adaptive(
         dark: RyntraNativeColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1),
         light: .ryntraLightBackground

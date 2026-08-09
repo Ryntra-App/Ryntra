@@ -77,6 +77,8 @@ internal fun ShareCardStudio(
     versions: List<ProjectVersion>,
     onDismiss: () -> Unit,
 ) {
+    val chooserTitle = stringResource(R.string.share_card_chooser)
+    val exportErrorMessage = stringResource(R.string.share_card_error)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var format by rememberSaveable(project.id) { mutableStateOf(ShareCardFormat.Square) }
@@ -154,11 +156,11 @@ internal fun ShareCardStudio(
                                         )
                                         context.openShareCardChooser(
                                             uri = uri,
-                                            chooserTitle = context.getString(R.string.share_card_chooser),
+                                            chooserTitle = chooserTitle,
                                         )
                                     } catch (error: Exception) {
                                         Log.e("ShareCardStudio", "Could not export share card", error)
-                                        exportError = context.getString(R.string.share_card_error)
+                                        exportError = exportErrorMessage
                                     } finally {
                                         isExporting = false
                                     }

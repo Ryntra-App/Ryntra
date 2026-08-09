@@ -57,6 +57,7 @@ struct AccountAvatarEditor: View {
                         .frame(width: 28, height: 28)
                         .background(Color.ryntraGreen, in: Circle())
                         .overlay(Circle().stroke(Color.ryntraBackground, lineWidth: 2))
+                        .ryntraMinimumTouchTarget()
                 }
 #if os(macOS)
                 // AppKit would draw this as a bordered popup button stretched

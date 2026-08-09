@@ -333,14 +333,11 @@ struct OrganizationDetailView: View {
         displayMembers.first { $0.user.id == model.currentAccountID }
     }
 
-    private var canManageMembers: Bool {
+    private func hasOrganizationPermission(_ bit: Int32) -> Bool {
         guard let currentMember else { return false }
         if currentMember.isOwner { return true }
         let orgPerms = (currentMember.organizationPermissions as? NSNumber)?.int32Value ?? 0
-        // Manage invites (1), remove (2), edit member (3)
-        return orgPerms & (Int32(1) << 1) != 0
-            || orgPerms & (Int32(1) << 2) != 0
-            || orgPerms & (Int32(1) << 3) != 0
+        return orgPerms & (Int32(1) << bit) != 0
     }
 
     private var canDeleteProjects: Bool {
@@ -375,7 +372,8 @@ struct OrganizationDetailView: View {
                     ForEach(displayMembers, id: \.user.id) { member in
                         ManagedMemberCard(
                             member: member,
-                            canManage: canManageMembers && teamID != nil,
+                            canEdit: hasOrganizationPermission(3) && teamID != nil,
+                            canRemove: hasOrganizationPermission(2) && teamID != nil,
                             isCurrentUser: member.user.id == model.currentAccountID,
                             onEdit: { editingMember = member },
                             onRemove: { Task { await remove(member) } },
@@ -392,7 +390,7 @@ struct OrganizationDetailView: View {
                 HStack {
                     RyntraSectionLabel(text: NSLocalizedString("Members", comment: "Members section"))
                     Spacer()
-                    if canManageMembers, teamID != nil {
+                    if hasOrganizationPermission(1), teamID != nil {
                         Button {
                             isInviting = true
                         } label: {
@@ -413,11 +411,19 @@ struct OrganizationDetailView: View {
                     }
                     .padding(.vertical, 12)
                 } else if let errorMessage, projects.isEmpty {
-                    EmptyStateView(
-                        title: NSLocalizedString("Projects unavailable", comment: "Org projects error"),
-                        systemImage: "exclamationmark.triangle",
-                        message: errorMessage
-                    )
+                    VStack(spacing: 10) {
+                        EmptyStateView(
+                            title: NSLocalizedString("Projects unavailable", comment: "Org projects error"),
+                            systemImage: "exclamationmark.triangle",
+                            message: errorMessage
+                        )
+                        Button {
+                            Task { await loadDetail() }
+                        } label: {
+                            Label(NSLocalizedString("Retry", comment: "Common action"), systemImage: "arrow.clockwise")
+                        }
+                        .buttonStyle(.bordered)
+                    }
                 } else if projects.isEmpty {
                     EmptyStateView(
                         title: NSLocalizedString("No organization projects", comment: "Org projects empty"),

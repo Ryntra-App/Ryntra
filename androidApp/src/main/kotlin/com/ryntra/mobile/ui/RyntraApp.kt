@@ -83,6 +83,7 @@ fun RyntraApp(viewModel: RyntraViewModel) {
                         dashboard = presentation.dashboard,
                         isRefreshing = presentation.isRefreshing,
                         errorMessage = presentation.errorMessage,
+                        onRetryDashboard = viewModel::refresh,
                         projectDetail = projectDetail,
                         organizationDetail = organizationDetail,
                         profileUpdate = profileUpdate,

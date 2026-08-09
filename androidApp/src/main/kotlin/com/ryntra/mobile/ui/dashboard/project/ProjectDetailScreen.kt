@@ -141,6 +141,7 @@ fun ProjectDetailScreen(
     onDeleteModerationMessage: (String, String) -> Unit = { _, _ -> },
     loadProjectCreationMetadata: suspend () -> ProjectCreationMetadata = { error("Unavailable") },
     onUnsavedChangesChanged: (Boolean) -> Unit = {},
+    onRetry: () -> Unit = {},
 ) {
     val uriHandler = LocalUriHandler.current
     var selectedTab by rememberSaveable(project.id) { mutableStateOf(ProjectDetailTab.Overview) }
@@ -170,8 +171,10 @@ fun ProjectDetailScreen(
     }
     var isCreatingVersion by remember(project.id) { mutableStateOf(false) }
     var editingVersion by remember(project.id) { mutableStateOf<ProjectVersion?>(null) }
+    var versionPendingDeletion by remember(project.id) { mutableStateOf<ProjectVersion?>(null) }
     var isInvitingMember by remember(project.id) { mutableStateOf(false) }
     var editingMember by remember(project.id) { mutableStateOf<ProjectMember?>(null) }
+    var memberPendingRemoval by remember(project.id) { mutableStateOf<ProjectMember?>(null) }
     var viewingGalleryImage by remember(project.id) { mutableStateOf<com.ryntra.shared.model.GalleryImage?>(null) }
     var moderationReplyTargetId by rememberSaveable(project.id) { mutableStateOf<String?>(null) }
     var isConfirmingSubmission by remember(project.id) { mutableStateOf(false) }
@@ -225,8 +228,10 @@ fun ProjectDetailScreen(
         if (projectAction.successMessage != null) {
             isCreatingVersion = false
             editingVersion = null
+            versionPendingDeletion = null
             isInvitingMember = false
             editingMember = null
+            memberPendingRemoval = null
             isConfirmingSubmission = false
             isConfirmingDeletion = false
             onClearProjectActionStatus()
@@ -352,6 +357,8 @@ fun ProjectDetailScreen(
                         RyntraEmptyState(
                             title = stringResource(R.string.project_versions_unavailable),
                             message = errorMessage,
+                            actionLabel = stringResource(R.string.common_retry),
+                            onAction = onRetry,
                         )
                     }
                     versions.isEmpty() -> item {
@@ -369,7 +376,7 @@ fun ProjectDetailScreen(
                                 isBusy = projectAction.isRunning && projectAction.targetId == version.id,
                                 onOpen = { if (canCreateVersions) editingVersion = version },
                                 onEdit = { editingVersion = version },
-                                onDelete = { onDeleteVersion(version.id) },
+                                onDelete = { versionPendingDeletion = version },
                             )
                         }
                     }
@@ -434,6 +441,8 @@ fun ProjectDetailScreen(
                         RyntraEmptyState(
                             title = stringResource(R.string.project_members_unavailable),
                             message = memberErrorMessage,
+                            actionLabel = stringResource(R.string.common_retry),
+                            onAction = onRetry,
                         )
                     }
                     rosterMembers.isEmpty() -> item {
@@ -450,7 +459,7 @@ fun ProjectDetailScreen(
                                 isCurrentUser = member.user.id == currentUserId,
                                 isBusy = projectAction.isRunning && projectAction.targetId == member.user.id,
                                 onEdit = { editingMember = member },
-                                onRemove = { project.team?.let { onRemoveMember(it, member.user.id) } },
+                                onRemove = { memberPendingRemoval = member },
                                 onJoin = { project.team?.let(onJoinTeam) },
                             )
                         }
@@ -586,6 +595,20 @@ fun ProjectDetailScreen(
             onUpdate = onUpdateVersion,
         )
     }
+    versionPendingDeletion?.let { version ->
+        DestructiveConfirmationDialog(
+            title = stringResource(R.string.version_delete_title),
+            message = stringResource(R.string.version_delete_message, version.versionNumber),
+            confirmLabel = stringResource(R.string.version_delete_action),
+            isRunning = projectAction.isRunning && projectAction.targetId == version.id,
+            errorMessage = projectAction.errorMessage.takeIf { projectAction.targetId == version.id },
+            onDismiss = {
+                versionPendingDeletion = null
+                onClearProjectActionStatus()
+            },
+            onConfirm = { onDeleteVersion(version.id) },
+        )
+    }
     if (isInvitingMember && teamId != null) {
         InviteMemberDialog(
             search = memberSearch,
@@ -611,6 +634,22 @@ fun ProjectDetailScreen(
                     editingMember = null
                     onClearProjectActionStatus()
                 },
+            )
+        }
+    }
+    memberPendingRemoval?.let { member ->
+        project.team?.let { resolvedTeamId ->
+            DestructiveConfirmationDialog(
+                title = stringResource(R.string.member_remove_title),
+                message = stringResource(R.string.member_remove_message, member.user.username),
+                confirmLabel = stringResource(R.string.member_remove_action),
+                isRunning = projectAction.isRunning && projectAction.targetId == member.user.id,
+                errorMessage = projectAction.errorMessage.takeIf { projectAction.targetId == member.user.id },
+                onDismiss = {
+                    memberPendingRemoval = null
+                    onClearProjectActionStatus()
+                },
+                onConfirm = { onRemoveMember(resolvedTeamId, member.user.id) },
             )
         }
     }
@@ -652,6 +691,44 @@ fun ProjectDetailScreen(
             onDismiss = { isCreatingShareCard = false },
         )
     }
+}
+
+@Composable
+internal fun DestructiveConfirmationDialog(
+    title: String,
+    message: String,
+    confirmLabel: String,
+    isRunning: Boolean,
+    errorMessage: String?,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = { if (!isRunning) onDismiss() },
+        title = { Text(title) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(message)
+                errorMessage?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(enabled = !isRunning, onClick = onDismiss) {
+                Text(stringResource(R.string.destructive_action_cancel))
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = !isRunning, onClick = onConfirm) {
+                if (isRunning) {
+                    CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
+                } else {
+                    Text(confirmLabel, color = MaterialTheme.colorScheme.error)
+                }
+            }
+        },
+    )
 }
 
 private fun ProjectMember?.hasPermission(bit: Int): Boolean =

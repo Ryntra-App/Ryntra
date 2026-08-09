@@ -243,9 +243,9 @@ fun RyntraTheme(
             chromeBorder = colorScheme.outlineVariant,
             chromeHighlight = colorScheme.surfaceTint.copy(alpha = 0.08f),
             separator = colorScheme.outlineVariant,
-            positive = RyntraGreen,
-            info = colorScheme.tertiary,
-            warning = Color(0xFFFFB74D),
+            positive = colorScheme.primary,
+            info = colorScheme.secondary,
+            warning = colorScheme.tertiary,
         )
     } else {
         RyntraSemanticColors(

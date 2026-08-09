@@ -53,14 +53,15 @@ struct RyntraTopBar: View {
             if showsBackButton {
                 Button(action: onBack) {
                     Image(systemName: "chevron.left")
-                        .frame(width: 38, height: 38)
+                        .ryntraMinimumTouchTarget()
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Back")
             }
             Text(title)
                 .font(.largeTitle.bold())
-                .lineLimit(1)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 8)
             if isRefreshing {
                 ProgressView().padding(.trailing, 8)
@@ -68,12 +69,12 @@ struct RyntraTopBar: View {
             if let onNotificationsTap {
                 Button(action: onNotificationsTap) {
                     Image(systemName: "bell")
-                        .frame(width: 38, height: 38)
+                        .ryntraMinimumTouchTarget()
                         .overlay(alignment: .topTrailing) {
                             if unreadNotificationCount > 0 {
                                 Text(unreadNotificationCount > 9 ? "9+" : "\(unreadNotificationCount)")
                                     .font(.system(size: 9, weight: .bold))
-                                    .foregroundStyle(.black)
+                                    .foregroundStyle(Color.ryntraOnAccent)
                                     .frame(minWidth: 15, minHeight: 15)
                                     .background(Color.ryntraGreen, in: Circle())
                             }
@@ -81,6 +82,10 @@ struct RyntraTopBar: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(NSLocalizedString("Notifications", comment: "Navigation action"))
+                .accessibilityValue(String.localizedStringWithFormat(
+                    NSLocalizedString("%d unread", comment: "Notification unread count"),
+                    unreadNotificationCount
+                ))
             }
             if showsAvatar {
                 Button(action: onAvatarTap) {
@@ -91,13 +96,14 @@ struct RyntraTopBar: View {
                     }
                     .frame(width: 38, height: 38)
                     .clipShape(Circle())
+                    .frame(minWidth: 44, minHeight: 44)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Open \(username)'s account")
             }
         }
         .padding(.horizontal, 20)
-        .frame(height: 76)
+        .frame(minHeight: 76)
     }
 }
 
@@ -125,7 +131,9 @@ struct RyntraTabBar: View {
                             .frame(width: 38, height: 28)
                         Text(destination.label)
                             .font(.caption2.weight(selection == destination ? .semibold : .regular))
-                            .lineLimit(1)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     .foregroundStyle(selection == destination ? Color.ryntraGreen : Color.secondary)
                     .frame(maxWidth: .infinity, minHeight: 54)
@@ -147,7 +155,7 @@ struct RyntraTabBar: View {
             }
         }
         .padding(.horizontal, 4)
-        .frame(height: 60)
+        .frame(minHeight: 60)
         .ryntraCapsuleGlass()
         .padding(.horizontal, 16)
         .padding(.top, 6)
@@ -269,6 +277,10 @@ private struct RyntraChromeModifier: ViewModifier {
                                     }
                             }
                             .accessibilityLabel(NSLocalizedString("Notifications", comment: "Navigation action"))
+                            .accessibilityValue(String.localizedStringWithFormat(
+                                NSLocalizedString("%d unread", comment: "Notification unread count"),
+                                unreadNotificationCount
+                            ))
                         }
                         if showsAvatar {
                             Button(action: onAvatarTap) {

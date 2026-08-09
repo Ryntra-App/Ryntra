@@ -415,7 +415,7 @@ struct AnalyticsView: View {
                 } label: {
                     Image(systemName: metric.symbol)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 40)
+                        .frame(minHeight: 44)
                         .foregroundStyle(selectedMetric == metric ? metric.color : Color.secondary)
                         .background(
                             selectedMetric == metric ? Color.ryntraSurfaceRaised : Color.clear,
@@ -424,6 +424,7 @@ struct AnalyticsView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(metric.localizedLabel)
+                .accessibilityAddTraits(selectedMetric == metric ? .isSelected : [])
             }
         }
         .padding(4)

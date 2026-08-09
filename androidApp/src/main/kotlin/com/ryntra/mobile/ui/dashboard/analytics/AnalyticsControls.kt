@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.DropdownMenu
@@ -25,6 +25,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -162,9 +164,10 @@ private fun RangePicker(selectedDays: Int, onSelect: (Int) -> Unit) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .height(34.dp)
+                    .heightIn(min = 48.dp)
                     .background(background, RoundedCornerShape(7.dp))
                     .clickable(role = Role.Tab) { onSelect(days) }
+                    .semantics { selected = isSelected }
                     .padding(horizontal = 10.dp),
             ) {
                 Text(
@@ -204,10 +207,11 @@ internal fun AnalyticsMetricPicker(selected: AnalyticsMetric, onSelect: (Analyti
                 modifier = Modifier
                     .weight(1f)
                     .padding(start = if (index == 0) 0.dp else 6.dp)
-                    .height(42.dp)
+                    .heightIn(min = 48.dp)
                     .background(background, RoundedCornerShape(8.dp))
                     .border(0.75.dp, RyntraDesign.colors.separator, RoundedCornerShape(8.dp))
-                    .clickable(role = Role.Tab) { onSelect(metric) },
+                    .clickable(role = Role.Tab) { onSelect(metric) }
+                    .semantics { this.selected = isSelected },
             ) {
                 RyntraIcon(
                     icon = icon,

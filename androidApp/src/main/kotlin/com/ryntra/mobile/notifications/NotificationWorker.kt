@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -80,13 +81,20 @@ class NotificationWorker(
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .build()
-        NotificationManagerCompat.from(applicationContext).notify(notification.id.hashCode(), built)
+        if (!canPostNotifications()) return
+        try {
+            NotificationManagerCompat.from(applicationContext).notify(notification.id.hashCode(), built)
+        } catch (_: SecurityException) {
+            // Permission can be revoked between the check and the framework call.
+        }
     }
 
-    private fun canPostNotifications(): Boolean =
-        ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.POST_NOTIFICATIONS) ==
-            PackageManager.PERMISSION_GRANTED &&
-            NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()
+    private fun canPostNotifications(): Boolean {
+        val permissionGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+        return permissionGranted && NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()
+    }
 
     private companion object {
         const val MAX_PER_RUN = 5

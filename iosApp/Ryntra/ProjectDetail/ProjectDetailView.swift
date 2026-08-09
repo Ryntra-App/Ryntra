@@ -100,10 +100,13 @@ struct ProjectDetailView: View {
                     )
                 }
             }
+            .frame(maxWidth: 760, alignment: .leading)
+            .frame(maxWidth: .infinity)
             .padding(.horizontal, 16)
             .padding(.top, 12)
             .padding(.bottom, 36)
         }
+        .ryntraInteractiveKeyboardDismissal()
         .ryntraScreenBackground(Color.ryntraBackground)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if selectedTab == .edit, editHasChanges {
@@ -238,6 +241,7 @@ struct ProjectDetailView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
             }
         }
         .padding(3)
@@ -409,41 +413,65 @@ struct ProjectDetailView: View {
     }
 
     private var identity: some View {
-        HStack(alignment: .center, spacing: 14) {
-            ProjectArtwork(project: project)
-                .frame(width: 76, height: 76)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(project.title)
-                    .font(.title2.bold())
-                Text(project.displayTypeLabel)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                if let organizationName {
-                    Label(organizationName, systemImage: "building.2")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(projectAccessSummary)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-                if project.status != "approved" {
-                    Text(project.localizedStatusLabel)
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(project.status == "rejected" ? Color.red : Color.orange)
-                        .padding(.top, 3)
-                }
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .center, spacing: 14) {
+                identityArtwork
+                identityDetails
+            }
+            VStack(alignment: .leading, spacing: 12) {
+                identityArtwork
+                identityDetails
             }
         }
         .padding(.bottom, 22)
     }
 
+    private var identityArtwork: some View {
+        ProjectArtwork(project: project)
+            .frame(width: 76, height: 76)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var identityDetails: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(project.title)
+                .font(.title2.bold())
+                .fixedSize(horizontal: false, vertical: true)
+            Text(project.displayTypeLabel)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            if let organizationName {
+                Label(organizationName, systemImage: "building.2")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(projectAccessSummary)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            if project.status != "approved" {
+                Label(
+                    project.localizedStatusLabel,
+                    systemImage: project.status == "rejected" ? "exclamationmark.circle.fill" : "clock.fill"
+                )
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(project.status == "rejected" ? Color.red : Color.orange)
+                .padding(.top, 3)
+            }
+        }
+    }
+
     private var metrics: some View {
-        HStack(spacing: 0) {
-            metric("Downloads", value: ryntraExactCount(project.downloads), systemImage: "arrow.down")
-            Divider().frame(height: 50)
-            metric("Followers", value: ryntraExactCount(project.followers), systemImage: "heart")
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 0) {
+                metric("Downloads", value: ryntraExactCount(project.downloads), systemImage: "arrow.down")
+                Divider().frame(height: 50)
+                metric("Followers", value: ryntraExactCount(project.followers), systemImage: "heart")
+            }
+            VStack(spacing: 10) {
+                metric("Downloads", value: ryntraExactCount(project.downloads), systemImage: "arrow.down")
+                Divider()
+                metric("Followers", value: ryntraExactCount(project.followers), systemImage: "heart")
+            }
         }
         .padding(.vertical, 14)
         .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 8))

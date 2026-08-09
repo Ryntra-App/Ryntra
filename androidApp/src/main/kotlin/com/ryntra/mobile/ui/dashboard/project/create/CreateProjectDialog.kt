@@ -9,6 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -85,6 +86,9 @@ fun CreateProjectDialog(
     var submitError by remember { mutableStateOf<String?>(null) }
     var iconError by remember { mutableStateOf<String?>(null) }
     var showDiscardConfirmation by remember { mutableStateOf(false) }
+    val iconErrorMessage = stringResource(R.string.project_create_icon_error)
+    val loadErrorMessage = stringResource(R.string.project_create_load_error)
+    val requiredFieldsMessage = stringResource(R.string.project_create_fix_required_fields)
 
     fun requestDismiss() {
         if (isSubmitting) return
@@ -97,7 +101,7 @@ fun CreateProjectDialog(
         uri ?: return@rememberLauncherForActivityResult
         scope.launch {
             draft.icon = withContext(Dispatchers.IO) { context.readProjectIcon(uri) }
-            iconError = if (draft.icon == null) context.getString(R.string.project_create_icon_error) else null
+            iconError = if (draft.icon == null) iconErrorMessage else null
         }
     }
 
@@ -110,7 +114,7 @@ fun CreateProjectDialog(
                     draft.projectType = loaded.projectTypes.firstOrNull { it != HIDDEN_PROJECT_TYPE } ?: "mod"
                 }
             },
-            onFailure = { loadError = it.message ?: context.getString(R.string.project_create_load_error) },
+            onFailure = { loadError = it.message ?: loadErrorMessage },
         )
     }
 
@@ -143,7 +147,7 @@ fun CreateProjectDialog(
                                 submitError = null
                                 if (!draft.isStepValid()) {
                                     draft.markValidationAttempted()
-                                    submitError = context.getString(R.string.project_create_fix_required_fields)
+                                    submitError = requiredFieldsMessage
                                     scope.launch { listState.animateScrollToItem(0) }
                                 } else if (draft.step < CREATE_PROJECT_STEP_COUNT - 1) {
                                     draft.step++
@@ -170,7 +174,7 @@ fun CreateProjectDialog(
                         state = listState,
                         horizontalAlignment = Alignment.CenterHorizontally,
                         contentPadding = contentPadding,
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize().consumeWindowInsets(contentPadding),
                     ) {
                         item {
                             Column(

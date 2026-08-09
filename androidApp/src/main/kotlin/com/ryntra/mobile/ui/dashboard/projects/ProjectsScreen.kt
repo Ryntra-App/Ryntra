@@ -148,6 +148,7 @@ fun ProjectsScreen(
     actionProject?.let { project ->
         ProjectActionsSheet(
             project = project,
+            canDelete = true,
             onDismiss = { actionProject = null },
             onOpen = {
                 actionProject = null

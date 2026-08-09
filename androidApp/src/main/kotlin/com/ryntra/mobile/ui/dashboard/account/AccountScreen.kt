@@ -32,6 +32,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import coil3.SingletonImageLoader
 import com.ryntra.mobile.BuildConfig
@@ -303,6 +306,7 @@ private fun SettingsNotice(message: String) {
             .padding(top = 18.dp)
             .background(RyntraDesign.colors.accent.copy(alpha = 0.10f), RyntraDesign.contentShape)
             .border(0.75.dp, RyntraDesign.colors.accent.copy(alpha = 0.24f), RyntraDesign.contentShape)
+            .semantics { liveRegion = LiveRegionMode.Polite }
             .padding(horizontal = 13.dp, vertical = 11.dp),
     ) {
         Text(
