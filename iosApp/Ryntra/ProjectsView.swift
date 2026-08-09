@@ -20,6 +20,7 @@ struct ProjectsView: View {
     @State private var query = ""
     @State private var isCreatingProject = false
     @State private var projectPendingDeletion: Project?
+    @State private var projectPendingShareCard: Project?
     @State private var deletePermissions: [String: Bool] = [:]
     @State private var permissionError: String?
 
@@ -95,6 +96,7 @@ struct ProjectsView: View {
                     .ryntraProjectContextMenu(
                         project,
                         onOpen: { onProjectTap(project) },
+                        onCreateShareCard: { projectPendingShareCard = project },
                         onRequestDelete: { Task { await requestProjectDeletion(project) } }
                     )
                 }
@@ -132,6 +134,16 @@ struct ProjectsView: View {
                     self.projectPendingDeletion = nil
                 }
                 .environmentObject(model)
+            }
+        }
+        .sheet(
+            isPresented: Binding(
+                get: { projectPendingShareCard != nil },
+                set: { if !$0 { projectPendingShareCard = nil } }
+            )
+        ) {
+            if let projectPendingShareCard {
+                ProjectShareCardStudio(project: projectPendingShareCard, versions: [])
             }
         }
         .alert(
@@ -302,6 +314,7 @@ private struct CreateProjectView: View {
     @State private var clientSide = "unknown"
     @State private var serverSide = "unknown"
     @State private var licenseID = "MIT"
+    @State private var licenseURL = ""
     @State private var projectBody = ""
     @State private var sourceURL = ""
     @State private var issuesURL = ""
@@ -324,7 +337,7 @@ private struct CreateProjectView: View {
     private let environments = ["required", "optional", "unsupported", "unknown"]
 
     private enum Field: Hashable {
-        case title, slug, summary, license, description, source, issues, wiki, discord
+        case title, slug, summary, license, licenseURL, description, source, issues, wiki, discord
     }
 
     var bodyView: some View {
@@ -412,6 +425,9 @@ private struct CreateProjectView: View {
         .onChange(of: selectedPhoto) { item in
             guard let item else { return }
             Task { await loadIcon(item) }
+        }
+        .onChange(of: licenseID) { _ in
+            licenseURL = ""
         }
     }
 
@@ -551,7 +567,7 @@ private struct CreateProjectView: View {
             }
 
             LabeledContent("Public URL") {
-                Text("modrinth.com/project/\(slug.isEmpty ? "…" : slug)")
+                Text("modrinth.com/\(projectType.modrinthRoute)/\(slug.isEmpty ? "…" : slug)")
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
@@ -690,6 +706,16 @@ private struct CreateProjectView: View {
                 licenseID: licenseID,
                 onOpen: { showingLicensePicker = true }
             )
+            if isCustomLicense(metadata) {
+                TextField("License terms URL", text: $licenseURL)
+                    .ryntraURLKeyboard()
+                    .ryntraNoAutocapitalization()
+                    .autocorrectionDisabled()
+                    .focused($focusedField, equals: .licenseURL)
+                if shouldShowValidationErrors && !licenseURL.isWebURL {
+                    validationLabel("Add a public URL with the complete custom license terms.")
+                }
+            }
         } header: {
             Text("License")
         } footer: {
@@ -916,10 +942,16 @@ private struct CreateProjectView: View {
                 slug.isValidModrinthSlug &&
                 (3...256).contains(summary.trimmingCharacters(in: .whitespacesAndNewlines).count) &&
                 !projectType.isEmpty
-        case 1: return !licenseID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case 1:
+            guard !licenseID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
+            return metadata.map { !isCustomLicense($0) || licenseURL.isWebURL } ?? false
         default: return !projectBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
             projectBody.count <= 65_536 && linksAreValid
         }
+    }
+
+    private func isCustomLicense(_ metadata: ProjectCreationMetadata) -> Bool {
+        !metadata.licenses.contains { $0.id.caseInsensitiveCompare(licenseID) == .orderedSame }
     }
 
     private var shouldShowValidationErrors: Bool { validationAttemptedSteps.contains(step) }
@@ -944,7 +976,7 @@ private struct CreateProjectView: View {
                 } else {
                     focusedField = .summary
                 }
-            case 1: focusedField = .license
+            case 1: focusedField = metadata.map { isCustomLicense($0) } == true ? .licenseURL : .license
             default: focusedField = .description
             }
             return
@@ -1055,12 +1087,21 @@ private struct CreateProjectView: View {
             let request = CreateProjectRequest(
                 slug: slug, title: title, description: summary, body: projectBody, projectType: projectType,
                 categories: Array(categories).sorted(), additionalCategories: [], clientSide: clientSide,
-                serverSide: serverSide, licenseId: licenseID, licenseUrl: nil,
+                serverSide: serverSide, licenseId: licenseID,
+                licenseUrl: metadata.map { isCustomLicense($0) } == true ? licenseURL : nil,
                 sourceUrl: sourceURL.nilIfEmpty, issuesUrl: issuesURL.nilIfEmpty,
                 wikiUrl: wikiURL.nilIfEmpty, discordUrl: discordURL.nilIfEmpty, icon: icon
             )
             onCreated(try await model.createProject(request: request))
-        } catch { errorMessage = projectCreationErrorMessage(error) }
+        } catch {
+            let details = error.localizedDescription.lowercased()
+            if details.contains("409") || details.contains("conflict") ||
+                (details.contains("slug") && (details.contains("taken") || details.contains("exists"))) {
+                step = 0
+                focusedField = .slug
+            }
+            errorMessage = projectCreationErrorMessage(error)
+        }
     }
 
     private func projectCreationErrorMessage(_ error: Error) -> String {
@@ -1073,6 +1114,10 @@ private struct CreateProjectView: View {
         }
         if details.contains("too many requests") || details.contains("429") {
             return String(localized: "Modrinth is receiving too many requests. Wait a moment and try again.")
+        }
+        if details.contains("409") || details.contains("conflict") ||
+            (details.contains("slug") && (details.contains("taken") || details.contains("exists"))) {
+            return String(localized: "That Modrinth URL is already in use. Choose another project address.")
         }
         if details.contains("initial_versions") || details.contains("parsing") || details.contains("serialization") || details.contains("json") {
             return String(localized: "The draft could not be created because Modrinth returned an unexpected response. Your entries are saved, so try again.")
@@ -1099,7 +1144,7 @@ struct ProjectLicenseSelectionButton: View {
                 Image(systemName: "doc.text")
                     .foregroundStyle(Color.ryntraGreen)
                     .frame(width: 22)
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(selectedName)
                         .foregroundStyle(.primary)
                     Text(licenseID)
@@ -1109,6 +1154,7 @@ struct ProjectLicenseSelectionButton: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(3)
+                        .padding(.top, 2)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
@@ -1149,6 +1195,19 @@ struct ProjectLicensePickerView: View {
         licenses.contains { $0.id.caseInsensitiveCompare(normalizedQuery) == .orderedSame }
     }
 
+    private var customLicenseID: String? {
+        guard !normalizedQuery.isEmpty else { return nil }
+        let prefix = "LicenseRef-"
+        let rawSuffix = normalizedQuery.lowercased().hasPrefix(prefix.lowercased())
+            ? String(normalizedQuery.dropFirst(prefix.count))
+            : normalizedQuery
+        let suffix = rawSuffix
+            .replacingOccurrences(of: "[^A-Za-z0-9.-]+", with: "-", options: .regularExpression)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+        guard !suffix.isEmpty, !["UNKNOWN", "NOASSERTION"].contains(suffix.uppercased()) else { return nil }
+        return "LicenseRef-\(suffix)"
+    }
+
     var body: some View {
         NavigationStack {
             List {
@@ -1182,10 +1241,10 @@ struct ProjectLicensePickerView: View {
                     Text("License summaries are not legal advice. Review the complete terms before publishing.")
                 }
 
-                if !normalizedQuery.isEmpty && !hasExactMatch {
+                if let customLicenseID, !hasExactMatch {
                     Section {
-                        Button("Use “\(normalizedQuery)”") {
-                            licenseID = normalizedQuery
+                        Button("Use “\(customLicenseID)”") {
+                            licenseID = customLicenseID
                             onDismiss()
                         }
                     } header: {
@@ -1249,7 +1308,12 @@ private extension String {
     }
 
     var isWebURL: Bool {
-        hasPrefix("https://") || hasPrefix("http://")
+        guard let components = URLComponents(string: self),
+              let scheme = components.scheme?.lowercased(),
+              scheme == "https" || scheme == "http",
+              let host = components.host,
+              host.contains(".") else { return false }
+        return true
     }
 
     var isValidModrinthSlug: Bool {
@@ -1271,6 +1335,19 @@ private extension String {
         case "plugin": return String(localized: "Plugin")
         case "datapack": return String(localized: "Data pack")
         default: return String(localized: "Other")
+        }
+    }
+
+    var modrinthRoute: String {
+        switch self {
+        case "mod": return "mod"
+        case "plugin": return "plugin"
+        case "modpack": return "modpack"
+        case "resourcepack": return "resourcepack"
+        case "shader": return "shader"
+        case "datapack": return "datapack"
+        case "server", "minecraft_java_server": return "server"
+        default: return "project"
         }
     }
 

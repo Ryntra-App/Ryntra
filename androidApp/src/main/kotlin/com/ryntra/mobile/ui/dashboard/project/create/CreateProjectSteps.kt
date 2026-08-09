@@ -71,6 +71,8 @@ import com.ryntra.shared.model.ProjectCreationMetadata
 import com.ryntra.shared.model.ProjectCreationRules
 import com.ryntra.shared.model.ProjectCategory
 import com.ryntra.shared.model.ProjectLicense
+import com.ryntra.shared.model.isCustomLicenseReference
+import java.net.URI
 
 @Composable
 internal fun ProjectCreationStepHeader(step: Int) {
@@ -172,7 +174,7 @@ internal fun ProjectBasicsStep(
                 Text(
                     if (isSlugMissing) stringResource(R.string.project_create_slug_required)
                     else if (isSlugInvalid) stringResource(R.string.project_create_slug_error)
-                    else if (draft.slug.isNotEmpty()) "modrinth.com/project/${draft.slug}"
+                    else if (draft.slug.isNotEmpty()) "modrinth.com/${draft.projectType.modrinthRoute()}/${draft.slug}"
                     else stringResource(R.string.project_create_slug_help),
                 )
             },
@@ -296,8 +298,26 @@ internal fun ProjectCompatibilityStep(draft: CreateProjectDraft, metadata: Proje
         LicenseSelector(
             licenses = metadata.licenses,
             selectedId = draft.licenseId,
-            onSelect = { draft.licenseId = it },
+            onSelect = {
+                draft.licenseId = it
+                if (!it.isCustomLicenseReference()) draft.licenseUrl = ""
+            },
         )
+        if (draft.licenseId.isCustomLicenseReference()) {
+            Spacer(Modifier.height(12.dp))
+            ProjectUrlField(
+                label = stringResource(R.string.project_create_license_url),
+                value = draft.licenseUrl,
+                onChange = { draft.licenseUrl = it },
+                icon = Lucide.Link,
+                required = true,
+            )
+            Text(
+                stringResource(R.string.project_create_license_url_help),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
@@ -426,6 +446,7 @@ internal fun LicenseSelector(
             .sortedWith(compareByDescending<ProjectLicense> { it.id.equals(selectedId, ignoreCase = true) }.thenBy { it.name ?: it.id })
         val normalizedQuery = query.trim()
         val hasExactMatch = licenses.any { it.id.equals(normalizedQuery, ignoreCase = true) }
+        val customLicenseId = normalizedQuery.toCustomLicenseReference()
 
         ModalBottomSheet(
             onDismissRequest = { isPickerOpen = false },
@@ -480,14 +501,14 @@ internal fun LicenseSelector(
                         )
                         HorizontalDivider()
                     }
-                    if (normalizedQuery.isNotEmpty() && !hasExactMatch) {
+                    if (customLicenseId != null && !hasExactMatch) {
                         item(key = "custom-license") {
                             ListItem(
-                                headlineContent = { Text(stringResource(R.string.project_create_use_custom_license, normalizedQuery)) },
+                                headlineContent = { Text(stringResource(R.string.project_create_use_custom_license, customLicenseId)) },
                                 supportingContent = { Text(stringResource(R.string.project_create_custom_license_help)) },
                                 leadingContent = { Icon(Lucide.Scale, contentDescription = null) },
                                 modifier = Modifier.fillMaxWidth().clickable {
-                                    onSelect(normalizedQuery)
+                                    onSelect(customLicenseId)
                                     isPickerOpen = false
                                 },
                             )
@@ -837,14 +858,40 @@ private fun projectTypeLabel(value: String): String = stringResource(
 private fun String.humanizeIdentifier(): String =
     replace('_', ' ').replace('-', ' ').replaceFirstChar(Char::uppercase)
 
+private fun String.modrinthRoute(): String = when (lowercase()) {
+    "mod" -> "mod"
+    "plugin" -> "plugin"
+    "modpack" -> "modpack"
+    "resourcepack" -> "resourcepack"
+    "shader" -> "shader"
+    "datapack" -> "datapack"
+    "server", "minecraft_java_server" -> "server"
+    else -> "project"
+}
+
+private fun String.toCustomLicenseReference(): String? {
+    val trimmed = trim()
+    if (trimmed.isEmpty()) return null
+    val rawSuffix = if (trimmed.startsWith("LicenseRef-", ignoreCase = true)) {
+        trimmed.drop("LicenseRef-".length)
+    } else {
+        trimmed
+    }
+    val suffix = rawSuffix.replace(Regex("[^A-Za-z0-9.-]+"), "-").trim('-')
+    if (suffix.isEmpty() || suffix.uppercase() in setOf("UNKNOWN", "NOASSERTION")) return null
+    return "LicenseRef-$suffix"
+}
+
 @Composable
 private fun ProjectUrlField(
     label: String,
     value: String,
     onChange: (String) -> Unit,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
+    required: Boolean = false,
 ) {
-    val isError = value.isNotBlank() && !value.startsWith("https://") && !value.startsWith("http://")
+    val isError = (required && value.isBlank()) ||
+        (value.isNotBlank() && !value.isValidWebUrl())
     OutlinedTextField(
         value = value,
         onValueChange = onChange,
@@ -852,7 +899,14 @@ private fun ProjectUrlField(
         placeholder = { Text("https://…") },
         leadingIcon = { Icon(icon, contentDescription = null) },
         supportingText = {
-            Text(if (isError) stringResource(R.string.project_create_url_error) else stringResource(R.string.project_create_optional))
+            Text(
+                when {
+                    isError && required -> stringResource(R.string.project_create_license_url_error)
+                    isError -> stringResource(R.string.project_create_url_error)
+                    required -> stringResource(R.string.project_create_required)
+                    else -> stringResource(R.string.project_create_optional)
+                },
+            )
         },
         isError = isError,
         singleLine = true,
@@ -860,3 +914,7 @@ private fun ProjectUrlField(
         modifier = Modifier.fillMaxWidth(),
     )
 }
+
+private fun String.isValidWebUrl(): Boolean = runCatching { URI(this) }.getOrNull()?.let { uri ->
+    uri.scheme?.lowercase() in setOf("http", "https") && uri.host?.contains('.') == true
+} == true

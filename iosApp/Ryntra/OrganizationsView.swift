@@ -315,6 +315,7 @@ struct OrganizationDetailView: View {
     @State private var editingMember: ProjectMember?
     @State private var localError: String?
     @State private var projectPendingDeletion: Project?
+    @State private var projectPendingShareCard: Project?
 
     private var displayOrganization: Organization {
         detail ?? organization
@@ -459,6 +460,7 @@ struct OrganizationDetailView: View {
                         .ryntraProjectContextMenu(
                             project,
                             onOpen: { onProjectTap(project) },
+                            onCreateShareCard: { projectPendingShareCard = project },
                             canDelete: canDeleteProjects,
                             onDelete: { projectPendingDeletion = project }
                         )
@@ -498,6 +500,16 @@ struct OrganizationDetailView: View {
                     await reloadMembers()
                     self.editingMember = nil
                 }
+            }
+        }
+        .sheet(
+            isPresented: Binding(
+                get: { projectPendingShareCard != nil },
+                set: { if !$0 { projectPendingShareCard = nil } }
+            )
+        ) {
+            if let projectPendingShareCard {
+                ProjectShareCardStudio(project: projectPendingShareCard, versions: [])
             }
         }
         .sheet(

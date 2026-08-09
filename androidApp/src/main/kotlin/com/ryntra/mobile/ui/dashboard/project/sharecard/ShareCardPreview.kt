@@ -35,6 +35,7 @@ import coil3.request.allowHardware
 import com.ryntra.mobile.R
 import com.ryntra.shared.model.Project
 import com.ryntra.shared.model.ProjectVersion
+import com.ryntra.shared.model.modrinthPath
 import java.text.NumberFormat
 
 internal enum class ShareCardFormat(
@@ -210,9 +211,8 @@ internal fun ShareCardPreview(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth().padding(top = if (tags.isEmpty()) 0.dp else 10.dp),
                 ) {
-                    val slug = project.slug ?: project.id
                     Text(
-                        text = "modrinth.com/project/$slug",
+                        text = "modrinth.com${project.modrinthPath()}",
                         color = palette.secondary,
                         style = MaterialTheme.typography.labelSmall,
                         maxLines = 1,

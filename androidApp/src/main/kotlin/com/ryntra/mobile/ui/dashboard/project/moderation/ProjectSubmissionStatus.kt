@@ -124,6 +124,21 @@ internal fun ProjectSubmissionStatus(
             )
         }
 
+        if (project.canSubmitForModeration() && readiness.warningRequirements.isNotEmpty()) {
+            Text(
+                text = stringResource(R.string.project_submit_recommended),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            readiness.warningRequirements.forEach { requirement ->
+                SubmissionMessage(
+                    text = submissionRequirementLabel(requirement),
+                    isComplete = false,
+                )
+            }
+        }
+
         if (!canSubmit && project.canSubmitForModeration() && readiness.canSubmit) {
             Text(
                 text = stringResource(R.string.project_submission_permission_required),
@@ -162,6 +177,8 @@ private fun submissionRequirementLabel(requirement: ProjectSubmissionRequirement
         ProjectSubmissionRequirement.Summary -> R.string.project_submit_requirement_summary
         ProjectSubmissionRequirement.Description -> R.string.project_submit_requirement_description
         ProjectSubmissionRequirement.License -> R.string.project_submit_requirement_license
+        ProjectSubmissionRequirement.LicenseUrl -> R.string.project_submit_requirement_license_url
+        ProjectSubmissionRequirement.Gallery -> R.string.project_submit_requirement_gallery
     },
 )
 

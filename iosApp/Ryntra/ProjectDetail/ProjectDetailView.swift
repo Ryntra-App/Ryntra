@@ -4,6 +4,7 @@ import SwiftUI
 struct ProjectDetailView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     @State private var project: Project
     let isReadOnly: Bool
@@ -19,6 +20,7 @@ struct ProjectDetailView: View {
     @State private var versionError: String?
     @State private var memberError: String?
     @State private var isConfirmingSubmission = false
+    @State private var isShowingShareCard = false
     @State private var isDeletingProject = false
     @State private var submissionError: String?
     @State private var editHasChanges = false
@@ -26,6 +28,7 @@ struct ProjectDetailView: View {
     @State private var editSaveRequest = 0
     @State private var pendingExit: PendingProjectExit?
     @State private var isConfirmingUnsavedChanges = false
+    @State private var selectedGalleryURL: URL?
 
     init(project: Project, isReadOnly: Bool = false) {
         _project = State(initialValue: project)
@@ -58,7 +61,8 @@ struct ProjectDetailView: View {
                     ProjectVersionsManagementView(
                         project: project,
                         versions: versions,
-                        isReadOnly: isReadOnly,
+                        canCreateOrEdit: !isReadOnly && hasProjectPermission(0),
+                        canDelete: !isReadOnly && hasProjectPermission(1),
                         isLoading: isLoadingVersions,
                         errorMessage: versionError,
                         onReload: { await loadVersions() }
@@ -67,6 +71,8 @@ struct ProjectDetailView: View {
                     VStack(spacing: 16) {
                         EditProjectView(
                             project: project,
+                            canEditDetails: hasProjectPermission(2),
+                            canEditBody: hasProjectPermission(3),
                             saveRequest: editSaveRequest,
                             onSaved: { await editDidSave() },
                             onEditingStateChanged: { hasChanges, canSave in
@@ -137,11 +143,15 @@ struct ProjectDetailView: View {
             _ = await (loadedVersions, loadedMembers)
         }
         .confirmationDialog(
-            NSLocalizedString("Submit to Modrinth moderation?", comment: "Project submission title"),
+            project.status.lowercased() == "draft"
+                ? NSLocalizedString("Submit to Modrinth moderation?", comment: "Project submission title")
+                : NSLocalizedString("Resubmit to Modrinth moderation?", comment: "Project submission title"),
             isPresented: $isConfirmingSubmission,
             titleVisibility: .visible
         ) {
-            Button(NSLocalizedString("Submit for review", comment: "Project submission action")) {
+            Button(project.status.lowercased() == "draft"
+                ? NSLocalizedString("Submit for review", comment: "Project submission action")
+                : NSLocalizedString("Resubmit for review", comment: "Project submission action")) {
                 Task { await submitForModeration() }
             }
             Button(NSLocalizedString("Cancel", comment: "Cancel"), role: .cancel) {}
@@ -180,6 +190,19 @@ struct ProjectDetailView: View {
             }
             .environmentObject(model)
         }
+        .sheet(isPresented: $isShowingShareCard) {
+            ProjectShareCardStudio(project: project, versions: versions)
+        }
+        .sheet(
+            isPresented: Binding(
+                get: { selectedGalleryURL != nil },
+                set: { if !$0 { selectedGalleryURL = nil } }
+            )
+        ) {
+            if let selectedGalleryURL {
+                ProjectGalleryPreview(url: selectedGalleryURL)
+            }
+        }
     }
 
     @ViewBuilder
@@ -206,7 +229,39 @@ struct ProjectDetailView: View {
 
     private var projectTabs: some View {
         Group {
-            if availableTabs.count > 4 {
+            if horizontalSizeClass == .compact {
+                Menu {
+                    ForEach(availableTabs, id: \.self) { tab in
+                        Button {
+                            requestTab(tab)
+                        } label: {
+                            Label(tab.label, systemImage: tab.symbol)
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 10) {
+                        Label(selectedTab.label, systemImage: selectedTab.symbol)
+                            .font(.subheadline.weight(.semibold))
+                        Spacer()
+                        Text(NSLocalizedString("Project section", comment: "Project navigation"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .foregroundStyle(.primary)
+                    .frame(minHeight: 44)
+                    .padding(.horizontal, 12)
+                    .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 10))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.ryntraSeparator, lineWidth: 0.5)
+                    }
+                }
+                .accessibilityLabel(NSLocalizedString("Project section", comment: "Project navigation"))
+                .accessibilityValue(selectedTab.label)
+            } else if availableTabs.count > 4 {
                 ScrollView(.horizontal, showsIndicators: false) {
                     projectTabBar(isScrollable: true)
                 }
@@ -365,16 +420,23 @@ struct ProjectDetailView: View {
         .background(.regularMaterial)
     }
 
-    private var currentMember: ProjectMember? {
-        members.first { $0.user.id == model.currentAccountID }
-            ?? organizationMembers.first { $0.user.id == model.currentAccountID }
+    private var currentMemberships: [ProjectMember] {
+        (members + organizationMembers).filter { $0.user.id == model.currentAccountID }
+    }
+
+    private var isCurrentUserOwner: Bool {
+        currentMemberships.contains { $0.isOwner }
+    }
+
+    private var effectiveProjectPermissions: Int32 {
+        currentMemberships.reduce(0) { accumulated, membership in
+            accumulated | ((membership.permissions as? NSNumber)?.int32Value ?? 0)
+        }
     }
 
     private func hasProjectPermission(_ bit: Int32) -> Bool {
-        guard let currentMember else { return false }
-        if currentMember.isOwner { return true }
-        let permissions = (currentMember.permissions as? NSNumber)?.int32Value ?? 0
-        return permissions & (Int32(1) << bit) != 0
+        guard !currentMemberships.isEmpty else { return false }
+        return isCurrentUserOwner || effectiveProjectPermissions & (Int32(1) << bit) != 0
     }
 
     private var projectDeleteAction: some View {
@@ -417,13 +479,37 @@ struct ProjectDetailView: View {
             HStack(alignment: .center, spacing: 14) {
                 identityArtwork
                 identityDetails
+                Spacer(minLength: 8)
+                shareCardButton
             }
             VStack(alignment: .leading, spacing: 12) {
-                identityArtwork
+                HStack(alignment: .top) {
+                    identityArtwork
+                    Spacer()
+                    shareCardButton
+                }
                 identityDetails
             }
         }
         .padding(.bottom, 22)
+    }
+
+    private var shareCardButton: some View {
+        Button {
+            isShowingShareCard = true
+        } label: {
+            Image(systemName: "square.and.arrow.up")
+                .font(.body.weight(.semibold))
+                .frame(width: 44, height: 44)
+                .background(Color.ryntraGreen.opacity(0.12), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.ryntraGreen)
+        .accessibilityLabel(NSLocalizedString("Create share card", comment: "Project share card action"))
+        .accessibilityHint(NSLocalizedString(
+            "Customize and share a project image.",
+            comment: "Project share card action hint"
+        ))
     }
 
     private var identityArtwork: some View {
@@ -482,14 +568,13 @@ struct ProjectDetailView: View {
     }
 
     private var projectAccessSummary: String {
-        guard let currentMember else {
+        guard !currentMemberships.isEmpty else {
             return NSLocalizedString("Access unavailable", comment: "Project access")
         }
-        if currentMember.isOwner {
+        if isCurrentUserOwner {
             return NSLocalizedString("Owner · full project access", comment: "Project access")
         }
-        let permissions = (currentMember.permissions as? NSNumber)?.int32Value ?? 0
-        let permissionCount = (0..<10).filter { permissions & (Int32(1) << $0) != 0 }.count
+        let permissionCount = (0..<10).filter { effectiveProjectPermissions & (Int32(1) << $0) != 0 }.count
         if permissionCount == 0 {
             return NSLocalizedString("View only", comment: "Project access")
         }
@@ -605,21 +690,27 @@ struct ProjectDetailView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
                     ForEach(project.gallery, id: \.url) { image in
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(.quaternary)
-                            RemoteImage(url: URL(string: image.url)) { loaded in
-                                loaded
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 172, height: 108)
-                                    .clipped()
-                            } placeholder: {
-                                ProgressView()
+                        Button {
+                            selectedGalleryURL = URL(string: image.rawUrl ?? image.url)
+                        } label: {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(.quaternary)
+                                RemoteImage(url: URL(string: image.url)) { loaded in
+                                    loaded
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 172, height: 108)
+                                        .clipped()
+                                } placeholder: {
+                                    ProgressView()
+                                }
                             }
+                            .frame(width: 172, height: 108)
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                         }
-                        .frame(width: 172, height: 108)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(image.title ?? NSLocalizedString("Open gallery image", comment: "Project gallery"))
                     }
                 }
             }
@@ -631,7 +722,45 @@ struct ProjectDetailView: View {
         if project.license != nil || project.published != nil {
             DetailHeading(title: "Details")
             if let license = project.license {
-                detailValue("License", value: license.name ?? license.id, systemImage: "scale.3d")
+                DisclosureGroup {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(license.id)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.ryntraGreen)
+                        Text(projectLicenseDescription(license.id))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Text(NSLocalizedString(
+                            "This summary is not legal advice. Review the complete terms before publishing or reusing the project.",
+                            comment: "Project license legal note"
+                        ))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        if let value = license.url, let url = URL(string: value) {
+                            Link(destination: url) {
+                                Label(
+                                    NSLocalizedString("Read complete license terms", comment: "Project license action"),
+                                    systemImage: "arrow.up.right.square"
+                                )
+                            }
+                            .font(.subheadline.weight(.semibold))
+                        }
+                    }
+                    .padding(.top, 8)
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "doc.text")
+                            .foregroundStyle(Color.ryntraGreen)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(NSLocalizedString("License", comment: "Project detail"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(license.name ?? license.id)
+                                .fontWeight(.semibold)
+                        }
+                    }
+                }
+                .padding(.vertical, 9)
             }
             if let published = project.published {
                 detailValue("Published", value: String(published.prefix(10)), systemImage: "calendar")
@@ -715,4 +844,32 @@ private enum ProjectDetailTab: CaseIterable {
 private enum PendingProjectExit {
     case tab(ProjectDetailTab)
     case dismiss
+}
+
+private struct ProjectGalleryPreview: View {
+    @Environment(\.dismiss) private var dismiss
+    let url: URL
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                RemoteImage(url: url) { image in
+                    image
+                        .resizable()
+                        .scaledToFit()
+                } placeholder: {
+                    ProgressView().tint(.white)
+                }
+                .padding()
+            }
+            .navigationTitle(NSLocalizedString("Gallery image", comment: "Project gallery"))
+            .ryntraInlineNavigationTitle()
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(NSLocalizedString("Done", comment: "Close gallery")) { dismiss() }
+                }
+            }
+        }
+    }
 }

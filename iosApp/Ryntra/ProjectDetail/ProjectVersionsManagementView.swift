@@ -1,3 +1,4 @@
+import Foundation
 import RyntraShared
 import SwiftUI
 import UniformTypeIdentifiers
@@ -7,7 +8,8 @@ struct ProjectVersionsManagementView: View {
 
     let project: Project
     let versions: [ProjectVersion]
-    let isReadOnly: Bool
+    let canCreateOrEdit: Bool
+    let canDelete: Bool
     let isLoading: Bool
     let errorMessage: String?
     let onReload: () async -> Void
@@ -20,7 +22,7 @@ struct ProjectVersionsManagementView: View {
             HStack {
                 Text("Releases").font(.title3.bold())
                 Spacer()
-                if !isReadOnly {
+                if canCreateOrEdit {
                     Button { isCreating = true } label: {
                         Image(systemName: "plus")
                     }
@@ -44,8 +46,8 @@ struct ProjectVersionsManagementView: View {
             } else {
                 LazyVStack(spacing: 0) {
                     ForEach(versions, id: \.id) { version in
-                        ManagedVersionCard(version: version) {
-                            if !isReadOnly { editingVersion = version }
+                        ManagedVersionCard(version: version, isActionable: canCreateOrEdit || canDelete) {
+                            if canCreateOrEdit || canDelete { editingVersion = version }
                         }
                     }
                 }
@@ -56,7 +58,14 @@ struct ProjectVersionsManagementView: View {
             }
         }
         .sheet(isPresented: $isCreating) {
-            VersionEditorSheet(project: project, version: nil) {
+            VersionEditorSheet(
+                project: project,
+                version: nil,
+                canEdit: true,
+                canDelete: false,
+                suggestedGameVersions: suggestedGameVersions,
+                suggestedLoaders: suggestedLoaders
+            ) {
                 await onReload()
                 isCreating = false
             }
@@ -68,12 +77,36 @@ struct ProjectVersionsManagementView: View {
             )
         ) {
             if let editingVersion {
-                VersionEditorSheet(project: project, version: editingVersion) {
+                VersionEditorSheet(
+                    project: project,
+                    version: editingVersion,
+                    canEdit: canCreateOrEdit,
+                    canDelete: canDelete,
+                    suggestedGameVersions: suggestedGameVersions,
+                    suggestedLoaders: suggestedLoaders
+                ) {
                     await onReload()
                     self.editingVersion = nil
                 }
             }
         }
+    }
+
+    private var suggestedGameVersions: [String] {
+        var seen = Set<String>()
+        return versions.flatMap(\.gameVersions).filter { seen.insert($0).inserted }
+    }
+
+    private var suggestedLoaders: [String] {
+        let existing = Set(versions.flatMap(\.loaders))
+        let defaults: Set<String>
+        switch project.projectType.lowercased() {
+        case "plugin": defaults = ["paper", "purpur", "spigot", "bukkit", "velocity", "waterfall"]
+        case "shader": defaults = ["iris", "optifine"]
+        case "resourcepack", "resource_pack": defaults = ["minecraft"]
+        default: defaults = ["fabric", "forge", "neoforge", "quilt"]
+        }
+        return Array(existing.union(defaults)).sorted()
     }
 
     private func managementEmpty(
@@ -102,6 +135,7 @@ struct ProjectVersionsManagementView: View {
 
 private struct ManagedVersionCard: View {
     let version: ProjectVersion
+    let isActionable: Bool
     let onOpen: () -> Void
 
     var body: some View {
@@ -129,6 +163,7 @@ private struct ManagedVersionCard: View {
                 .padding(14)
             }
             .buttonStyle(.plain)
+            .disabled(!isActionable)
             if !version.changelog.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     ForEach(Array(MarkdownParser.shared.parse(markdown: version.changelog).prefix(2).enumerated()), id: \.offset) { _, block in
@@ -160,6 +195,10 @@ private struct VersionEditorSheet: View {
 
     let project: Project
     let version: ProjectVersion?
+    let canEdit: Bool
+    let canDelete: Bool
+    let suggestedGameVersions: [String]
+    let suggestedLoaders: [String]
     let onSaved: () async -> Void
 
     @State private var name: String
@@ -184,9 +223,21 @@ private struct VersionEditorSheet: View {
     @State private var localError: String?
     @State private var isConfirmingDeletion = false
 
-    init(project: Project, version: ProjectVersion?, onSaved: @escaping () async -> Void) {
+    init(
+        project: Project,
+        version: ProjectVersion?,
+        canEdit: Bool,
+        canDelete: Bool,
+        suggestedGameVersions: [String],
+        suggestedLoaders: [String],
+        onSaved: @escaping () async -> Void
+    ) {
         self.project = project
         self.version = version
+        self.canEdit = canEdit
+        self.canDelete = canDelete
+        self.suggestedGameVersions = suggestedGameVersions
+        self.suggestedLoaders = suggestedLoaders
         self.onSaved = onSaved
         _name = State(initialValue: version?.name ?? "")
         _versionNumber = State(initialValue: version?.versionNumber ?? "")
@@ -225,13 +276,44 @@ private struct VersionEditorSheet: View {
                         comment: "Version validation guidance"
                     ))
                 }
+                .disabled(!canEdit)
+                if !canSave {
+                    Section {
+                        readinessRow(
+                            NSLocalizedString("Name and version number", comment: "Version readiness"),
+                            complete: !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+                                !versionNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        )
+                        readinessRow(
+                            NSLocalizedString("Minecraft version", comment: "Version readiness"),
+                            complete: !gameVersions.isEmpty
+                        )
+                        readinessRow(
+                            NSLocalizedString("Loader", comment: "Version readiness"),
+                            complete: !loaders.isEmpty
+                        )
+                        if version == nil {
+                            readinessRow(
+                                NSLocalizedString("At least one release file", comment: "Version readiness"),
+                                complete: !selectedFiles.isEmpty
+                            )
+                        }
+                    } header: {
+                        Text(NSLocalizedString("Before saving", comment: "Version readiness"))
+                    } footer: {
+                        Text(NSLocalizedString(
+                            "Complete the unchecked items to enable Save.",
+                            comment: "Version readiness guidance"
+                        ))
+                    }
+                }
                 Section {
                     valueEditor(
                         title: NSLocalizedString("Minecraft versions", comment: "Version compatibility"),
                         placeholder: NSLocalizedString("For example 1.21.5", comment: "Version compatibility input"),
                         input: $gameVersionInput,
                         values: gameVersions,
-                        suggestions: [],
+                        suggestions: suggestedGameVersions,
                         normalize: { $0 },
                         onChange: { gameVersions = $0 }
                     )
@@ -240,7 +322,7 @@ private struct VersionEditorSheet: View {
                         placeholder: NSLocalizedString("For example fabric", comment: "Loader input"),
                         input: $loaderInput,
                         values: loaders,
-                        suggestions: ["fabric", "forge", "neoforge", "quilt"],
+                        suggestions: suggestedLoaders,
                         normalize: { $0.lowercased() },
                         onChange: { loaders = $0 }
                     )
@@ -252,6 +334,7 @@ private struct VersionEditorSheet: View {
                         comment: "Version validation guidance"
                     ))
                 }
+                .disabled(!canEdit)
                 Section {
                     HStack {
                         TextField(
@@ -267,6 +350,15 @@ private struct VersionEditorSheet: View {
                     }
                     ForEach(dependencies.indices, id: \.self) { index in
                         HStack(spacing: 10) {
+                            if let value = dependencies[index].iconUrl, let url = URL(string: value) {
+                                RemoteImage(url: url) { image in
+                                    image.resizable().scaledToFill()
+                                } placeholder: {
+                                    RoundedRectangle(cornerRadius: 7).fill(.quaternary)
+                                }
+                                .frame(width: 36, height: 36)
+                                .clipShape(RoundedRectangle(cornerRadius: 7))
+                            }
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(dependencyIdentifier(dependencies[index]))
                                     .lineLimit(1)
@@ -304,6 +396,7 @@ private struct VersionEditorSheet: View {
                         comment: "Dependency guidance"
                     ))
                 }
+                .disabled(!canEdit)
                 Section("Changelog") {
                     Picker("Changelog mode", selection: $changelogMode) {
                         Text("Write").tag(0)
@@ -327,6 +420,7 @@ private struct VersionEditorSheet: View {
                         .frame(maxWidth: .infinity, minHeight: 170, alignment: .topLeading)
                     }
                 }
+                .disabled(!canEdit)
                 if version == nil {
                     Section("Files") {
                         Button {
@@ -344,23 +438,67 @@ private struct VersionEditorSheet: View {
                                         .foregroundStyle(primaryFileIndex == index ? Color.ryntraGreen : Color.secondary)
                                 }
                                 .buttonStyle(.plain)
-                                Text(selectedFileNames[index]).lineLimit(1)
+                                .ryntraMinimumTouchTarget()
+                                .accessibilityLabel(String.localizedStringWithFormat(
+                                    NSLocalizedString("Make %@ the primary file", comment: "Version file action"),
+                                    selectedFileNames[index]
+                                ))
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(selectedFileNames[index]).lineLimit(1)
+                                    HStack(spacing: 6) {
+                                        Text(ByteCountFormatter.string(
+                                            fromByteCount: Int64(selectedFileSizes[index]),
+                                            countStyle: .file
+                                        ))
+                                        if primaryFileIndex == index {
+                                            Text(NSLocalizedString("Primary", comment: "Version primary file"))
+                                                .fontWeight(.semibold)
+                                                .foregroundStyle(Color.ryntraGreen)
+                                        }
+                                    }
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                }
                                 Spacer()
                                 Button(role: .destructive) { removeFile(at: index) } label: {
                                     Image(systemName: "trash")
                                 }
                                 .buttonStyle(.plain)
+                                .ryntraMinimumTouchTarget()
+                                .accessibilityLabel(String.localizedStringWithFormat(
+                                    NSLocalizedString("Remove %@", comment: "Version file action"),
+                                    selectedFileNames[index]
+                                ))
                             }
                         }
                     }
                 } else if let version, !version.files.isEmpty {
                     Section("Files") {
                         ForEach(version.files, id: \.url) { file in
-                            if let fileURL = URL(string: file.url) {
-                                Link(file.filename, destination: fileURL)
-                            } else {
-                                Text(file.filename)
+                            HStack(spacing: 10) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    if let fileURL = URL(string: file.url) {
+                                        Link(file.filename, destination: fileURL)
+                                    } else {
+                                        Text(file.filename)
+                                    }
+                                    HStack(spacing: 6) {
+                                        Text(ByteCountFormatter.string(fromByteCount: file.size, countStyle: .file))
+                                        if file.primary {
+                                            Text(NSLocalizedString("Primary", comment: "Version primary file"))
+                                                .fontWeight(.semibold)
+                                                .foregroundStyle(Color.ryntraGreen)
+                                        }
+                                    }
+                                    .font(.caption)
                                     .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                if file.primary {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(Color.ryntraGreen)
+                                        .accessibilityHidden(true)
+                                }
                             }
                         }
                     }
@@ -368,7 +506,7 @@ private struct VersionEditorSheet: View {
                 if let error = localError ?? model.projectActionError {
                     Section { Text(error).foregroundStyle(.red) }
                 }
-                if let version {
+                if let version, canDelete {
                     Section {
                         Button(role: .destructive) {
                             isConfirmingDeletion = true
@@ -386,9 +524,11 @@ private struct VersionEditorSheet: View {
                     Button("Cancel") { dismiss() }
                         .disabled(model.isProjectActionRunning || isReadingFiles)
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { Task { await save() } }
-                        .disabled(!canSave || model.isProjectActionRunning)
+                if canEdit {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Save") { Task { await save() } }
+                            .disabled(!canSave || model.isProjectActionRunning)
+                    }
                 }
             }
             .fileImporter(
@@ -404,7 +544,10 @@ private struct VersionEditorSheet: View {
                 }
             }
             .confirmationDialog(
-                NSLocalizedString("Delete this version?", comment: "Version deletion confirmation"),
+                String.localizedStringWithFormat(
+                    NSLocalizedString("Delete version %@?", comment: "Version deletion confirmation"),
+                    version?.versionNumber ?? ""
+                ),
                 isPresented: $isConfirmingDeletion,
                 titleVisibility: .visible
             ) {
@@ -420,6 +563,17 @@ private struct VersionEditorSheet: View {
             }
         }
         .interactiveDismissDisabled(model.isProjectActionRunning || isReadingFiles)
+        .task(id: version?.id) {
+            guard let version else { return }
+            if let enriched = try? await model.loadProjectDependencies(versions: [version]), !enriched.isEmpty {
+                dependencies = enriched
+            }
+        }
+    }
+
+    private func readinessRow(_ title: String, complete: Bool) -> some View {
+        Label(title, systemImage: complete ? "checkmark.circle.fill" : "circle")
+            .foregroundStyle(complete ? Color.ryntraGreen : Color.secondary)
     }
 
     @MainActor
@@ -572,7 +726,7 @@ private struct VersionEditorSheet: View {
     }
 
     private func dependencyIdentifier(_ dependency: ProjectDependency) -> String {
-        dependency.projectId ?? dependency.versionId ?? dependency.fileName ??
+        dependency.title ?? dependency.projectId ?? dependency.versionId ?? dependency.fileName ??
             NSLocalizedString("Unknown dependency", comment: "Dependency fallback")
     }
 

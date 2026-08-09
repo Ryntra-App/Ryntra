@@ -37,10 +37,10 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Trash2
 import com.ryntra.mobile.R
 import com.ryntra.shared.model.Project
+import com.ryntra.shared.model.modrinthUrl
 
 internal fun Project.modrinthPageUrl(): String {
-    val reference = slug?.takeIf(String::isNotBlank) ?: id
-    return "https://modrinth.com/project/$reference"
+    return modrinthUrl()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -60,7 +60,14 @@ object ProjectCreationRules {
         if (request.body.isBlank()) add("Add a full project description.")
         if (request.body.length > BODY_MAX_LENGTH) add("Full description must be $BODY_MAX_LENGTH characters or fewer.")
         if (request.projectType.isBlank()) add("Select a project type.")
-        if (request.licenseId.isBlank()) add("Select a license.")
+        val normalizedLicenseId = request.licenseId.trim().lowercase()
+        if (normalizedLicenseId.isEmpty()) add("Select a license.")
+        if (normalizedLicenseId in setOf("licenseref-", "licenseref-unknown", "noassertion", "licenseref-noassertion")) {
+            add("Select a valid license.")
+        }
+        if (request.licenseId.isCustomLicenseReference() && request.licenseUrl.isNullOrBlank()) {
+            add("Add a public URL with the complete custom license terms.")
+        }
         if (request.categories.distinct().size > CATEGORIES_MAX_COUNT) {
             add("Select no more than $CATEGORIES_MAX_COUNT primary categories.")
         }

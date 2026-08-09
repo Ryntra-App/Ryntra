@@ -5,6 +5,8 @@ import SwiftUI
 struct EditProjectView: View {
     @EnvironmentObject private var model: AppModel
     let project: Project
+    let canEditDetails: Bool
+    let canEditBody: Bool
     let saveRequest: Int
     let onSaved: () async -> Void
     let onEditingStateChanged: (Bool, Bool) -> Void
@@ -18,6 +20,7 @@ struct EditProjectView: View {
     @State private var discordUrl: String
     @State private var status: String
     @State private var licenseId: String
+    @State private var licenseURL: String
     @State private var iconItem: PhotosPickerItem?
     @State private var localError: String?
     @State private var isEditingDescription = false
@@ -32,11 +35,15 @@ struct EditProjectView: View {
 
     init(
         project: Project,
+        canEditDetails: Bool,
+        canEditBody: Bool,
         saveRequest: Int,
         onSaved: @escaping () async -> Void,
         onEditingStateChanged: @escaping (Bool, Bool) -> Void
     ) {
         self.project = project
+        self.canEditDetails = canEditDetails
+        self.canEditBody = canEditBody
         self.saveRequest = saveRequest
         self.onSaved = onSaved
         self.onEditingStateChanged = onEditingStateChanged
@@ -47,25 +54,58 @@ struct EditProjectView: View {
         _issuesUrl = State(initialValue: project.issuesUrl ?? "")
         _wikiUrl = State(initialValue: project.wikiUrl ?? "")
         _discordUrl = State(initialValue: project.discordUrl ?? "")
-        _status = State(initialValue: project.status)
+        _status = State(initialValue: Self.usesDirectStatus(project.status)
+            ? project.status
+            : (project.requestedStatus ?? "draft"))
         _licenseId = State(initialValue: project.license?.id ?? "")
+        _licenseURL = State(initialValue: project.license?.url ?? "")
     }
 
     private var hasChanges: Bool {
         title != project.title || summary != project.description_ || bodyText != project.body ||
         sourceUrl != (project.sourceUrl ?? "") || issuesUrl != (project.issuesUrl ?? "") ||
         wikiUrl != (project.wikiUrl ?? "") || discordUrl != (project.discordUrl ?? "") ||
-        status != project.status || licenseId != (project.license?.id ?? "")
+        status != baselineStatus || licenseId != (project.license?.id ?? "") ||
+            licenseURL != (project.license?.url ?? "")
+    }
+
+    private var baselineStatus: String {
+        Self.usesDirectStatus(project.status) ? project.status : (project.requestedStatus ?? "draft")
+    }
+
+    private var usesDirectStatus: Bool { Self.usesDirectStatus(project.status) }
+
+    private var statusOptions: [String] {
+        let choices = ["approved", "archived", "unlisted", "private", "draft"]
+        return Array(Set(choices + [status])).sorted()
+    }
+
+    private static func usesDirectStatus(_ status: String) -> Bool {
+        ["approved", "archived", "unlisted", "private"].contains(status.lowercased())
     }
 
     private var canSave: Bool {
         hasChanges && !model.isProjectSaving && !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-            !summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            !summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+            (!isCustomLicense || isWebURL(licenseURL))
+    }
+
+    private var isCustomLicense: Bool {
+        !licenses.isEmpty && !licenses.contains { $0.id.caseInsensitiveCompare(licenseId) == .orderedSame }
+    }
+
+    private func isWebURL(_ value: String) -> Bool {
+        guard let components = URLComponents(string: value),
+              let scheme = components.scheme?.lowercased(),
+              scheme == "https" || scheme == "http",
+              let host = components.host,
+              host.contains(".") else { return false }
+        return true
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            editSection(.main, title: "Main information", systemImage: "pencil") {
+            editSection(.main, title: "Main information", summary: title, systemImage: "pencil", isEnabled: canEditDetails) {
                 iconEditor
                 field("Title", text: $title, systemImage: "tag")
                     .onChange(of: title) { _ in isTitleTouched = true }
@@ -79,7 +119,13 @@ struct EditProjectView: View {
                 }
             }
 
-            editSection(.description, title: "Full description", systemImage: "doc.text") {
+            editSection(
+                .description,
+                title: "Full description",
+                summary: bodyText.isEmpty ? NSLocalizedString("Not added", comment: "Collapsed editor summary") : NSLocalizedString("Added", comment: "Collapsed editor summary"),
+                systemImage: "doc.text",
+                isEnabled: canEditBody
+            ) {
                 Text(bodyText.isEmpty
                     ? NSLocalizedString("No full description yet", comment: "Project description editor")
                     : bodyText)
@@ -96,17 +142,24 @@ struct EditProjectView: View {
                 .buttonStyle(.bordered)
             }
 
-            editSection(.gallery, title: "Gallery", systemImage: "photo.on.rectangle.angled") {
+            editSection(
+                .gallery,
+                title: "Gallery",
+                summary: String.localizedStringWithFormat(NSLocalizedString("Gallery: %d", comment: "Collapsed editor summary"), project.gallery.count),
+                systemImage: "photo.on.rectangle.angled",
+                isEnabled: canEditDetails
+            ) {
                 ProjectGalleryEditor(project: project, onSaved: onSaved)
             }
 
-            editSection(.publishing, title: "Status and license", systemImage: "checkmark.seal") {
+            editSection(.publishing, title: "Status and license", summary: licenseId, systemImage: "checkmark.seal", isEnabled: canEditDetails) {
                 Picker("Status", selection: $status) {
-                    ForEach(Array(Set([project.status, "draft", "unlisted", "archived"])).sorted(), id: \.self) {
+                    ForEach(statusOptions, id: \.self) {
                         Text(ProjectStatusSupport.statusLabel($0)).tag($0)
                     }
                 }
                 .pickerStyle(.menu)
+                .disabled(project.status.lowercased() == "processing")
                 if !licenses.isEmpty {
                     ProjectLicenseSelectionButton(
                         licenses: licenses,
@@ -131,9 +184,26 @@ struct EditProjectView: View {
                             .buttonStyle(.bordered)
                     }
                 }
+                if isCustomLicense {
+                    field("License terms URL", text: $licenseURL, systemImage: "link", isURL: true)
+                    Text(NSLocalizedString(
+                        "A custom license needs a public URL with its complete terms.",
+                        comment: "Custom license guidance"
+                    ))
+                    .font(.caption)
+                    .foregroundStyle(licenseURL.isEmpty || isWebURL(licenseURL) ? Color.secondary : Color.red)
+                }
             }
 
-            editSection(.links, title: "Links", systemImage: "link") {
+            editSection(
+                .links,
+                title: "Links",
+                summary: [sourceUrl, issuesUrl, wikiUrl, discordUrl].filter { !$0.isEmpty }.isEmpty
+                    ? NSLocalizedString("Not added", comment: "Collapsed editor summary")
+                    : NSLocalizedString("Added", comment: "Collapsed editor summary"),
+                systemImage: "link",
+                isEnabled: canEditDetails
+            ) {
                 field("Source code", text: $sourceUrl, systemImage: "chevron.left.forwardslash.chevron.right", isURL: true)
                 field("Issue tracker", text: $issuesUrl, systemImage: "ant", isURL: true)
                 field("Wiki", text: $wikiUrl, systemImage: "book", isURL: true)
@@ -168,6 +238,11 @@ struct EditProjectView: View {
                 onDismiss: { isShowingLicensePicker = false }
             )
         }
+        .onChange(of: licenseId) { selected in
+            if selected.caseInsensitiveCompare(project.license?.id ?? "") != .orderedSame {
+                licenseURL = ""
+            }
+        }
         .task(id: project.id) { await loadLicenses() }
     }
 
@@ -181,9 +256,10 @@ struct EditProjectView: View {
             issuesUrl: issuesUrl == (project.issuesUrl ?? "") ? nil : issuesUrl,
             wikiUrl: wikiUrl == (project.wikiUrl ?? "") ? nil : wikiUrl,
             discordUrl: discordUrl == (project.discordUrl ?? "") ? nil : discordUrl,
-            status: status == project.status ? nil : status,
-            requestedStatus: nil,
-            licenseId: licenseId == (project.license?.id ?? "") ? nil : licenseId
+            status: usesDirectStatus && status != baselineStatus ? status : nil,
+            requestedStatus: !usesDirectStatus && status != baselineStatus ? status : nil,
+            licenseId: licenseId == (project.license?.id ?? "") ? nil : licenseId,
+            licenseUrl: isCustomLicense && licenseURL != (project.license?.url ?? "") ? licenseURL : nil
         )
         await model.updateProject(projectId: project.id, update: update)
         if model.projectUpdateError == nil {
@@ -306,7 +382,9 @@ struct EditProjectView: View {
     private func editSection<Content: View>(
         _ section: EditProjectSection,
         title: String,
+        summary: String,
         systemImage: String,
+        isEnabled: Bool,
         @ViewBuilder content: () -> Content
     ) -> some View {
         DisclosureGroup(
@@ -319,12 +397,30 @@ struct EditProjectView: View {
             )
         ) {
             VStack(alignment: .leading, spacing: 14) {
+                if !isEnabled {
+                    Label(
+                        NSLocalizedString("You don’t have permission to edit this section.", comment: "Project edit permission"),
+                        systemImage: "lock"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
                 content()
             }
+            .disabled(!isEnabled)
             .padding(.top, 14)
         } label: {
-            Label(NSLocalizedString(title, comment: "Project editor section"), systemImage: systemImage)
-                .font(.headline)
+            HStack(spacing: 10) {
+                Label(NSLocalizedString(title, comment: "Project editor section"), systemImage: systemImage)
+                    .font(.headline)
+                Spacer(minLength: 8)
+                if !expandedSections.contains(section) {
+                    Text(summary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
         }
         .padding(.vertical, 10)
         .overlay(alignment: .bottom) { Divider() }
@@ -337,26 +433,4 @@ private enum EditProjectSection: Hashable {
     case gallery
     case publishing
     case links
-}
-
-private struct MarkdownProjectEditor: View {
-    @Environment(\.dismiss) private var dismiss
-    @Binding var text: String
-
-    var body: some View {
-        NavigationStack {
-            TextEditor(text: $text)
-                .font(.body)
-                .padding(.horizontal, 12)
-                .scrollContentBackground(.hidden)
-                .background(Color.ryntraBackground)
-                .navigationTitle(NSLocalizedString("Full description", comment: "Project editor title"))
-                .ryntraInlineNavigationTitle()
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button(NSLocalizedString("Done", comment: "Finish editing")) { dismiss() }
-                    }
-                }
-        }
-    }
 }

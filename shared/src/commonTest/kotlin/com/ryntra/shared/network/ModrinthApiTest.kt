@@ -511,6 +511,8 @@ class ModrinthApiTest {
             assertEquals(HttpMethod.Patch, request.method)
             assertEquals("/v2/project/project-1", request.url.encodedPath)
             assertEquals("mrp_test", request.headers[HttpHeaders.Authorization])
+            assertTrue(request.bodyText().contains("\"license_id\":\"LicenseRef-Custom\""))
+            assertTrue(request.bodyText().contains("\"license_url\":\"https://example.com/license\""))
             respond(
                 content = "",
                 status = HttpStatusCode.NoContent,
@@ -521,7 +523,11 @@ class ModrinthApiTest {
 
         api.updateProject(
             projectIdOrSlug = "project-1",
-            update = com.ryntra.shared.model.ProjectUpdate(title = "New Title"),
+            update = com.ryntra.shared.model.ProjectUpdate(
+                title = "New Title",
+                licenseId = "LicenseRef-Custom",
+                licenseUrl = "https://example.com/license",
+            ),
             token = "mrp_test",
         )
 

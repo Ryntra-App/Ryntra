@@ -582,6 +582,10 @@
     <string name="project_create_environment_unsupported">Not supported</string>
     <string name="project_create_environment_unknown">Not confirmed</string>
     <string name="project_create_license_help">Choose what other people may do with your project.</string>
+    <string name="project_create_license_url">License terms URL</string>
+    <string name="project_create_license_url_help">Link to the complete terms of your custom license.</string>
+    <string name="project_create_license_url_error">Enter a valid http:// or https:// link to the license terms.</string>
+    <string name="project_create_required">Required</string>
     <string name="project_create_license_id">SPDX license</string>
     <string name="project_create_license_field_help">Examples: MIT, Apache-2.0, GPL-3.0-only</string>
     <string name="project_create_license_legal_note">This summary is only a quick guide. Read the full license terms before publishing.</string>
@@ -672,6 +676,9 @@
     <string name="project_submit_requirement_summary">Short summary</string>
     <string name="project_submit_requirement_description">Full description</string>
     <string name="project_submit_requirement_license">Project license</string>
+    <string name="project_submit_requirement_license_url">A valid URL for the custom license</string>
+    <string name="project_submit_requirement_gallery">Required gallery images for this project type</string>
+    <string name="project_submit_recommended">Recommended before publishing</string>
     <string name="project_submission_not_available">This project does not need to be submitted in its current status.</string>
     <string name="project_submission_permission_required">You need permission to edit project details before you can submit it.</string>
     <string name="project_submit_title">Submit to Modrinth moderation?</string>

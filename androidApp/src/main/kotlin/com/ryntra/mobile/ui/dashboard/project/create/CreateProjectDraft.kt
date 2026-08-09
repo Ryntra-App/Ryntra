@@ -8,6 +8,8 @@ import com.ryntra.mobile.ui.dashboard.project.markdown.MarkdownEditorMode
 import com.ryntra.shared.model.CreateProjectRequest
 import com.ryntra.shared.model.ProjectCreationRules
 import com.ryntra.shared.model.ProjectFileUpload
+import com.ryntra.shared.model.isCustomLicenseReference
+import java.net.URI
 
 @Stable
 internal class CreateProjectDraft {
@@ -21,6 +23,7 @@ internal class CreateProjectDraft {
     var clientSide by mutableStateOf("unknown")
     var serverSide by mutableStateOf("unknown")
     var licenseId by mutableStateOf("MIT")
+    var licenseUrl by mutableStateOf("")
     var body by mutableStateOf("")
     var sourceUrl by mutableStateOf("")
     var issuesUrl by mutableStateOf("")
@@ -45,6 +48,10 @@ internal class CreateProjectDraft {
     val areLinksValid: Boolean
         get() = listOf(sourceUrl, issuesUrl, wikiUrl, discordUrl).all { it.isBlank() || it.isWebUrl() }
 
+    val isLicenseValid: Boolean
+        get() = licenseId.isNotBlank() &&
+            (!licenseId.isCustomLicenseReference() || licenseUrl.isWebUrl())
+
     fun updateTitle(value: String) {
         title = value.take(ProjectCreationRules.TITLE_MAX_LENGTH + 1)
         if (!isSlugManuallyEdited) slug = value.toModrinthSlug()
@@ -65,7 +72,7 @@ internal class CreateProjectDraft {
 
     fun isStepValid(): Boolean = when (step) {
         0 -> isTitleValid && isSlugValid && isSummaryValid && projectType.isNotBlank()
-        1 -> licenseId.isNotBlank()
+        1 -> isLicenseValid
         else -> body.isNotBlank() && body.length <= ProjectCreationRules.BODY_MAX_LENGTH &&
             areLinksValid && ProjectCreationRules.validate(toRequest()).isEmpty()
     }
@@ -86,6 +93,7 @@ internal class CreateProjectDraft {
         clientSide = clientSide,
         serverSide = serverSide,
         licenseId = licenseId.trim(),
+        licenseUrl = licenseUrl.trim().ifBlank { null },
         sourceUrl = sourceUrl.trim().ifBlank { null },
         issuesUrl = issuesUrl.trim().ifBlank { null },
         wikiUrl = wikiUrl.trim().ifBlank { null },
@@ -100,4 +108,6 @@ private fun String.toModrinthSlug(): String = lowercase()
     .trim('-')
     .take(ProjectCreationRules.SLUG_MAX_LENGTH)
 
-private fun String.isWebUrl(): Boolean = startsWith("https://") || startsWith("http://")
+private fun String.isWebUrl(): Boolean = runCatching { URI(this) }.getOrNull()?.let { uri ->
+    uri.scheme?.lowercase() in setOf("http", "https") && uri.host?.contains('.') == true
+} == true

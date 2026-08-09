@@ -1,7 +1,10 @@
 package com.ryntra.mobile.ui.dashboard.project.edit
 
 import com.ryntra.shared.model.Project
+import com.ryntra.shared.model.ProjectStatusPolicy
 import com.ryntra.shared.model.ProjectUpdate
+import com.ryntra.shared.model.isCustomLicenseReference
+import java.net.URI
 
 internal data class ProjectEditDraft(
     val title: String,
@@ -11,23 +14,38 @@ internal data class ProjectEditDraft(
     val issuesUrl: String,
     val wikiUrl: String,
     val discordUrl: String,
+    val currentStatus: String,
+    val currentRequestedStatus: String?,
     val status: String,
     val licenseId: String,
+    val licenseUrl: String,
 ) {
     val canSave: Boolean
-        get() = title.isNotBlank() && summary.isNotBlank()
+        get() = title.isNotBlank() && summary.isNotBlank() &&
+            (!licenseId.isCustomLicenseReference() || licenseUrl.isWebUrl())
 
-    fun toUpdate(baseline: ProjectEditDraft): ProjectUpdate = ProjectUpdate(
-        title = title.takeIf { it != baseline.title },
-        description = summary.takeIf { it != baseline.summary },
-        body = description.takeIf { it != baseline.description },
-        sourceUrl = sourceUrl.takeIf { it != baseline.sourceUrl },
-        issuesUrl = issuesUrl.takeIf { it != baseline.issuesUrl },
-        wikiUrl = wikiUrl.takeIf { it != baseline.wikiUrl },
-        discordUrl = discordUrl.takeIf { it != baseline.discordUrl },
-        status = status.takeIf { it != baseline.status },
-        licenseId = licenseId.takeIf { it != baseline.licenseId },
-    )
+    fun toUpdate(baseline: ProjectEditDraft): ProjectUpdate {
+        val visibilityUpdate = status.takeIf { it != baseline.status }?.let { desiredStatus ->
+            ProjectStatusPolicy.updateFor(
+                currentStatus = baseline.currentStatus,
+                currentRequestedStatus = baseline.currentRequestedStatus,
+                desiredStatus = desiredStatus,
+            )
+        }
+        return ProjectUpdate(
+            title = title.takeIf { it != baseline.title },
+            description = summary.takeIf { it != baseline.summary },
+            body = description.takeIf { it != baseline.description },
+            sourceUrl = sourceUrl.takeIf { it != baseline.sourceUrl },
+            issuesUrl = issuesUrl.takeIf { it != baseline.issuesUrl },
+            wikiUrl = wikiUrl.takeIf { it != baseline.wikiUrl },
+            discordUrl = discordUrl.takeIf { it != baseline.discordUrl },
+            status = visibilityUpdate?.status,
+            requestedStatus = visibilityUpdate?.requestedStatus,
+            licenseId = licenseId.takeIf { it != baseline.licenseId },
+            licenseUrl = licenseUrl.takeIf { it != baseline.licenseUrl },
+        )
+    }
 
     companion object {
         fun from(project: Project): ProjectEditDraft = ProjectEditDraft(
@@ -38,8 +56,19 @@ internal data class ProjectEditDraft(
             issuesUrl = project.issuesUrl.orEmpty(),
             wikiUrl = project.wikiUrl.orEmpty(),
             discordUrl = project.discordUrl.orEmpty(),
-            status = project.status,
+            currentStatus = project.status,
+            currentRequestedStatus = project.requestedStatus,
+            status = project.requestedStatus
+                ?.lowercase()
+                ?.takeIf { it in ProjectStatusPolicy.editableVisibilityStatuses }
+                ?: project.status.lowercase().takeIf { it in ProjectStatusPolicy.editableVisibilityStatuses }
+                ?: "approved",
             licenseId = project.license?.id.orEmpty(),
+            licenseUrl = project.license?.url.orEmpty(),
         )
     }
 }
+
+private fun String.isWebUrl(): Boolean = runCatching { URI(this) }.getOrNull()?.let { uri ->
+    uri.scheme?.lowercase() in setOf("http", "https") && uri.host?.contains('.') == true
+} == true

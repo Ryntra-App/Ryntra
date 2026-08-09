@@ -22,6 +22,9 @@ import io.ktor.http.HttpHeaders
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
 
 internal class ProjectEndpoints(
     private val client: HttpClient,
@@ -45,7 +48,7 @@ internal class ProjectEndpoints(
         client.patch("project/$projectIdOrSlug") {
             authorize(token)
             contentType(ContentType.Application.Json)
-            setBody(update)
+            setBody(encodeProjectUpdatePayload(update))
         }.ensureSuccess()
     }
 
@@ -132,6 +135,15 @@ internal class ProjectEndpoints(
             description?.let { parameter("description", it) }
             ordering?.let { parameter("ordering", it) }
         }.ensureSuccess()
+    }
+}
+
+internal fun encodeProjectUpdatePayload(update: ProjectUpdate): JsonObject {
+    val encoded = apiJson.encodeToJsonElement(ProjectUpdate.serializer(), update).jsonObject
+    return if (update.licenseId != null && update.licenseUrl == null) {
+        JsonObject(encoded + ("license_url" to JsonNull))
+    } else {
+        encoded
     }
 }
 

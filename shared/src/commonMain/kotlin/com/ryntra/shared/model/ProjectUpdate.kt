@@ -15,4 +15,5 @@ data class ProjectUpdate(
     val status: String? = null,
     @SerialName("requested_status") val requestedStatus: String? = null,
     @SerialName("license_id") val licenseId: String? = null,
+    @SerialName("license_url") val licenseUrl: String? = null,
 )

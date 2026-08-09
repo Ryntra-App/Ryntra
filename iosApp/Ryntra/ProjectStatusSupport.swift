@@ -59,8 +59,25 @@ extension Project {
 
     /// Public page for this project on Modrinth.
     var modrinthPageURL: URL? {
+        URL(string: "https://modrinth.com\(modrinthDisplayPath)")
+    }
+
+    var modrinthDisplayPath: String {
         let reference = (slug?.isEmpty ?? true) ? id : (slug ?? id)
-        return URL(string: "https://modrinth.com/project/\(reference)")
+        let encoded = reference.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id
+        let route: String
+        switch projectType.lowercased() {
+        case "mod": route = "mod"
+        case "plugin": route = "plugin"
+        case "hybrid": route = "mod"
+        case "modpack": route = "modpack"
+        case "resourcepack", "resource_pack": route = "resourcepack"
+        case "shader": route = "shader"
+        case "datapack", "data_pack": route = "datapack"
+        case "server", "minecraft_java_server": route = "server"
+        default: route = "project"
+        }
+        return "/\(route)/\(encoded)"
     }
 }
 
@@ -70,6 +87,7 @@ extension View {
     func ryntraProjectContextMenu(
         _ project: Project,
         onOpen: (() -> Void)? = nil,
+        onCreateShareCard: (() -> Void)? = nil,
         canDelete: Bool = false,
         onDelete: (() -> Void)? = nil,
         onRequestDelete: (() -> Void)? = nil
@@ -98,6 +116,14 @@ extension View {
                     Label(
                         NSLocalizedString("Copy link", comment: "Project context action"),
                         systemImage: "link"
+                    )
+                }
+            }
+            if let onCreateShareCard {
+                Button(action: onCreateShareCard) {
+                    Label(
+                        NSLocalizedString("Create share card", comment: "Project context action"),
+                        systemImage: "square.and.arrow.up"
                     )
                 }
             }

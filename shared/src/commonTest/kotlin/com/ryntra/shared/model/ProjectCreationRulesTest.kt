@@ -41,4 +41,28 @@ class ProjectCreationRulesTest {
 
         assertTrue(errors.any { "Full description" in it })
     }
+
+    @Test
+    fun customLicenseRequiresPublicTermsUrl() {
+        val missingUrl = ProjectCreationRules.validate(
+            validRequest().copy(licenseId = "LicenseRef-Ryntra"),
+        )
+        val withUrl = ProjectCreationRules.validate(
+            validRequest().copy(
+                licenseId = "LicenseRef-Ryntra",
+                licenseUrl = "https://example.com/license",
+            ),
+        )
+
+        assertTrue(missingUrl.any { "custom license terms" in it })
+        assertTrue(withUrl.none { "custom license terms" in it })
+    }
+
+    @Test
+    fun rejectsInvalidLicenseSentinels() {
+        listOf("LicenseRef-", "LicenseRef-Unknown", "NOASSERTION", "LicenseRef-NOASSERTION").forEach { id ->
+            val errors = ProjectCreationRules.validate(validRequest().copy(licenseId = id))
+            assertTrue(errors.any { "valid license" in it }, "Expected $id to be rejected")
+        }
+    }
 }

@@ -47,6 +47,9 @@
 		A038 /* ModerationMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B042 /* ModerationMessageView.swift */; };
 		A039 /* PlatformCompat.swift in Sources */ = {isa = PBXBuildFile; fileRef = B043 /* PlatformCompat.swift */; };
 		A040 /* RemoteImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B047 /* RemoteImage.swift */; };
+		A041 /* ProjectShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B048 /* ProjectShareCard.swift */; };
+		A042 /* ProjectShareCardStudio.swift in Sources */ = {isa = PBXBuildFile; fileRef = B049 /* ProjectShareCardStudio.swift */; };
+		A043 /* MarkdownProjectEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B050 /* MarkdownProjectEditor.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -94,6 +97,9 @@
 		B042 /* ModerationMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModerationMessageView.swift; sourceTree = "<group>"; };
 		B043 /* PlatformCompat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformCompat.swift; sourceTree = "<group>"; };
 		B047 /* RemoteImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteImage.swift; sourceTree = "<group>"; };
+		B048 /* ProjectShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectShareCard.swift; sourceTree = "<group>"; };
+		B049 /* ProjectShareCardStudio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectShareCardStudio.swift; sourceTree = "<group>"; };
+		B050 /* MarkdownProjectEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownProjectEditor.swift; sourceTree = "<group>"; };
 		B044 /* Info-macOS.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info-macOS.plist"; sourceTree = "<group>"; };
 		B045 /* Ryntra-macOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Ryntra-macOS.entitlements"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -189,6 +195,9 @@
 				B020 /* ProjectMembersManagementView.swift */,
 				B041 /* ProjectModerationView.swift */,
 				B042 /* ModerationMessageView.swift */,
+				B048 /* ProjectShareCard.swift */,
+				B049 /* ProjectShareCardStudio.swift */,
+				B050 /* MarkdownProjectEditor.swift */,
 			);
 			path = ProjectDetail;
 			sourceTree = "<group>";
@@ -342,6 +351,9 @@
 				A018 /* ProjectMembersManagementView.swift in Sources */,
 				A037 /* ProjectModerationView.swift in Sources */,
 				A038 /* ModerationMessageView.swift in Sources */,
+				A041 /* ProjectShareCard.swift in Sources */,
+				A042 /* ProjectShareCardStudio.swift in Sources */,
+				A043 /* MarkdownProjectEditor.swift in Sources */,
 				A008 /* OrganizationsView.swift in Sources */,
 				A009 /* AccountView.swift in Sources */,
 			);

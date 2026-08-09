@@ -586,6 +586,10 @@
     <string name="project_create_environment_unsupported">Не поддерживается</string>
     <string name="project_create_environment_unknown">Не подтверждено</string>
     <string name="project_create_license_help">Укажите, что другие люди могут делать с вашим проектом.</string>
+    <string name="project_create_license_url">Ссылка на условия лицензии</string>
+    <string name="project_create_license_url_help">Укажите ссылку на полный текст вашей собственной лицензии.</string>
+    <string name="project_create_license_url_error">Укажите корректную ссылку на условия лицензии с http:// или https://.</string>
+    <string name="project_create_required">Обязательное поле</string>
     <string name="project_create_license_id">Лицензия SPDX</string>
     <string name="project_create_license_field_help">Примеры: MIT, Apache-2.0, GPL-3.0-only</string>
     <string name="project_create_license_legal_note">Это лишь краткая подсказка. Перед публикацией прочитайте полный текст лицензии.</string>
@@ -676,6 +680,9 @@
     <string name="project_submit_requirement_summary">Краткое описание</string>
     <string name="project_submit_requirement_description">Полное описание</string>
     <string name="project_submit_requirement_license">Лицензию проекта</string>
+    <string name="project_submit_requirement_license_url">Корректную ссылку на пользовательскую лицензию</string>
+    <string name="project_submit_requirement_gallery">Обязательные изображения галереи для этого типа проекта</string>
+    <string name="project_submit_recommended">Рекомендуется добавить перед публикацией</string>
     <string name="project_submission_not_available">В текущем статусе проект не нужно повторно отправлять на модерацию.</string>
     <string name="project_submission_permission_required">Для отправки нужно право редактировать данные проекта.</string>
     <string name="project_submit_title">Отправить на модерацию Modrinth?</string>

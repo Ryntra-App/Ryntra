@@ -130,6 +130,18 @@ struct ProjectModerationView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 }
+
+                if !submissionReadiness.warningRequirementKeys.isEmpty {
+                    Text(NSLocalizedString(
+                        "Recommended before publishing:",
+                        comment: "Project submission recommendations"
+                    ))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    ForEach(submissionReadiness.warningRequirementKeys, id: \.self) { key in
+                        recommendationRow(submissionRequirementLabel(key))
+                    }
+                }
             } else if project.status == "processing" {
                 requirementRow(
                     NSLocalizedString(
@@ -164,6 +176,12 @@ struct ProjectModerationView: View {
             .foregroundStyle(isComplete ? Color.ryntraGreen : Color.secondary)
     }
 
+    private func recommendationRow(_ text: String) -> some View {
+        Label(text, systemImage: "sparkles")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+    }
+
     private func submissionRequirementLabel(_ key: String) -> String {
         switch key {
         case "version": return NSLocalizedString("At least one version", comment: "Submission requirement")
@@ -171,6 +189,11 @@ struct ProjectModerationView: View {
         case "summary": return NSLocalizedString("Short summary", comment: "Submission requirement")
         case "description": return NSLocalizedString("Full description", comment: "Submission requirement")
         case "license": return NSLocalizedString("Project license", comment: "Submission requirement")
+        case "license_url": return NSLocalizedString("Public URL for the custom license", comment: "Submission requirement")
+        case "gallery":
+            return project.projectType.lowercased() == "shader"
+                ? NSLocalizedString("At least three gallery images", comment: "Submission requirement")
+                : NSLocalizedString("At least one gallery image", comment: "Submission requirement")
         default: return key
         }
     }

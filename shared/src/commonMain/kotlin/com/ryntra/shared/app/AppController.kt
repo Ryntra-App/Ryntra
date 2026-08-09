@@ -477,32 +477,45 @@ class AppController internal constructor(
     private fun Dashboard.withUpdatedAccount(username: String, bio: String): Dashboard =
         copy(account = account.copy(username = username, bio = bio.ifEmpty { null }))
 
-    private fun Dashboard.withUpdatedProject(projectIdOrSlug: String, update: com.ryntra.shared.model.ProjectUpdate): Dashboard =
-        copy(projects = projects.map { project ->
-            if (project.id == projectIdOrSlug || project.slug == projectIdOrSlug) {
-                project.copy(
-                    title = update.title ?: project.title,
-                    description = update.description ?: project.description,
-                    body = update.body ?: project.body,
-                    sourceUrl = update.sourceUrl?.ifBlank { null } ?: if (update.sourceUrl != null) null else project.sourceUrl,
-                    issuesUrl = update.issuesUrl?.ifBlank { null } ?: if (update.issuesUrl != null) null else project.issuesUrl,
-                    wikiUrl = update.wikiUrl?.ifBlank { null } ?: if (update.wikiUrl != null) null else project.wikiUrl,
-                    discordUrl = update.discordUrl?.ifBlank { null } ?: if (update.discordUrl != null) null else project.discordUrl,
-                    status = update.status ?: project.status,
-                    license = update.licenseId?.let { project.license?.copy(id = it) ?: com.ryntra.shared.model.ProjectLicense(it) }
-                        ?: project.license,
-                )
-            } else {
-                project
-            }
-        })
-
     private fun Dashboard.withoutProject(projectIdOrSlug: String): Dashboard =
         copy(projects = projects.filterNot { project ->
             project.id == projectIdOrSlug || project.slug == projectIdOrSlug
         })
 
 }
+
+internal fun Dashboard.withUpdatedProject(
+    projectIdOrSlug: String,
+    update: com.ryntra.shared.model.ProjectUpdate,
+): Dashboard = copy(projects = projects.map { project ->
+    if (project.id == projectIdOrSlug || project.slug == projectIdOrSlug) {
+        project.copy(
+            title = update.title ?: project.title,
+            description = update.description ?: project.description,
+            body = update.body ?: project.body,
+            sourceUrl = update.sourceUrl?.ifBlank { null } ?: if (update.sourceUrl != null) null else project.sourceUrl,
+            issuesUrl = update.issuesUrl?.ifBlank { null } ?: if (update.issuesUrl != null) null else project.issuesUrl,
+            wikiUrl = update.wikiUrl?.ifBlank { null } ?: if (update.wikiUrl != null) null else project.wikiUrl,
+            discordUrl = update.discordUrl?.ifBlank { null } ?: if (update.discordUrl != null) null else project.discordUrl,
+            status = update.status ?: project.status,
+            requestedStatus = when {
+                update.requestedStatus != null -> update.requestedStatus.ifBlank { null }
+                update.status != null -> null
+                else -> project.requestedStatus
+            },
+            license = when {
+                update.licenseId != null -> com.ryntra.shared.model.ProjectLicense(
+                    id = update.licenseId,
+                    url = update.licenseUrl?.ifBlank { null },
+                )
+                update.licenseUrl != null -> project.license?.copy(url = update.licenseUrl.ifBlank { null })
+                else -> project.license
+            },
+        )
+    } else {
+        project
+    }
+})
 
 internal fun Dashboard.withFreshProject(project: Project): Dashboard = copy(
     projects = projects.map { cached ->

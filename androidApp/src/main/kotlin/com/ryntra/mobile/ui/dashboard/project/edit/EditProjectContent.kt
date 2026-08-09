@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -75,13 +76,16 @@ import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.shared.model.Project
 import com.ryntra.shared.model.ProjectCreationMetadata
 import com.ryntra.shared.model.ProjectLicense
+import com.ryntra.shared.model.ProjectStatusPolicy
 import com.ryntra.shared.model.ProjectFileUpload
 import com.ryntra.shared.model.ProjectUploadLimits
+import com.ryntra.shared.model.isCustomLicenseReference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
+import java.net.URI
 
 @Composable
 internal fun EditProjectContent(
@@ -230,20 +234,22 @@ internal fun EditProjectContent(
         ) {
             EditLabel(stringResource(R.string.project_edit_status))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                listOf(project.status, "draft", "unlisted", "archived").distinct().forEach { value ->
+                ProjectStatusPolicy.editableVisibilityStatuses.forEach { value ->
                     val statusLabel = when (value.lowercase()) {
                         "draft" -> stringResource(R.string.project_status_draft)
                         "unlisted" -> stringResource(R.string.project_status_unlisted)
                         "archived" -> stringResource(R.string.project_status_archived)
                         "approved" -> stringResource(R.string.project_status_approved)
-                        "processing" -> stringResource(R.string.project_status_processing)
+                        "private" -> stringResource(R.string.project_status_private)
                         else -> value.replaceFirstChar(Char::uppercase)
                     }
                     Surface(
                         color = if (draft.status == value) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
                         contentColor = if (draft.status == value) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                         shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.clickable { onDraftChange(draft.copy(status = value)) },
+                        modifier = Modifier
+                            .heightIn(min = 48.dp)
+                            .clickable { onDraftChange(draft.copy(status = value)) },
                     ) {
                         Text(statusLabel, modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp), maxLines = 1)
                     }
@@ -266,7 +272,37 @@ internal fun EditProjectContent(
                 LicenseSelector(
                     licenses = licenses,
                     selectedId = draft.licenseId,
-                    onSelect = { onDraftChange(draft.copy(licenseId = it)) },
+                    onSelect = {
+                        onDraftChange(
+                            draft.copy(
+                                licenseId = it,
+                                licenseUrl = if (it.isCustomLicenseReference()) draft.licenseUrl else "",
+                            ),
+                        )
+                    },
+                )
+            }
+            if (draft.licenseId.isCustomLicenseReference()) {
+                Spacer(Modifier.height(18.dp))
+                EditField(
+                    label = stringResource(R.string.project_create_license_url),
+                    value = draft.licenseUrl,
+                    onValueChange = { onDraftChange(draft.copy(licenseUrl = it)) },
+                    placeholder = "https://…",
+                    icon = Lucide.Link,
+                )
+                Text(
+                    if (draft.licenseUrl.isValidWebUrl()) {
+                        stringResource(R.string.project_create_license_url_help)
+                    } else {
+                        stringResource(R.string.project_create_license_url_error)
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (draft.licenseUrl.isValidWebUrl()) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.error
+                    },
                 )
             }
             if (licenseLoadError) {
@@ -410,5 +446,9 @@ private fun InputStream.readBytesLimited(maxBytes: Int): ByteArray? {
     }
     return output.toByteArray()
 }
+
+private fun String.isValidWebUrl(): Boolean = runCatching { URI(this) }.getOrNull()?.let { uri ->
+    uri.scheme?.lowercase() in setOf("http", "https") && uri.host?.contains('.') == true
+} == true
 
 private const val MAX_IMAGE_BYTES = 20 * 1024 * 1024
