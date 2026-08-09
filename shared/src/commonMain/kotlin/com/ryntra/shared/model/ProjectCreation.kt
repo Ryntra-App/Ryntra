@@ -48,7 +48,7 @@ object ProjectCreationRules {
         val slug = request.slug.trim()
         val title = request.title.trim()
         val description = request.description.trim()
-        if (!slugPattern.matches(slug)) add("Slug must be 3–64 characters and contain only Modrinth-supported characters.")
+        if (!isSlugValid(slug)) add("Slug must be 3–64 characters and contain only Modrinth-supported characters.")
         if (title.isEmpty()) add("Project name cannot be empty.")
         if (title.length > TITLE_MAX_LENGTH) add("Project name must be $TITLE_MAX_LENGTH characters or fewer.")
         if (description.isEmpty()) add("Add a short project summary.")
@@ -68,4 +68,6 @@ object ProjectCreationRules {
                 if (!url.startsWith("https://") && !url.startsWith("http://")) add("Links must start with https:// or http://.")
             }
     }.distinct()
+
+    fun isSlugValid(value: String): Boolean = slugPattern.matches(value.trim())
 }

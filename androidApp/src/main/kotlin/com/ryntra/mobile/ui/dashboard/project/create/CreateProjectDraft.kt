@@ -28,6 +28,7 @@ internal class CreateProjectDraft {
     var discordUrl by mutableStateOf("")
     var icon by mutableStateOf<ProjectFileUpload?>(null)
     var editorMode by mutableStateOf(MarkdownEditorMode.Write)
+    private var validationAttemptedSteps by mutableStateOf(emptySet<Int>())
 
     val isDirty: Boolean
         get() = title.isNotBlank() || summary.isNotBlank() || body.isNotBlank() || icon != null
@@ -36,8 +37,7 @@ internal class CreateProjectDraft {
         get() = title.isNotBlank() && title.length <= ProjectCreationRules.TITLE_MAX_LENGTH
 
     val isSlugValid: Boolean
-        get() = slug.length in ProjectCreationRules.SLUG_MIN_LENGTH..ProjectCreationRules.SLUG_MAX_LENGTH &&
-            slug.all { it.isLetterOrDigit() || it in "_!@$()`.+,\"'-" }
+        get() = ProjectCreationRules.isSlugValid(slug)
 
     val isSummaryValid: Boolean
         get() = summary.isNotBlank() && summary.length <= ProjectCreationRules.DESCRIPTION_MAX_LENGTH
@@ -59,11 +59,17 @@ internal class CreateProjectDraft {
         categories = if (category in categories) categories - category else categories + category
     }
 
-    fun canContinue(): Boolean = when (step) {
+    fun isStepValid(): Boolean = when (step) {
         0 -> isTitleValid && isSlugValid && isSummaryValid && projectType.isNotBlank()
         1 -> licenseId.isNotBlank()
         else -> body.isNotBlank() && areLinksValid && ProjectCreationRules.validate(toRequest()).isEmpty()
     }
+
+    fun markValidationAttempted() {
+        validationAttemptedSteps = validationAttemptedSteps + step
+    }
+
+    fun shouldShowValidationErrors(step: Int): Boolean = step in validationAttemptedSteps
 
     fun toRequest(): CreateProjectRequest = CreateProjectRequest(
         slug = slug.trim(),

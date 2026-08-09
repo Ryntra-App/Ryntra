@@ -458,7 +458,7 @@
     <string name="project_create_server">Server support</string>
     <string name="project_create_license">License</string>
     <string name="project_create_links">Links (optional)</string>
-    <string name="project_create_description">Full description (GitHub Flavored Markdown)</string>
+    <string name="project_create_description">Full description</string>
     <string name="project_create_next">Continue</string>
     <string name="project_create_back">Back</string>
     <string name="project_create_draft">Create draft</string>
@@ -479,6 +479,11 @@
     <string name="project_create_character_count">%1$d of %2$d characters</string>
     <string name="project_create_slug_help">Generated from the name. You can customize it.</string>
     <string name="project_create_slug_error">Use 3–64 supported letters, numbers, or URL-safe symbols.</string>
+    <string name="project_create_slug_required">Add the project address. It is generated from the name automatically.</string>
+    <string name="project_create_name_required">Enter a project name.</string>
+    <string name="project_create_name_error">Use no more than 64 characters for the project name.</string>
+    <string name="project_create_summary_required">Add a short summary so people understand the project.</string>
+    <string name="project_create_summary_error">Use no more than 256 characters for the summary.</string>
     <string name="project_create_summary_hint">One clear sentence explaining why someone should install it</string>
     <string name="project_create_type_help">This controls available categories and where Modrinth lists the project.</string>
     <string name="project_create_artwork">Project icon</string>
@@ -588,7 +593,7 @@
     <string name="project_create_type_plugin_help">Server-side functionality for platforms such as Paper, Spigot, Bukkit or Velocity.</string>
     <string name="project_create_type_datapack_help">Vanilla-compatible gameplay content loaded by a Minecraft world.</string>
     <string name="project_create_type_other_help">Choose the type that determines where the project appears and which metadata is available.</string>
-    <string name="project_create_description_help">GitHub Flavored Markdown is supported. Cover features, installation, and compatibility.</string>
+    <string name="project_create_description_help">Explain the main features, installation, requirements, and compatibility.</string>
     <string name="project_create_description_hint"># About\n\nWhat does the project do?\n\n## Installation\n\nExplain how to get started.</string>
     <string name="project_create_description_required">Add a full description before creating the draft.</string>
     <string name="project_create_links_help">Help users find source code, support, documentation, and your community.</string>
@@ -600,6 +605,12 @@
     <string name="project_create_url_error">Enter a complete link starting with https:// or http://</string>
     <string name="project_create_load_error">Could not load Modrinth options</string>
     <string name="project_create_submit_error">Modrinth could not create the project. Check the fields and try again.</string>
+    <string name="project_create_fix_required_fields">Complete the required fields highlighted below.</string>
+    <string name="project_create_error_session">Your Modrinth session expired. Sign in again, then retry.</string>
+    <string name="project_create_error_permission">Your Modrinth account does not have permission to create projects.</string>
+    <string name="project_create_error_slug_taken">This project address is already in use. Return to the first step and choose another.</string>
+    <string name="project_create_error_rate_limit">Modrinth is receiving too many requests. Wait a moment and try again.</string>
+    <string name="project_create_error_response">The draft could not be created because Modrinth returned an unexpected response. Your entries are saved, so try again.</string>
     <string name="project_create_discard_title">Discard this draft?</string>
     <string name="project_create_discard_message">The information entered on this screen will be lost.</string>
     <string name="project_create_discard">Discard</string>

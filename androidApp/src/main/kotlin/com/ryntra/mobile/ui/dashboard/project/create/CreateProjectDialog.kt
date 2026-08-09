@@ -135,12 +135,15 @@ fun CreateProjectDialog(
                     if (metadata != null) {
                         CreateProjectBottomBar(
                             step = draft.step,
-                            canContinue = draft.canContinue(),
                             isSubmitting = isSubmitting,
                             onBack = { draft.step-- },
                             onContinue = {
                                 submitError = null
-                                if (draft.step < CREATE_PROJECT_STEP_COUNT - 1) {
+                                if (!draft.isStepValid()) {
+                                    draft.markValidationAttempted()
+                                    submitError = context.getString(R.string.project_create_fix_required_fields)
+                                    scope.launch { listState.animateScrollToItem(0) }
+                                } else if (draft.step < CREATE_PROJECT_STEP_COUNT - 1) {
                                     draft.step++
                                 } else {
                                     scope.launch {
@@ -148,7 +151,7 @@ fun CreateProjectDialog(
                                         createProject(draft.toRequest()).fold(
                                             onSuccess = onCreated,
                                             onFailure = {
-                                                submitError = it.message ?: context.getString(R.string.project_create_submit_error)
+                                                submitError = context.projectCreationErrorMessage(it)
                                                 isSubmitting = false
                                             },
                                         )
@@ -183,12 +186,16 @@ fun CreateProjectDialog(
                                         draft = draft,
                                         metadata = metadata!!,
                                         iconError = iconError,
+                                        showValidationErrors = draft.shouldShowValidationErrors(0),
                                         onChooseIcon = {
                                             iconLauncher.launch(arrayOf("image/png", "image/jpeg", "image/webp", "image/gif"))
                                         },
                                     )
                                     1 -> ProjectCompatibilityStep(draft, metadata!!)
-                                    else -> ProjectPageStep(draft)
+                                    else -> ProjectPageStep(
+                                        draft = draft,
+                                        showValidationErrors = draft.shouldShowValidationErrors(2),
+                                    )
                                 }
                                 Spacer(Modifier.size(12.dp))
                             }
@@ -219,7 +226,6 @@ fun CreateProjectDialog(
 @Composable
 private fun CreateProjectBottomBar(
     step: Int,
-    canContinue: Boolean,
     isSubmitting: Boolean,
     onBack: () -> Unit,
     onContinue: () -> Unit,
@@ -244,7 +250,7 @@ private fun CreateProjectBottomBar(
                     text = stringResource(if (step == 2) R.string.project_create_draft else R.string.project_create_next),
                     icon = if (step == 2) Lucide.Rocket else Lucide.ArrowRight,
                     onClick = onContinue,
-                    enabled = canContinue && !isSubmitting,
+                    enabled = !isSubmitting,
                     isLoading = isSubmitting,
                     modifier = Modifier.weight(1f),
                 )
@@ -293,6 +299,21 @@ private fun ProjectCreationLoadError(message: String, onRetry: () -> Unit) {
 
 private const val CREATE_PROJECT_STEP_COUNT = 3
 internal const val HIDDEN_PROJECT_TYPE = "minecraft_java_server"
+
+private fun android.content.Context.projectCreationErrorMessage(error: Throwable): String {
+    val details = error.message.orEmpty().lowercase()
+    return when {
+        "401" in details || "token" in details && ("invalid" in details || "expired" in details) ->
+            getString(R.string.project_create_error_session)
+        "403" in details || "permission" in details -> getString(R.string.project_create_error_permission)
+        "409" in details || "already exists" in details || "slug" in details && "taken" in details ->
+            getString(R.string.project_create_error_slug_taken)
+        "429" in details || "too many requests" in details -> getString(R.string.project_create_error_rate_limit)
+        "initial_versions" in details || "parsing" in details || "serialization" in details || "json" in details ->
+            getString(R.string.project_create_error_response)
+        else -> getString(R.string.project_create_submit_error)
+    }
+}
 
 private fun android.content.Context.readProjectIcon(uri: Uri): ProjectFileUpload? {
     val bytes = contentResolver.openInputStream(uri)?.use { input ->

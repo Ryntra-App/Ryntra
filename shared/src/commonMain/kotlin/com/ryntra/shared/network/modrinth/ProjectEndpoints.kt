@@ -52,16 +52,8 @@ internal class ProjectEndpoints(
     suspend fun create(request: CreateProjectRequest, token: String): Project {
         val errors = ProjectCreationRules.validate(request)
         require(errors.isEmpty()) { errors.joinToString("\n") }
-        val payload = CreateProjectPayload(
-            slug = request.slug.trim(), title = request.title.trim(), description = request.description.trim(),
-            body = request.body.trim(), projectType = request.projectType, categories = request.categories.distinct(),
-            additionalCategories = request.additionalCategories.distinct(), clientSide = request.clientSide,
-            serverSide = request.serverSide, licenseId = request.licenseId, licenseUrl = request.licenseUrl.blankToNull(),
-            sourceUrl = request.sourceUrl.blankToNull(), issuesUrl = request.issuesUrl.blankToNull(),
-            wikiUrl = request.wikiUrl.blankToNull(), discordUrl = request.discordUrl.blankToNull(), isDraft = true,
-        )
         val multipart = MultiPartFormDataContent(formData {
-            append("data", apiJson.encodeToString(payload), Headers.build {
+            append("data", encodeCreateProjectPayload(request), Headers.build {
                 append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
             })
             request.icon?.let { icon ->
@@ -157,5 +149,27 @@ private data class CreateProjectPayload(
     @SerialName("wiki_url") val wikiUrl: String? = null,
     @SerialName("discord_url") val discordUrl: String? = null,
     @SerialName("is_draft") val isDraft: Boolean = true,
-    @SerialName("initial_versions") val initialVersions: List<String> = emptyList(),
+    @SerialName("initial_versions") val initialVersions: List<String>,
+)
+
+internal fun encodeCreateProjectPayload(request: CreateProjectRequest): String = apiJson.encodeToString(
+    CreateProjectPayload(
+        slug = request.slug.trim(),
+        title = request.title.trim(),
+        description = request.description.trim(),
+        categories = request.categories.distinct(),
+        additionalCategories = request.additionalCategories.distinct(),
+        clientSide = request.clientSide,
+        serverSide = request.serverSide,
+        body = request.body.trim(),
+        licenseId = request.licenseId,
+        licenseUrl = request.licenseUrl.blankToNull(),
+        projectType = request.projectType,
+        sourceUrl = request.sourceUrl.blankToNull(),
+        issuesUrl = request.issuesUrl.blankToNull(),
+        wikiUrl = request.wikiUrl.blankToNull(),
+        discordUrl = request.discordUrl.blankToNull(),
+        isDraft = true,
+        initialVersions = emptyList(),
+    ),
 )

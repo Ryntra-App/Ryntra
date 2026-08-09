@@ -121,9 +121,17 @@ internal fun ProjectBasicsStep(
     draft: CreateProjectDraft,
     metadata: ProjectCreationMetadata,
     iconError: String?,
+    showValidationErrors: Boolean,
     onChooseIcon: () -> Unit,
 ) {
     var isTypePickerOpen by rememberSaveable { mutableStateOf(false) }
+    val isTitleMissing = showValidationErrors && draft.title.isBlank()
+    val isTitleInvalid = draft.title.isNotBlank() && !draft.isTitleValid
+    val isSlugMissing = showValidationErrors && draft.slug.isBlank()
+    val isSlugInvalid = draft.slug.isNotBlank() && !draft.isSlugValid
+    val isSummaryMissing = showValidationErrors && draft.summary.isBlank()
+    val isSummaryInvalid = draft.summary.isNotBlank() && !draft.isSummaryValid
+
     ProjectDraftNotice()
 
     FormSection(
@@ -138,9 +146,13 @@ internal fun ProjectBasicsStep(
             placeholder = { Text(stringResource(R.string.project_create_name_hint)) },
             leadingIcon = { Icon(Lucide.FileText, contentDescription = null) },
             supportingText = {
-                Text(stringResource(R.string.project_create_character_count, draft.title.length, ProjectCreationRules.TITLE_MAX_LENGTH))
+                Text(
+                    if (isTitleMissing) stringResource(R.string.project_create_name_required)
+                    else if (isTitleInvalid) stringResource(R.string.project_create_name_error)
+                    else stringResource(R.string.project_create_character_count, draft.title.length, ProjectCreationRules.TITLE_MAX_LENGTH),
+                )
             },
-            isError = draft.title.isNotEmpty() && !draft.isTitleValid,
+            isError = isTitleMissing || isTitleInvalid,
             singleLine = true,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Next),
             modifier = Modifier.fillMaxWidth(),
@@ -153,12 +165,13 @@ internal fun ProjectBasicsStep(
             leadingIcon = { Icon(Lucide.Hash, contentDescription = null) },
             supportingText = {
                 Text(
-                    if (draft.slug.isNotEmpty() && !draft.isSlugValid) stringResource(R.string.project_create_slug_error)
+                    if (isSlugMissing) stringResource(R.string.project_create_slug_required)
+                    else if (isSlugInvalid) stringResource(R.string.project_create_slug_error)
                     else if (draft.slug.isNotEmpty()) "modrinth.com/project/${draft.slug}"
                     else stringResource(R.string.project_create_slug_help),
                 )
             },
-            isError = draft.slug.isNotEmpty() && !draft.isSlugValid,
+            isError = isSlugMissing || isSlugInvalid,
             singleLine = true,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None, imeAction = ImeAction.Next),
             modifier = Modifier.fillMaxWidth(),
@@ -170,9 +183,13 @@ internal fun ProjectBasicsStep(
             placeholder = { Text(stringResource(R.string.project_create_summary_hint)) },
             leadingIcon = { Icon(Lucide.FileText, contentDescription = null) },
             supportingText = {
-                Text(stringResource(R.string.project_create_character_count, draft.summary.length, ProjectCreationRules.DESCRIPTION_MAX_LENGTH))
+                Text(
+                    if (isSummaryMissing) stringResource(R.string.project_create_summary_required)
+                    else if (isSummaryInvalid) stringResource(R.string.project_create_summary_error)
+                    else stringResource(R.string.project_create_character_count, draft.summary.length, ProjectCreationRules.DESCRIPTION_MAX_LENGTH),
+                )
             },
-            isError = draft.summary.isNotEmpty() && !draft.isSummaryValid,
+            isError = isSummaryMissing || isSummaryInvalid,
             minLines = 1,
             maxLines = 3,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
@@ -477,7 +494,10 @@ private fun LicenseSelector(
 }
 
 @Composable
-internal fun ProjectPageStep(draft: CreateProjectDraft) {
+internal fun ProjectPageStep(
+    draft: CreateProjectDraft,
+    showValidationErrors: Boolean,
+) {
     FormSection(
         title = stringResource(R.string.project_create_description),
         description = stringResource(R.string.project_create_description_help),
@@ -488,11 +508,12 @@ internal fun ProjectPageStep(draft: CreateProjectDraft) {
             placeholder = stringResource(R.string.project_create_description_hint),
             onMarkdownChange = { draft.body = it },
             onModeChange = { draft.editorMode = it },
+            isError = showValidationErrors && draft.body.isBlank(),
         )
         if (draft.body.isBlank()) {
             Text(
                 stringResource(R.string.project_create_description_required),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (showValidationErrors) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall,
             )
         }

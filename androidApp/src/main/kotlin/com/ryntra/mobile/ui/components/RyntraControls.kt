@@ -79,6 +79,7 @@ fun RyntraTextField(
     enabled: Boolean = true,
     singleLine: Boolean = true,
     minLines: Int = 1,
+    isError: Boolean = false,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
 ) {
@@ -89,6 +90,7 @@ fun RyntraTextField(
             enabled = enabled,
             singleLine = singleLine,
             minLines = minLines,
+            isError = isError,
             placeholder = { Text(placeholder, maxLines = if (singleLine) 1 else minLines) },
             // Multi-line fields keep icons top-aligned; Material centers leadingIcon by default.
             leadingIcon = if (singleLine) {
@@ -127,7 +129,11 @@ fun RyntraTextField(
     val interactionSource = remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
     val borderColor by animateColorAsState(
-        targetValue = if (isFocused) colors.accent.copy(alpha = 0.62f) else colors.separator,
+        targetValue = when {
+            isError -> colors.destructive
+            isFocused -> colors.accent.copy(alpha = 0.62f)
+            else -> colors.separator
+        },
         animationSpec = tween(RyntraDesign.motion.duration(160)),
         label = "Field focus",
     )
