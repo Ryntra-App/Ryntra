@@ -506,7 +506,7 @@ private struct VersionEditorSheet: View {
                 if let error = localError ?? model.projectActionError {
                     Section { Text(error).foregroundStyle(.red) }
                 }
-                if let version, canDelete {
+                if version != nil, canDelete {
                     Section {
                         Button(role: .destructive) {
                             isConfirmingDeletion = true

@@ -55,9 +55,10 @@ struct MarkdownProjectEditor: View {
             }
             .onChange(of: isPreviewing) { previewing in
                 guard previewing else { return }
+                let markdown = text
                 Task {
                     previewBlocks = await Task.detached(priority: .userInitiated) {
-                        MarkdownParser.shared.parse(markdown: text)
+                        MarkdownParser.shared.parse(markdown: markdown)
                     }.value
                 }
             }

@@ -385,7 +385,7 @@ struct EditProjectView: View {
         summary: String,
         systemImage: String,
         isEnabled: Bool,
-        @ViewBuilder content: () -> Content
+        @ViewBuilder content: @escaping () -> Content
     ) -> some View {
         DisclosureGroup(
             isExpanded: Binding(
