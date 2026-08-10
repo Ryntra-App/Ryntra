@@ -54,7 +54,7 @@ class AppUpdateClient internal constructor(
     }
 
     companion object {
-        const val CURRENT_VERSION = "3.1.0"
+        const val CURRENT_VERSION = "3.1.1"
         const val RELEASES_URL = "https://github.com/Ryntra-App/Ryntra/releases"
         private const val LATEST_RELEASE_URL = "https://api.github.com/repos/Ryntra-App/Ryntra/releases/latest"
 

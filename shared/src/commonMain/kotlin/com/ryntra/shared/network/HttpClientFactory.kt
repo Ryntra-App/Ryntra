@@ -32,7 +32,7 @@ internal fun HttpClientConfig<*>.configureForModrinth() {
         url("https://api.modrinth.com/v2/")
         headers {
             append(HttpHeaders.Accept, "application/json")
-            append(HttpHeaders.UserAgent, "Ryntra/3.1.0 (com.ryntra.mobile)")
+            append(HttpHeaders.UserAgent, "Ryntra/3.1.1 (com.ryntra.mobile)")
         }
     }
 }
