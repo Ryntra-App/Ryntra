@@ -304,7 +304,7 @@ struct AccountView: View {
                         systemImage: "person.crop.circle"
                     )
                 }
-                Link(destination: URL(string: "https://github.com/imsawiq/Ryntra/releases")!) {
+                Link(destination: URL(string: "https://github.com/Ryntra-App/Ryntra/releases")!) {
                     Label("Releases", systemImage: "arrow.up.right.square")
                 }
                 Link(destination: SupportDetails.discordCommunityURL) {
