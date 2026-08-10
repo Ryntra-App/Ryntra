@@ -146,7 +146,14 @@ internal fun ShareCardStudio(
                                     isExporting = true
                                     exportError = null
                                     try {
-                                        val bitmap = previewGraphicsLayer.toImageBitmap().asAndroidBitmap()
+                                        val layerBitmap = previewGraphicsLayer.toImageBitmap().asAndroidBitmap()
+                                        val bitmap = try {
+                                            checkNotNull(layerBitmap.copy(Bitmap.Config.ARGB_8888, false)) {
+                                                "Could not create a readable share card image."
+                                            }
+                                        } finally {
+                                            layerBitmap.recycle()
+                                        }
                                         val uri = try {
                                             check(bitmap.width > 1 && bitmap.height > 1) {
                                                 "The share card has not finished rendering."

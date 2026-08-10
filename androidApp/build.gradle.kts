@@ -20,7 +20,7 @@ android {
         applicationId = "com.ryntra.mobile"
         minSdk = 26
         targetSdk = 36
-        versionCode = 30100
+        versionCode = 30101
         versionName = "3.1.0"
         buildConfigField(
             "String",

@@ -406,7 +406,7 @@
 				CODE_SIGN_ENTITLEMENTS = Ryntra/Ryntra.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Ryntra/Ryntra-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 30100;
+				CURRENT_PROJECT_VERSION = 30101;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -444,7 +444,7 @@
 				CODE_SIGN_ENTITLEMENTS = Ryntra/Ryntra.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Ryntra/Ryntra-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 30100;
+				CURRENT_PROJECT_VERSION = 30101;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				FRAMEWORK_SEARCH_PATHS = (
