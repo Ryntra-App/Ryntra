@@ -13,7 +13,6 @@ import AppKit
 struct ProjectShareCardStudio: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.displayScale) private var displayScale
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     let project: Project
@@ -298,15 +297,22 @@ struct ProjectShareCardStudio: View {
     private func renderCardAfterChanges() async {
         guard !headline.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             renderedCard = nil
+            isRendering = false
             return
         }
-        try? await Task.sleep(nanoseconds: 180_000_000)
-        guard !Task.isCancelled else { return }
+        renderedCard = nil
         isRendering = true
         renderError = nil
-        defer { isRendering = false }
+        do {
+            try await Task.sleep(nanoseconds: 180_000_000)
+        } catch {
+            return
+        }
+        guard !Task.isCancelled else { return }
 
         let width: CGFloat = 600
+        let height = width / format.aspectRatio
+        let exportScale: CGFloat = 2
         let canvas = ProjectShareCardCanvas(
             project: project,
             version: selectedVersion,
@@ -317,20 +323,27 @@ struct ProjectShareCardStudio: View {
             description: description,
             iconData: iconData
         )
-        .frame(width: width, height: width / format.aspectRatio)
+        .frame(width: width, height: height)
 
         let renderer = ImageRenderer(content: canvas)
-        renderer.scale = max(2, displayScale)
+        renderer.proposedSize = ProposedViewSize(width: width, height: height)
+        renderer.scale = exportScale
+        guard !Task.isCancelled,
+              let cgImage = renderer.cgImage,
+              cgImage.width > 1,
+              cgImage.height > 1,
+              abs(CGFloat(cgImage.width) / CGFloat(cgImage.height) - format.aspectRatio) < 0.02 else {
+            renderFailed()
+            return
+        }
 #if canImport(UIKit)
-        guard let image = renderer.uiImage, let data = image.pngData() else {
+        guard let data = UIImage(cgImage: cgImage).pngData() else {
             renderFailed()
             return
         }
 #elseif canImport(AppKit)
-        guard let image = renderer.nsImage,
-              let tiff = image.tiffRepresentation,
-              let bitmap = NSBitmapImageRep(data: tiff),
-              let data = bitmap.representation(using: .png, properties: [:]) else {
+        guard let data = NSBitmapImageRep(cgImage: cgImage)
+            .representation(using: .png, properties: [:]) else {
             renderFailed()
             return
         }
@@ -338,15 +351,18 @@ struct ProjectShareCardStudio: View {
         renderFailed()
         return
 #endif
+        guard !Task.isCancelled else { return }
         renderedCard = ProjectShareCardPayload(
             data: data,
             filename: "\((project.slug ?? project.id).shareCardFilename)-share-card.png"
         )
+        isRendering = false
     }
 
     @MainActor
     private func renderFailed() {
         renderedCard = nil
+        isRendering = false
         renderError = String(localized: "Couldn’t create the image. Try again.")
     }
 }

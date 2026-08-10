@@ -17,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,9 +26,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -108,124 +112,139 @@ internal fun ShareCardPreview(
     description: String,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(24.dp))
-            .background(Brush.linearGradient(listOf(palette.backgroundStart, palette.backgroundEnd))),
+    val deviceDensity = LocalDensity.current
+    CompositionLocalProvider(
+        LocalDensity provides Density(density = deviceDensity.density, fontScale = 1f),
     ) {
-        val isWide = format == ShareCardFormat.Post
-        val isStory = format == ShareCardFormat.Story
-        val padding = when {
-            isStory -> 28.dp
-            isWide -> 16.dp
-            else -> 26.dp
-        }
-        val iconSize = when {
-            isStory -> 74.dp
-            isWide -> 42.dp
-            else -> 56.dp
-        }
-
-        Canvas(Modifier.fillMaxSize()) {
-            drawCircle(
-                color = palette.accent.copy(alpha = 0.12f),
-                radius = size.minDimension * 0.42f,
-                center = androidx.compose.ui.geometry.Offset(size.width * 0.92f, size.height * 0.08f),
-            )
-            drawCircle(
-                color = palette.foreground.copy(alpha = 0.045f),
-                radius = size.minDimension * 0.26f,
-                center = androidx.compose.ui.geometry.Offset(size.width * 0.06f, size.height * 0.96f),
-            )
-        }
-
-        Column(
-            verticalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxSize().padding(padding),
+        Box(
+            modifier = modifier
+                .clip(RoundedCornerShape(24.dp))
+                .background(Brush.linearGradient(listOf(palette.backgroundStart, palette.backgroundEnd))),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                ProjectMark(project = project, palette = palette, size = iconSize)
-                Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                    Text(
-                        text = stringResource(template.eyebrowRes()),
-                        color = palette.accent,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        text = project.title,
-                        color = palette.foreground,
-                        style = if (isWide) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = if (isStory) 2 else 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
-                }
+            val isWide = format == ShareCardFormat.Post
+            val isStory = format == ShareCardFormat.Story
+            val padding = when {
+                isStory -> 28.dp
+                isWide -> 16.dp
+                else -> 26.dp
+            }
+            val iconSize = when {
+                isStory -> 74.dp
+                isWide -> 42.dp
+                else -> 56.dp
             }
 
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = headline,
-                    color = palette.foreground,
-                    style = when {
-                        isStory -> MaterialTheme.typography.headlineLarge
-                        isWide -> MaterialTheme.typography.headlineSmall
-                        else -> MaterialTheme.typography.headlineMedium
-                    },
-                    fontWeight = FontWeight.Black,
-                    maxLines = if (isWide) 2 else 3,
-                    overflow = TextOverflow.Ellipsis,
+            Canvas(Modifier.fillMaxSize()) {
+                drawCircle(
+                    color = palette.accent.copy(alpha = 0.12f),
+                    radius = size.minDimension * 0.42f,
+                    center = androidx.compose.ui.geometry.Offset(size.width * 0.92f, size.height * 0.08f),
                 )
-                if (description.isNotBlank()) {
-                    Text(
-                        text = description,
-                        color = palette.secondary,
-                        style = MaterialTheme.typography.bodySmall,
-                        maxLines = when {
-                            isStory -> 7
-                            isWide -> 2
-                            else -> 4
-                        },
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = if (isWide) 5.dp else 12.dp),
-                    )
-                }
+                drawCircle(
+                    color = palette.foreground.copy(alpha = 0.045f),
+                    radius = size.minDimension * 0.26f,
+                    center = androidx.compose.ui.geometry.Offset(size.width * 0.06f, size.height * 0.96f),
+                )
             }
 
-            Column(modifier = Modifier.fillMaxWidth()) {
-                val tags = buildList {
-                    version?.versionNumber?.takeIf(String::isNotBlank)?.let(::add)
-                    version?.loaders?.firstOrNull()?.let { add(it.replaceFirstChar(Char::uppercase)) }
-                    version?.gameVersions?.firstOrNull()?.let(::add)
-                    if (template == ShareCardTemplate.Milestone) {
-                        add(NumberFormat.getIntegerInstance().format(project.downloads))
-                    }
-                }.take(if (isWide) 2 else 3)
-                if (tags.isNotEmpty()) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        tags.forEach { tag -> ShareCardTag(tag, palette) }
+            Column(
+                verticalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxSize().padding(padding),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    ProjectMark(project = project, palette = palette, size = iconSize)
+                    Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+                        Text(
+                            text = stringResource(template.eyebrowRes()),
+                            color = palette.accent,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = FontFamily.SansSerif,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(
+                            text = project.title,
+                            color = palette.foreground,
+                            style = if (isWide) {
+                                MaterialTheme.typography.titleSmall
+                            } else {
+                                MaterialTheme.typography.titleMedium
+                            },
+                            fontFamily = FontFamily.SansSerif,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = if (isStory) 2 else 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
                     }
                 }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth().padding(top = if (tags.isEmpty()) 0.dp else 10.dp),
-                ) {
+
+                Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "modrinth.com${project.modrinthPath()}",
-                        color = palette.secondary,
-                        style = MaterialTheme.typography.labelSmall,
-                        maxLines = 1,
+                        text = headline,
+                        color = palette.foreground,
+                        style = when {
+                            isStory -> MaterialTheme.typography.headlineLarge
+                            isWide -> MaterialTheme.typography.headlineSmall
+                            else -> MaterialTheme.typography.headlineMedium
+                        },
+                        fontFamily = FontFamily.SansSerif,
+                        fontWeight = FontWeight.Black,
+                        maxLines = if (isWide) 2 else 3,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f),
                     )
-                    Text(
-                        text = "RYNTRA",
-                        color = palette.secondary,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(start = 10.dp),
-                    )
+                    if (description.isNotBlank()) {
+                        Text(
+                            text = description,
+                            color = palette.secondary,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = FontFamily.SansSerif,
+                            maxLines = when {
+                                isStory -> 7
+                                isWide -> 2
+                                else -> 4
+                            },
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = if (isWide) 5.dp else 12.dp),
+                        )
+                    }
+                }
+
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    val tags = buildList {
+                        version?.versionNumber?.takeIf(String::isNotBlank)?.let(::add)
+                        version?.loaders?.firstOrNull()?.let { add(it.replaceFirstChar(Char::uppercase)) }
+                        version?.gameVersions?.firstOrNull()?.let(::add)
+                        if (template == ShareCardTemplate.Milestone) {
+                            add(NumberFormat.getIntegerInstance().format(project.downloads))
+                        }
+                    }.take(if (isWide) 2 else 3)
+                    if (tags.isNotEmpty()) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            tags.forEach { tag -> ShareCardTag(tag, palette) }
+                        }
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().padding(top = if (tags.isEmpty()) 0.dp else 10.dp),
+                    ) {
+                        Text(
+                            text = "modrinth.com${project.modrinthPath()}",
+                            color = palette.secondary,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = FontFamily.SansSerif,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text(
+                            text = "RYNTRA",
+                            color = palette.secondary,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = FontFamily.SansSerif,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(start = 10.dp),
+                        )
+                    }
                 }
             }
         }
@@ -242,6 +261,7 @@ private fun ProjectMark(project: Project, palette: ShareCardPalette, size: andro
             text = project.title.take(1).uppercase(),
             color = palette.foreground,
             style = MaterialTheme.typography.headlineMedium,
+            fontFamily = FontFamily.SansSerif,
             fontWeight = FontWeight.Black,
         )
         project.iconUrl?.let { url ->
@@ -269,6 +289,7 @@ private fun ShareCardTag(text: String, palette: ShareCardPalette) {
             text = text,
             color = palette.foreground,
             style = MaterialTheme.typography.labelSmall,
+            fontFamily = FontFamily.SansSerif,
             maxLines = 1,
             modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
         )

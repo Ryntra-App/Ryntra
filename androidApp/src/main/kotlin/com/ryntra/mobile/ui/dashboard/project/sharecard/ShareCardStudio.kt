@@ -2,9 +2,6 @@ package com.ryntra.mobile.ui.dashboard.project.sharecard
 
 import android.content.Context
 import android.util.Log
-import android.view.View
-import android.view.ViewParent
-import android.view.Window
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -48,20 +45,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.layout.boundsInRoot
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.DialogWindowProvider
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Share2
 import com.composables.icons.lucide.X
@@ -91,8 +87,8 @@ internal fun ShareCardStudio(
     var description by rememberSaveable(project.id) {
         mutableStateOf(defaultShareCardDescription(project, ShareCardTemplate.Release, versions.firstOrNull()))
     }
+    val previewGraphicsLayer = rememberGraphicsLayer()
     var isPreviewReady by remember { mutableStateOf(false) }
-    var previewBounds by remember { mutableStateOf(Rect.Zero) }
     var isExporting by remember { mutableStateOf(false) }
     var exportError by remember { mutableStateOf<String?>(null) }
     val selectedVersion = versions.firstOrNull { it.id == selectedVersionId } ?: versions.firstOrNull()
@@ -102,8 +98,6 @@ internal fun ShareCardStudio(
         onDismissRequest = { if (!isExporting) onDismiss() },
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
-        val rootView = LocalView.current
-        val dialogWindow = remember(rootView) { rootView.findDialogWindow() }
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -141,19 +135,24 @@ internal fun ShareCardStudio(
                             )
                         }
                         Button(
-                            enabled = isPreviewReady && dialogWindow != null && !isExporting && headline.isNotBlank(),
+                            enabled = isPreviewReady && !isExporting && headline.isNotBlank(),
                             onClick = {
                                 scope.launch {
                                     isExporting = true
                                     exportError = null
                                     try {
-                                        val uri = context.createShareCardUri(
-                                            bitmap = rootView.captureRegion(
-                                                bounds = previewBounds.toIntRect(),
-                                                window = checkNotNull(dialogWindow),
-                                            ),
-                                            projectSlug = project.slug ?: project.id,
-                                        )
+                                        val bitmap = previewGraphicsLayer.toImageBitmap().asAndroidBitmap()
+                                        val uri = try {
+                                            check(bitmap.width > 1 && bitmap.height > 1) {
+                                                "The share card has not finished rendering."
+                                            }
+                                            context.createShareCardUri(
+                                                bitmap = bitmap,
+                                                projectSlug = project.slug ?: project.id,
+                                            )
+                                        } finally {
+                                            bitmap.recycle()
+                                        }
                                         context.openShareCardChooser(
                                             uri = uri,
                                             chooserTitle = chooserTitle,
@@ -197,9 +196,14 @@ internal fun ShareCardStudio(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .onGloballyPositioned {
-                                previewBounds = it.boundsInRoot()
-                                isPreviewReady = it.size.width > 0 && it.size.height > 0
+                            .onSizeChanged {
+                                isPreviewReady = it.width > 1 && it.height > 1
+                            }
+                            .drawWithContent {
+                                previewGraphicsLayer.record {
+                                    this@drawWithContent.drawContent()
+                                }
+                                drawLayer(previewGraphicsLayer)
                             },
                     ) {
                         ShareCardPreview(
@@ -403,24 +407,4 @@ private fun defaultShareCardDescription(
     } else {
         project.description.trim().take(240)
     }
-}
-
-private fun Rect.toIntRect(): IntRect = IntRect(
-    left = left.toInt(),
-    top = top.toInt(),
-    right = right.toInt(),
-    bottom = bottom.toInt(),
-)
-
-private fun View.findDialogWindow(): Window? {
-    var current: Any? = this
-    while (current != null) {
-        if (current is DialogWindowProvider) return current.window
-        current = when (current) {
-            is View -> current.parent
-            is ViewParent -> current.parent
-            else -> null
-        }
-    }
-    return null
 }

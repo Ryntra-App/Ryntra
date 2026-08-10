@@ -198,6 +198,7 @@ struct ProjectShareCardCanvas: View {
             .clipShape(RoundedRectangle(cornerRadius: max(14, min(size.width, size.height) * 0.05), style: .continuous))
         }
         .aspectRatio(format.aspectRatio, contentMode: .fit)
+        .dynamicTypeSize(.medium)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(
             String.localizedStringWithFormat(
