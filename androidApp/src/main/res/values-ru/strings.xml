@@ -158,6 +158,8 @@
     <string name="settings_author_url">https://modrinth.com/user/sawiq_</string>
     <string name="settings_releases">Версии приложения</string>
     <string name="settings_releases_hint">Обновления и список изменений</string>
+    <string name="settings_discord_community">Сообщество в Discord</string>
+    <string name="settings_discord_community_hint">Новости, помощь и обратная связь</string>
     <string name="profile_avatar_change">Сменить аватар</string>
     <string name="profile_avatar_hint">Нажмите на фото, чтобы сменить аватар</string>
     <string name="profile_avatar_remove">Удалить аватар</string>

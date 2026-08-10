@@ -307,6 +307,18 @@ struct AccountView: View {
                 Link(destination: URL(string: "https://github.com/imsawiq/Ryntra/releases")!) {
                     Label("Releases", systemImage: "arrow.up.right.square")
                 }
+                Link(destination: SupportDetails.discordCommunityURL) {
+                    Label {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(NSLocalizedString("Discord community", comment: "About link"))
+                            Text(NSLocalizedString("News, support, and feedback", comment: "About link detail"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: "bubble.left.and.bubble.right")
+                    }
+                }
                 Button(role: .destructive, action: model.signOut) {
                     Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
                 }
@@ -384,7 +396,7 @@ struct AccountView: View {
     }
 
     private var appVersion: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "3.0.0"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "3.1.0"
     }
 
     private func resetDraft() {

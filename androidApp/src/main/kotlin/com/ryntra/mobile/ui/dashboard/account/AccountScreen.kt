@@ -285,6 +285,7 @@ fun AccountScreen(
             AboutSettingsSection(
                 appVersion = BuildConfig.VERSION_NAME,
                 onOpenReleases = { uriHandler.openUri("https://github.com/imsawiq/Ryntra/releases") },
+                onOpenDiscord = { uriHandler.openUri(SupportDetails.DISCORD_COMMUNITY_URL) },
                 onOpenAuthor = { uriHandler.openUri(authorUrl) },
                 onSignOut = onSignOut,
                 modifier = Modifier.padding(top = 26.dp),

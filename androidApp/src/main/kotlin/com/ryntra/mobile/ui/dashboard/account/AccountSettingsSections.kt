@@ -18,6 +18,7 @@ import com.composables.icons.lucide.Globe
 import com.composables.icons.lucide.LogOut
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Monitor
+import com.composables.icons.lucide.MessageSquareText
 import com.composables.icons.lucide.RotateCcw
 import com.composables.icons.lucide.Sparkles
 import com.composables.icons.lucide.Star
@@ -247,6 +248,7 @@ internal fun NotificationSettingsSection(
 internal fun AboutSettingsSection(
     appVersion: String,
     onOpenReleases: () -> Unit,
+    onOpenDiscord: () -> Unit,
     onOpenAuthor: () -> Unit,
     onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
@@ -256,6 +258,13 @@ internal fun AboutSettingsSection(
             icon = Lucide.Info,
             title = stringResource(R.string.app_name),
             subtitle = stringResource(R.string.settings_unofficial_with_version, appVersion),
+        )
+        SettingsDivider()
+        SettingsRow(
+            icon = Lucide.MessageSquareText,
+            title = stringResource(R.string.settings_discord_community),
+            subtitle = stringResource(R.string.settings_discord_community_hint),
+            onClick = onOpenDiscord,
         )
         SettingsDivider()
         SettingsRow(

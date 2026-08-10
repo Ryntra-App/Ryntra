@@ -158,6 +158,8 @@
     <string name="settings_author_url">https://modrinth.com/user/sawiq_</string>
     <string name="settings_releases">Releases</string>
     <string name="settings_releases_hint">View updates and release notes</string>
+    <string name="settings_discord_community">Discord community</string>
+    <string name="settings_discord_community_hint">News, support, and feedback</string>
     <string name="profile_avatar_change">Change avatar</string>
     <string name="profile_avatar_hint">Tap photo to change your avatar</string>
     <string name="profile_avatar_remove">Remove avatar</string>
