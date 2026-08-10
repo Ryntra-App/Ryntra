@@ -1,6 +1,7 @@
 package com.ryntra.mobile.ui.dashboard.project.sharecard
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,8 +21,10 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -53,6 +56,7 @@ import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -65,6 +69,7 @@ import com.ryntra.mobile.R
 import com.ryntra.shared.model.Project
 import com.ryntra.shared.model.ProjectVersion
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -146,6 +151,12 @@ internal fun ShareCardStudio(
                                             check(bitmap.width > 1 && bitmap.height > 1) {
                                                 "The share card has not finished rendering."
                                             }
+                                            check(
+                                                abs(bitmap.width.toFloat() / bitmap.height - format.ratio) < 0.02f,
+                                            ) { "The share card has stale dimensions." }
+                                            check(bitmap.hasRenderedContent()) {
+                                                "The share card renderer returned an empty image."
+                                            }
                                             context.createShareCardUri(
                                                 bitmap = bitmap,
                                                 projectSlug = project.slug ?: project.id,
@@ -187,25 +198,15 @@ internal fun ShareCardStudio(
                 }
             },
         ) { innerPadding ->
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(24.dp),
-                contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 28.dp),
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
-            ) {
-                item(key = "preview") {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .onSizeChanged {
-                                isPreviewReady = it.width > 1 && it.height > 1
-                            }
-                            .drawWithContent {
-                                previewGraphicsLayer.record {
-                                    this@drawWithContent.drawContent()
-                                }
-                                drawLayer(previewGraphicsLayer)
-                            },
-                    ) {
+            Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                // LazyColumn disposes off-screen items, so export from a persistent sibling renderer.
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clearAndSetSemantics { }
+                        .verticalScroll(rememberScrollState()),
+                ) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                         ShareCardPreview(
                             project = project,
                             version = selectedVersion,
@@ -214,102 +215,132 @@ internal fun ShareCardStudio(
                             palette = palette,
                             headline = headline,
                             description = description,
-                            modifier = Modifier.fillMaxWidth().then(Modifier.aspectRatio(format.ratio)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(format.ratio)
+                                .onSizeChanged {
+                                    isPreviewReady = it.width > 1 && it.height > 1
+                                }
+                                .drawWithContent {
+                                    previewGraphicsLayer.record {
+                                        this@drawWithContent.drawContent()
+                                    }
+                                    drawLayer(previewGraphicsLayer)
+                                },
                         )
                     }
                 }
-                item(key = "template") {
-                    StudioChoiceSection(stringResource(R.string.share_card_template)) {
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            items(ShareCardTemplate.entries, key = ShareCardTemplate::name) { option ->
-                                FilterChip(
-                                    selected = template == option,
-                                    onClick = {
-                                        template = option
-                                        headline = defaultShareCardHeadline(context, option, selectedVersion)
-                                        description = defaultShareCardDescription(project, option, selectedVersion)
-                                    },
-                                    label = { Text(stringResource(option.labelRes)) },
-                                )
-                            }
-                        }
+
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(24.dp),
+                    contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 28.dp),
+                    modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+                ) {
+                    item(key = "preview") {
+                        ShareCardPreview(
+                            project = project,
+                            version = selectedVersion,
+                            template = template,
+                            format = format,
+                            palette = palette,
+                            headline = headline,
+                            description = description,
+                            modifier = Modifier.fillMaxWidth().aspectRatio(format.ratio),
+                        )
                     }
-                }
-                item(key = "format") {
-                    StudioChoiceSection(stringResource(R.string.share_card_format)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            ShareCardFormat.entries.forEach { option ->
-                                FilterChip(
-                                    selected = format == option,
-                                    onClick = { format = option },
-                                    label = { Text(stringResource(option.labelRes)) },
-                                )
-                            }
-                        }
-                    }
-                }
-                item(key = "style") {
-                    StudioChoiceSection(stringResource(R.string.share_card_style)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            shareCardPalettes.forEach { option ->
-                                PaletteChoice(
-                                    palette = option,
-                                    selected = option.id == paletteId,
-                                    onClick = { paletteId = option.id },
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
-                        }
-                    }
-                }
-                if (versions.isNotEmpty()) {
-                    item(key = "version") {
-                        StudioChoiceSection(stringResource(R.string.share_card_version)) {
+                    item(key = "template") {
+                        StudioChoiceSection(stringResource(R.string.share_card_template)) {
                             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                items(versions, key = ProjectVersion::id) { version ->
+                                items(ShareCardTemplate.entries, key = ShareCardTemplate::name) { option ->
                                     FilterChip(
-                                        selected = selectedVersion?.id == version.id,
+                                        selected = template == option,
                                         onClick = {
-                                            selectedVersionId = version.id
-                                            headline = defaultShareCardHeadline(context, template, version)
-                                            description = defaultShareCardDescription(project, template, version)
+                                            template = option
+                                            headline = defaultShareCardHeadline(context, option, selectedVersion)
+                                            description = defaultShareCardDescription(project, option, selectedVersion)
                                         },
-                                        label = {
-                                            Text(
-                                                version.versionNumber + version.loaders.firstOrNull()?.let {
-                                                    " · ${it.replaceFirstChar(Char::uppercase)}"
-                                                }.orEmpty(),
-                                            )
-                                        },
+                                        label = { Text(stringResource(option.labelRes)) },
                                     )
                                 }
                             }
                         }
                     }
-                }
-                item(key = "headline") {
-                    OutlinedTextField(
-                        value = headline,
-                        onValueChange = { if (it.length <= 90) headline = it },
-                        label = { Text(stringResource(R.string.share_card_headline)) },
-                        supportingText = { Text(stringResource(R.string.share_card_headline_hint, headline.length)) },
-                        minLines = 2,
-                        maxLines = 3,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-                item(key = "description") {
-                    OutlinedTextField(
-                        value = description,
-                        onValueChange = { if (it.length <= 240) description = it },
-                        label = { Text(stringResource(R.string.share_card_description)) },
-                        supportingText = {
-                            Text(stringResource(R.string.share_card_description_hint, description.length))
-                        },
-                        minLines = 3,
-                        maxLines = 6,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                    item(key = "format") {
+                        StudioChoiceSection(stringResource(R.string.share_card_format)) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                ShareCardFormat.entries.forEach { option ->
+                                    FilterChip(
+                                        selected = format == option,
+                                        onClick = { format = option },
+                                        label = { Text(stringResource(option.labelRes)) },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    item(key = "style") {
+                        StudioChoiceSection(stringResource(R.string.share_card_style)) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                shareCardPalettes.forEach { option ->
+                                    PaletteChoice(
+                                        palette = option,
+                                        selected = option.id == paletteId,
+                                        onClick = { paletteId = option.id },
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    if (versions.isNotEmpty()) {
+                        item(key = "version") {
+                            StudioChoiceSection(stringResource(R.string.share_card_version)) {
+                                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    items(versions, key = ProjectVersion::id) { version ->
+                                        FilterChip(
+                                            selected = selectedVersion?.id == version.id,
+                                            onClick = {
+                                                selectedVersionId = version.id
+                                                headline = defaultShareCardHeadline(context, template, version)
+                                                description = defaultShareCardDescription(project, template, version)
+                                            },
+                                            label = {
+                                                Text(
+                                                    version.versionNumber + version.loaders.firstOrNull()?.let {
+                                                        " · ${it.replaceFirstChar(Char::uppercase)}"
+                                                    }.orEmpty(),
+                                                )
+                                            },
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    item(key = "headline") {
+                        OutlinedTextField(
+                            value = headline,
+                            onValueChange = { if (it.length <= 90) headline = it },
+                            label = { Text(stringResource(R.string.share_card_headline)) },
+                            supportingText = { Text(stringResource(R.string.share_card_headline_hint, headline.length)) },
+                            minLines = 2,
+                            maxLines = 3,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    item(key = "description") {
+                        OutlinedTextField(
+                            value = description,
+                            onValueChange = { if (it.length <= 240) description = it },
+                            label = { Text(stringResource(R.string.share_card_description)) },
+                            supportingText = {
+                                Text(stringResource(R.string.share_card_description_hint, description.length))
+                            },
+                            minLines = 3,
+                            maxLines = 6,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
             }
         }
@@ -406,5 +437,20 @@ private fun defaultShareCardDescription(
         changelog.joinToString(separator = "\n") { "• $it" }
     } else {
         project.description.trim().take(240)
+    }
+}
+
+private fun Bitmap.hasRenderedContent(): Boolean {
+    val xSamples = intArrayOf(width / 4, width / 2, width * 3 / 4)
+    val ySamples = intArrayOf(height / 4, height / 2, height * 3 / 4)
+    return ySamples.any { y ->
+        xSamples.any { x ->
+            val pixel = getPixel(x, y)
+            val alpha = pixel ushr 24 and 0xFF
+            val red = pixel ushr 16 and 0xFF
+            val green = pixel ushr 8 and 0xFF
+            val blue = pixel and 0xFF
+            alpha > 0 && red + green + blue > 12
+        }
     }
 }
