@@ -72,20 +72,41 @@ workflows:
             RYNTRA_BACKEND_URL="${RYNTRA_BACKEND_URL:-https://authrinthy.sawiq.org}" \
             CODE_SIGNING_ALLOWED=NO \
             build
-      - name: Package macOS app
+      - name: Package macOS DMG
         script: |
           APP_PATH="$CM_BUILD_DIR/build/macos/DerivedData/Build/Products/Release/Ryntra.app"
-          OUTPUT_DIR="$CM_BUILD_DIR/build/macos-app"
+          OUTPUT_DIR="$CM_BUILD_DIR/build/macos-dmg"
           test -d "$APP_PATH"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundlePackageType' "$APP_PATH/Contents/Info.plist")" = "APPL"
           # macOS links the Kotlin framework dynamically, so the app cannot
           # launch unless a build phase embedded it.
           test -d "$APP_PATH/Contents/Frameworks/RyntraShared.framework"
           lipo "$APP_PATH/Contents/MacOS/Ryntra" -verify_arch arm64
+
+          APP_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_PATH/Contents/Info.plist")"
+          case "$APP_VERSION" in
+            ""|*[!0-9A-Za-z._-]*)
+              echo "Invalid macOS app version: $APP_VERSION" >&2
+              exit 1
+              ;;
+          esac
+
           mkdir -p "$OUTPUT_DIR"
-          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$OUTPUT_DIR/Ryntra-macos.zip"
+          STAGING_DIR="$(mktemp -d "$CM_BUILD_DIR/build/ryntra-dmg.XXXXXX")"
+          ditto "$APP_PATH" "$STAGING_DIR/Ryntra.app"
+          ln -s /Applications "$STAGING_DIR/Applications"
+
+          DMG_PATH="$OUTPUT_DIR/Ryntra.$APP_VERSION.dmg"
+          hdiutil create \
+            -volname "Ryntra" \
+            -srcfolder "$STAGING_DIR" \
+            -format UDZO \
+            -ov \
+            "$DMG_PATH"
+          hdiutil verify "$DMG_PATH"
+          test -s "$DMG_PATH"
     artifacts:
-      - build/macos-app/Ryntra-macos.zip
+      - build/macos-dmg/*.dmg
 
 
   ios-unsigned-ipa:
