@@ -10,6 +10,8 @@ import com.ryntra.shared.model.CreateVersionRequest
 import com.ryntra.shared.model.CreateProjectRequest
 import com.ryntra.shared.model.ProjectCreationMetadata
 import com.ryntra.shared.model.Dashboard
+import com.ryntra.shared.model.ProjectDisclosure
+import com.ryntra.shared.model.ProjectDisclosureDraft
 import com.ryntra.shared.model.Organization
 import com.ryntra.shared.model.ModrinthNotification
 import com.ryntra.shared.model.ModerationThread
@@ -294,6 +296,29 @@ class AppController internal constructor(
             )
             AppState.SignedOut -> AppState.SignedOut
         }
+    }
+
+    suspend fun loadProjectDisclosures(projectIdOrSlug: String): List<ProjectDisclosure> {
+        val token = requireToken("loading content disclosures")
+        return repository.loadProjectDisclosures(projectIdOrSlug, token)
+    }
+
+    /**
+     * Sends only what the creator actually changed, then returns the disclosures as Modrinth now
+     * stores them so the editor rebaselines on the server's own view rather than on the draft.
+     */
+    suspend fun saveProjectDisclosures(
+        projectIdOrSlug: String,
+        draft: ProjectDisclosureDraft,
+        baseline: ProjectDisclosureDraft,
+    ): List<ProjectDisclosure> {
+        val issues = draft.issues()
+        require(issues.isEmpty()) { "Complete every enabled disclosure before saving." }
+        val token = requireToken("saving content disclosures")
+        val changes = draft.changesFrom(baseline)
+        if (changes.isEmpty) return baseline.entries.filter { it.enabled }
+        repository.modifyProjectDisclosures(projectIdOrSlug, changes, token)
+        return repository.loadProjectDisclosures(projectIdOrSlug, token)
     }
 
     suspend fun loadProjectCreationMetadata(): ProjectCreationMetadata = repository.loadProjectCreationMetadata()

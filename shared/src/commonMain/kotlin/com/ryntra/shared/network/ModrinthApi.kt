@@ -5,7 +5,9 @@ import com.ryntra.shared.model.AccountProfileUpdate
 import com.ryntra.shared.model.AnalyticsQuery
 import com.ryntra.shared.model.CreateVersionRequest
 import com.ryntra.shared.model.CreateProjectRequest
+import com.ryntra.shared.model.DisclosureChangeSet
 import com.ryntra.shared.model.ProjectCategory
+import com.ryntra.shared.model.ProjectDisclosure
 import com.ryntra.shared.model.ProjectLicense
 import com.ryntra.shared.model.Organization
 import com.ryntra.shared.model.ModrinthNotification
@@ -18,6 +20,7 @@ import com.ryntra.shared.model.ProjectUpdate
 import com.ryntra.shared.model.ProjectVersion
 import com.ryntra.shared.model.VersionUpdate
 import com.ryntra.shared.network.modrinth.AccountEndpoints
+import com.ryntra.shared.network.modrinth.DisclosureEndpoints
 import com.ryntra.shared.network.modrinth.InsightEndpoints
 import com.ryntra.shared.network.modrinth.NotificationEndpoints
 import com.ryntra.shared.network.modrinth.NotificationContentResolver
@@ -35,6 +38,7 @@ class ModrinthApi(
     private val projects = ProjectEndpoints(httpClient)
     private val versions = VersionEndpoints(httpClient)
     private val teams = TeamOrganizationEndpoints(httpClient)
+    private val disclosures = DisclosureEndpoints(httpClient)
     private val insights = InsightEndpoints(httpClient)
     private val notifications = NotificationEndpoints(httpClient)
     private val threads = ThreadEndpoints(httpClient)
@@ -67,6 +71,15 @@ class ModrinthApi(
         projects.delete(projectIdOrSlug, token)
 
     suspend fun createProject(request: CreateProjectRequest, token: String): Project = projects.create(request, token)
+
+    suspend fun getProjectDisclosures(projectIdOrSlug: String, token: String): List<ProjectDisclosure> =
+        disclosures.getForProject(projectIdOrSlug, token)
+
+    suspend fun modifyProjectDisclosures(
+        projectIdOrSlug: String,
+        changes: DisclosureChangeSet,
+        token: String,
+    ) = disclosures.modify(projectIdOrSlug, changes, token)
 
     suspend fun getProjectTypes(): List<String> = tags.projectTypes()
 

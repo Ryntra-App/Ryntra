@@ -332,6 +332,22 @@ final class AppModel: ObservableObject {
         try await controller.deleteModerationMessage(messageId: messageID)
     }
 
+    func loadProjectDisclosures(project: Project) async throws -> [ProjectDisclosure] {
+        try await controller.loadProjectDisclosures(projectIdOrSlug: project.slug ?? project.id)
+    }
+
+    func saveProjectDisclosures(
+        project: Project,
+        draft: ProjectDisclosureDraft,
+        baseline: ProjectDisclosureDraft
+    ) async throws -> [ProjectDisclosure] {
+        try await controller.saveProjectDisclosures(
+            projectIdOrSlug: project.slug ?? project.id,
+            draft: draft,
+            baseline: baseline
+        )
+    }
+
     func loadProjectMembers(project: Project) async throws -> [ProjectMember] {
         try await controller.loadProjectMembers(projectIdOrSlug: project.slug ?? project.id, teamId: project.team)
     }

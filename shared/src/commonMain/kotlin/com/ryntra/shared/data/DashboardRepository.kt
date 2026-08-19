@@ -7,9 +7,11 @@ import com.ryntra.shared.model.AnalyticsQuery
 import com.ryntra.shared.model.AnalyticsReport
 import com.ryntra.shared.model.CreateVersionRequest
 import com.ryntra.shared.model.CreateProjectRequest
+import com.ryntra.shared.model.DisclosureChangeSet
 import com.ryntra.shared.model.ProjectCreationMetadata
 import com.ryntra.shared.model.Project
 import com.ryntra.shared.model.ProjectDependency
+import com.ryntra.shared.model.ProjectDisclosure
 import com.ryntra.shared.model.ProjectFileUpload
 import com.ryntra.shared.model.Organization
 import com.ryntra.shared.model.ModrinthNotification
@@ -80,6 +82,17 @@ class DashboardRepository(
 
     suspend fun deleteProject(projectIdOrSlug: String, token: String) =
         api.deleteProject(projectIdOrSlug, token)
+
+    suspend fun loadProjectDisclosures(
+        projectIdOrSlug: String,
+        token: String,
+    ): List<ProjectDisclosure> = api.getProjectDisclosures(projectIdOrSlug, token)
+
+    suspend fun modifyProjectDisclosures(
+        projectIdOrSlug: String,
+        changes: DisclosureChangeSet,
+        token: String,
+    ) = api.modifyProjectDisclosures(projectIdOrSlug, changes, token)
 
     suspend fun loadProjectCreationMetadata(): ProjectCreationMetadata = coroutineScope {
         val types = async { api.getProjectTypes() }

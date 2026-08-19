@@ -26,6 +26,7 @@ struct ProjectDetailView: View {
     @State private var editHasChanges = false
     @State private var editCanSave = false
     @State private var editSaveRequest = 0
+    @State private var isSavingDisclosures = false
     @State private var pendingExit: PendingProjectExit?
     @State private var isConfirmingUnsavedChanges = false
     @State private var selectedGalleryURL: URL?
@@ -66,6 +67,19 @@ struct ProjectDetailView: View {
                         isLoading: isLoadingVersions,
                         errorMessage: versionError,
                         onReload: { await loadVersions() }
+                    )
+                case .disclosures:
+                    ProjectDisclosuresView(
+                        project: project,
+                        canEditDetails: hasProjectPermission(2),
+                        versionCount: versions.count,
+                        saveRequest: editSaveRequest,
+                        onEditingStateChanged: { hasChanges, canSave in
+                            editHasChanges = hasChanges
+                            editCanSave = canSave
+                        },
+                        onSavingChanged: { isSavingDisclosures = $0 },
+                        onSaved: { disclosuresDidSave() }
                     )
                 case .edit:
                     VStack(spacing: 16) {
@@ -115,15 +129,15 @@ struct ProjectDetailView: View {
         .ryntraInteractiveKeyboardDismissal()
         .ryntraScreenBackground(Color.ryntraBackground)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if selectedTab == .edit, editHasChanges {
+            if isEditingTab, editHasChanges {
                 editSaveBar
             }
         }
-        .interactiveDismissDisabled(selectedTab == .edit && editHasChanges)
+        .interactiveDismissDisabled(isEditingTab && editHasChanges)
 #if !os(macOS)
-        .navigationBarBackButtonHidden(selectedTab == .edit && editHasChanges)
+        .navigationBarBackButtonHidden(isEditingTab && editHasChanges)
         .toolbar {
-            if selectedTab == .edit, editHasChanges {
+            if isEditingTab, editHasChanges {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
                         pendingExit = .dismiss
@@ -362,6 +376,19 @@ struct ProjectDetailView: View {
         isReadOnly ? [.overview, .versions] : ProjectDetailTab.allCases
     }
 
+    /// Both the editor and the disclosures tab keep unsaved work, and share the one save bar.
+    private var isEditingTab: Bool { selectedTab == .edit || selectedTab == .disclosures }
+
+    private var isSavingEdits: Bool {
+        selectedTab == .disclosures ? isSavingDisclosures : model.isProjectSaving
+    }
+
+    @MainActor private func disclosuresDidSave() {
+        editHasChanges = false
+        editCanSave = false
+        completePendingExit()
+    }
+
     @MainActor private func editDidSave() async {
         await reloadProject()
         editHasChanges = false
@@ -371,7 +398,7 @@ struct ProjectDetailView: View {
 
     private func requestTab(_ tab: ProjectDetailTab) {
         guard tab != selectedTab else { return }
-        if selectedTab == .edit, editHasChanges {
+        if isEditingTab, editHasChanges {
             pendingExit = .tab(tab)
             isConfirmingUnsavedChanges = true
         } else {
@@ -397,13 +424,13 @@ struct ProjectDetailView: View {
                 editSaveRequest += 1
             } label: {
                 HStack(spacing: 8) {
-                    if model.isProjectSaving {
+                    if isSavingEdits {
                         ProgressView().controlSize(.small)
                     } else {
                         Image(systemName: "checkmark")
                     }
                     Text(NSLocalizedString(
-                        model.isProjectSaving ? "Saving…" : "Save changes",
+                        isSavingEdits ? "Saving…" : "Save changes",
                         comment: "Project save action"
                     ))
                 }
@@ -413,7 +440,7 @@ struct ProjectDetailView: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(.ryntraGreen)
-            .disabled(!editCanSave || model.isProjectSaving)
+            .disabled(!editCanSave || isSavingEdits)
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
         }
@@ -817,6 +844,7 @@ private enum ProjectDetailTab: CaseIterable {
     case overview
     case versions
     case edit
+    case disclosures
     case members
     case moderation
 
@@ -825,6 +853,7 @@ private enum ProjectDetailTab: CaseIterable {
         case .overview: return NSLocalizedString("Overview", comment: "Project tab")
         case .versions: return NSLocalizedString("Versions", comment: "Project tab")
         case .edit: return NSLocalizedString("Edit", comment: "Project tab")
+        case .disclosures: return NSLocalizedString("Disclosures", comment: "Project tab")
         case .members: return NSLocalizedString("Members", comment: "Project tab")
         case .moderation: return NSLocalizedString("Moderation", comment: "Project tab")
         }
@@ -835,6 +864,7 @@ private enum ProjectDetailTab: CaseIterable {
         case .overview: return "square.grid.2x2.fill"
         case .versions: return "arrow.down.circle.fill"
         case .edit: return "slider.horizontal.3"
+        case .disclosures: return "checkmark.shield.fill"
         case .members: return "person.3.fill"
         case .moderation: return "text.bubble.fill"
         }

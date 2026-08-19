@@ -788,4 +788,88 @@
     <string name="version_editor_warning_changelog">Опишите изменения в этом релизе</string>
     <string name="version_editor_warning_file">Прикрепите хотя бы один файл версии</string>
     <string name="version_editor_file_read_error">Не удалось прочитать выбранные файлы.</string>
+    <!-- Content disclosures -->
+    <string name="project_tab_disclosures">Раскрытия</string>
+    <string name="disclosures_title">Раскрытие содержимого</string>
+    <string name="disclosures_description">Modrinth требует указывать все применимые раскрытия, чтобы игроки знали, что внутри проекта, ещё до загрузки.</string>
+    <string name="disclosures_content_rules">Правила о содержимом</string>
+    <string name="disclosures_refresh">Обновить раскрытия</string>
+    <string name="disclosures_unsaved">Несохранённые раскрытия</string>
+    <string name="disclosures_required_hint">Заполните данные, обязательные для включённых раскрытий</string>
+    <string name="disclosures_issues_title">Перед сохранением</string>
+    <string name="disclosures_versions_required">Сначала загрузите версию</string>
+    <string name="disclosures_versions_required_hint">Modrinth принимает раскрытия только у проектов, где уже есть хотя бы одна версия.</string>
+    <string name="disclosures_no_permission">Только просмотр</string>
+    <string name="disclosures_no_permission_hint">Для изменения раскрытий нужно право «Редактировать детали» в этом проекте.</string>
+    <string name="disclosures_access_required">Войдите заново и выдайте доступ к проектам, чтобы управлять раскрытиями.</string>
+    <string name="disclosures_none_applicable">Раскрытия не применимы</string>
+    <string name="disclosures_none_applicable_hint">Для проектов такого типа Modrinth не запрашивает раскрытий.</string>
+    <string name="disclosures_locked_hint">Раскрытие установил модератор. Детали можно менять, но снять раскрытие нельзя.</string>
+    <string name="disclosures_fully_locked_hint">Раскрытие заблокировано модератором.</string>
+    <string name="disclosures_explanation">Пояснение</string>
+    <string name="disclosures_explanation_optional">Пояснение (необязательно)</string>
+
+    <string name="disclosures_ai_title">Содержит контент, созданный ИИ</string>
+    <string name="disclosures_ai_description">Обязательно, если существенная часть кода создана ИИ, любой ресурс в основном сгенерирован ИИ, функциональность опирается на генеративный ИИ или им написана страница проекта.</string>
+    <string name="disclosures_ai_uses">Для чего используется генеративный ИИ?</string>
+    <string name="disclosures_ai_use_code">Код</string>
+    <string name="disclosures_ai_use_assets">Ресурсы</string>
+    <string name="disclosures_ai_use_text">Текст</string>
+    <string name="disclosures_ai_use_functionality">Функциональность</string>
+    <string name="disclosures_ai_note_hint">Например: переводы на китайский и арабский сделаны ИИ.</string>
+
+    <string name="disclosures_ads_title">Содержит рекламу</string>
+    <string name="disclosures_ads_description">Обязательно, если в проекте есть реклама, спонсорство или продвижение чужих работ.</string>
+    <string name="disclosures_ads_note_hint">Например: добавляет сервер Modrinth SMP в список серверов автоматически.</string>
+
+    <string name="disclosures_epilepsy_title">Предупреждение о светочувствительности</string>
+    <string name="disclosures_epilepsy_description">Включите, если в проекте есть что-то опасное для людей, чувствительных к мерцанию света или узорам.</string>
+    <string name="disclosures_epilepsy_note_hint">Например: добавляет фонарь со стробоскопом, его можно отключить в настройках доступности.</string>
+
+    <string name="disclosures_system_title">Взаимодействие с системой</string>
+    <string name="disclosures_system_description">Обязательно, если проект читает или изменяет что-то в системе игрока за пределами игры.</string>
+    <string name="disclosures_system_note_label">Опишите взаимодействие с системой</string>
+    <string name="disclosures_system_note_hint">Например: создаёт на рабочем столе файл wake_up.txt.</string>
+
+    <string name="disclosures_telemetry_title">Содержит телеметрию</string>
+    <string name="disclosures_telemetry_description">Обязательно, если проект отправляет данные об использовании вам или третьей стороне.</string>
+    <string name="disclosures_telemetry_consent">Модель согласия</string>
+    <string name="disclosures_telemetry_consent_opt_in">По согласию</string>
+    <string name="disclosures_telemetry_consent_opt_out">С отказом</string>
+    <string name="disclosures_telemetry_consent_always">Всегда включена</string>
+    <string name="disclosures_telemetry_data_label">Какие данные собираются?</string>
+    <string name="disclosures_telemetry_data_description">Укажите политику конфиденциальности или перечислите типы данных. Отметьте, анонимны ли они и есть ли персональные данные.</string>
+    <string name="disclosures_telemetry_data_hint">Например: анонимная статистика запусков — версия Minecraft и загрузчик.</string>
+    <string name="disclosures_telemetry_add_data">Добавить тип данных</string>
+    <string name="disclosures_telemetry_remove_data">Удалить тип данных</string>
+
+    <string name="disclosures_derivative_title">Содержит производный контент</string>
+    <string name="disclosures_derivative_description">Обязательно, если проект — форк другого проекта или содержит значительную часть чужой работы.</string>
+    <string name="disclosures_derivative_source_index">Оригинал %1$d</string>
+    <string name="disclosures_derivative_name_label">Название оригинальной работы</string>
+    <string name="disclosures_derivative_name_hint">Пример проекта</string>
+    <string name="disclosures_derivative_link_label">Ссылка на оригинал</string>
+    <string name="disclosures_derivative_note_label">Как проект основан на оригинале (необязательно)</string>
+    <string name="disclosures_derivative_note_hint">Например: форк, который поддерживает 1.20.</string>
+    <string name="disclosures_derivative_add_source">Добавить оригинал</string>
+    <string name="disclosures_derivative_remove_source">Удалить оригинал</string>
+
+    <string name="disclosures_paid_title">Содержит платные функции</string>
+    <string name="disclosures_paid_description">Обязательно, если в проекте есть функции, доступные за реальные деньги.</string>
+    <string name="disclosures_paid_features_label">Перечислите виды платных функций</string>
+    <string name="disclosures_paid_feature_hint">Например: косметика в награду за Patreon</string>
+    <string name="disclosures_paid_add_feature">Добавить платную функцию</string>
+    <string name="disclosures_paid_remove_feature">Удалить платную функцию</string>
+
+    <string name="disclosures_archived_title">Архивировать проект</string>
+    <string name="disclosures_archived_description">Помечает проект как больше не поддерживаемый. Архивные проекты остаются в поиске, пока видимость публичная.</string>
+    <string name="disclosures_archived_note_hint">Например: больше нет времени на проект — форкайте смело!</string>
+
+    <string name="disclosures_issue_ads_note">Раскрытию о рекламе нужно пояснение.</string>
+    <string name="disclosures_issue_epilepsy_note">Предупреждению о светочувствительности нужно описание.</string>
+    <string name="disclosures_issue_system_note">Раскрытию о взаимодействии с системой нужно описание.</string>
+    <string name="disclosures_issue_telemetry_empty">Укажите хотя бы один тип собираемых данных.</string>
+    <string name="disclosures_issue_derivative_empty">Укажите хотя бы одну оригинальную работу.</string>
+    <string name="disclosures_issue_derivative_label">У каждой оригинальной работы должно быть название.</string>
+    <string name="disclosures_issue_paid_empty">Укажите хотя бы одну платную функцию.</string>
 </resources>

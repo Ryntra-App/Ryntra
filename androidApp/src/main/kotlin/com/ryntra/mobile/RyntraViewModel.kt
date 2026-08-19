@@ -38,6 +38,7 @@ import com.ryntra.shared.model.CreateProjectRequest
 import com.ryntra.shared.model.ProjectCreationMetadata
 import com.ryntra.shared.model.Project
 import com.ryntra.shared.model.ProjectDependency
+import com.ryntra.shared.model.ProjectDisclosureDraft
 import com.ryntra.shared.model.ProjectFileUpload
 import com.ryntra.shared.model.ProjectMember
 import com.ryntra.shared.model.ProjectMemberUpdate
@@ -75,6 +76,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     private val mutableProjectUpdate = MutableStateFlow(ProjectUpdateState())
     private val mutableProjectAction = MutableStateFlow(ProjectActionState())
     private val mutableModeration = MutableStateFlow(ProjectModerationState())
+    private val mutableDisclosures = MutableStateFlow(ProjectDisclosuresState())
     private val mutableMemberSearch = MutableStateFlow(MemberSearchState())
     private val mutableAnalytics = MutableStateFlow(AnalyticsState())
     private val mutableNotifications = MutableStateFlow(
@@ -92,6 +94,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     private var organizationLoadJob: Job? = null
     private var projectActionJob: Job? = null
     private var moderationJob: Job? = null
+    private var disclosuresJob: Job? = null
     private var memberSearchJob: Job? = null
     private var analyticsJob: Job? = null
     private var notificationsJob: Job? = null
@@ -117,6 +120,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     val projectUpdate: StateFlow<ProjectUpdateState> = mutableProjectUpdate.asStateFlow()
     val projectAction: StateFlow<ProjectActionState> = mutableProjectAction.asStateFlow()
     val moderation: StateFlow<ProjectModerationState> = mutableModeration.asStateFlow()
+    val disclosures: StateFlow<ProjectDisclosuresState> = mutableDisclosures.asStateFlow()
     val memberSearch: StateFlow<MemberSearchState> = mutableMemberSearch.asStateFlow()
     val analytics: StateFlow<AnalyticsState> = mutableAnalytics.asStateFlow()
     val notifications: StateFlow<NotificationState> = mutableNotifications.asStateFlow()
@@ -514,7 +518,9 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     ) {
         projectLoadJob?.cancel()
         moderationJob?.cancel()
+        disclosuresJob?.cancel()
         mutableModeration.value = ProjectModerationState()
+        mutableDisclosures.value = ProjectDisclosuresState()
         mutableProjectDetail.value = ProjectDetailState(
             project = seed,
             isReadOnly = initiallyReadOnly,
@@ -582,10 +588,12 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     fun closeProject() {
         projectLoadJob?.cancel()
         moderationJob?.cancel()
+        disclosuresJob?.cancel()
         projectLoadJob = null
         mutableProjectDetail.value = null
         mutableProjectAction.value = ProjectActionState()
         mutableModeration.value = ProjectModerationState()
+        mutableDisclosures.value = ProjectDisclosuresState()
         mutableMemberSearch.value = MemberSearchState()
     }
 
@@ -611,6 +619,72 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
                     mutableModeration.value.copy(
                         isLoading = false,
                         errorMessage = error.message ?: "Unable to load project moderation.",
+                        requiresNewAuthorization = (error as? ApiException)?.statusCode in setOf(401, 403),
+                    )
+                },
+            )
+        }
+    }
+
+    fun loadProjectDisclosures(projectIdOrSlug: String, force: Boolean = false) {
+        if (projectIdOrSlug.isBlank()) return
+        val current = mutableDisclosures.value
+        val isSameProject = current.projectReference == projectIdOrSlug
+        if (!force && isSameProject && (current.isLoading || current.hasLoaded)) return
+
+        disclosuresJob?.cancel()
+        mutableDisclosures.value = if (isSameProject) {
+            current.copy(isLoading = true, errorMessage = null, requiresNewAuthorization = false)
+        } else {
+            ProjectDisclosuresState(projectReference = projectIdOrSlug, isLoading = true)
+        }
+        disclosuresJob = viewModelScope.launch {
+            val result = suspendCatching { controller.loadProjectDisclosures(projectIdOrSlug) }
+            val project = mutableProjectDetail.value?.project ?: return@launch
+            if (mutableDisclosures.value.projectReference != projectIdOrSlug) return@launch
+            mutableDisclosures.value = result.fold(
+                onSuccess = { loaded ->
+                    mutableDisclosures.value.copy(
+                        baseline = ProjectDisclosureDraft.from(project, loaded),
+                        isLoading = false,
+                        hasLoaded = true,
+                    )
+                },
+                onFailure = { error ->
+                    mutableDisclosures.value.copy(
+                        isLoading = false,
+                        errorMessage = error.message ?: "Unable to load content disclosures.",
+                        requiresNewAuthorization = (error as? ApiException)?.statusCode in setOf(401, 403),
+                    )
+                },
+            )
+        }
+    }
+
+    fun saveProjectDisclosures(projectIdOrSlug: String, draft: ProjectDisclosureDraft) {
+        val current = mutableDisclosures.value
+        if (projectIdOrSlug.isBlank() || current.isSaving) return
+
+        disclosuresJob?.cancel()
+        mutableDisclosures.value = current.copy(isSaving = true, saveErrorMessage = null)
+        disclosuresJob = viewModelScope.launch {
+            val result = suspendCatching {
+                controller.saveProjectDisclosures(projectIdOrSlug, draft, current.baseline)
+            }
+            val project = mutableProjectDetail.value?.project ?: return@launch
+            if (mutableDisclosures.value.projectReference != projectIdOrSlug) return@launch
+            mutableDisclosures.value = result.fold(
+                onSuccess = { saved ->
+                    mutableDisclosures.value.copy(
+                        baseline = ProjectDisclosureDraft.from(project, saved),
+                        isSaving = false,
+                        hasLoaded = true,
+                    )
+                },
+                onFailure = { error ->
+                    mutableDisclosures.value.copy(
+                        isSaving = false,
+                        saveErrorMessage = error.message ?: "Unable to save content disclosures.",
                         requiresNewAuthorization = (error as? ApiException)?.statusCode in setOf(401, 403),
                     )
                 },
@@ -1061,6 +1135,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
         mutableProjectUpdate.value = ProjectUpdateState()
         mutableProjectAction.value = ProjectActionState()
         mutableModeration.value = ProjectModerationState()
+        mutableDisclosures.value = ProjectDisclosuresState()
         mutableMemberSearch.value = MemberSearchState()
         mutableAnalytics.value = AnalyticsState()
         mutableNotifications.value = NotificationState()
@@ -1159,6 +1234,19 @@ data class ProjectModerationState(
     val errorMessage: String? = null,
     val requiresNewAuthorization: Boolean = false,
     val replyGeneration: Int = 0,
+)
+
+data class ProjectDisclosuresState(
+    /** Project the loaded disclosures belong to, so a late response cannot land on another one. */
+    val projectReference: String? = null,
+    /** Disclosures as Modrinth currently stores them; the editor diffs its draft against this. */
+    val baseline: ProjectDisclosureDraft = ProjectDisclosureDraft(),
+    val isLoading: Boolean = false,
+    val isSaving: Boolean = false,
+    val hasLoaded: Boolean = false,
+    val errorMessage: String? = null,
+    val saveErrorMessage: String? = null,
+    val requiresNewAuthorization: Boolean = false,
 )
 
 data class MemberSearchState(

@@ -40,6 +40,7 @@ Join the Ryntra Discord server: https://discord.gg/6H5vDq2wk7
 - View, search, and manage your Modrinth projects.
 - Edit project metadata, links, descriptions, status, icons, banners, and gallery images.
 - Manage versions, loaders, game versions, dependencies, files, and release metadata.
+- Declare Modrinth content disclosures, including AI-generated content, telemetry, paid features, and derivative work.
 - Work with teams and organizations, including members, permissions, invites, ownership, and organization projects.
 - Open related projects directly from notifications and accept organization or project invitations.
 - View analytics for downloads, views, playtime, revenue, trends, and per-project performance.
@@ -160,6 +161,7 @@ Ryntra — неофициальное нативное мобильное при
 - Просмотр, поиск и управление проектами Modrinth.
 - Редактирование метаданных, ссылок, описаний, статуса, иконок, баннеров и галереи.
 - Управление версиями, загрузчиками, версиями игры, зависимостями, файлами и метаданными релизов.
+- Раскрытие содержимого Modrinth: контент с ИИ, телеметрия, платные функции и производный контент.
 - Работа с командами и организациями: участники, права, приглашения, владелец и проекты организации.
 - Переход в связанные проекты прямо из уведомлений и принятие приглашений.
 - Аналитика по загрузкам, просмотрам, playtime, доходу, трендам и отдельным проектам.

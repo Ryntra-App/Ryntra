@@ -49,6 +49,7 @@ import com.ryntra.mobile.ProfileUpdateState
 import com.ryntra.mobile.NotificationState
 import com.ryntra.mobile.InstantNotificationState
 import com.ryntra.mobile.ProjectActionState
+import com.ryntra.mobile.ProjectDisclosuresState
 import com.ryntra.mobile.ProjectModerationState
 import com.ryntra.mobile.ProjectDetailState
 import com.ryntra.mobile.preferences.AppLanguage
@@ -74,6 +75,7 @@ import com.ryntra.shared.model.Organization
 import com.ryntra.shared.model.ModrinthNotification
 import com.ryntra.shared.model.Project
 import com.ryntra.shared.model.CreateVersionRequest
+import com.ryntra.shared.model.ProjectDisclosureDraft
 import com.ryntra.shared.model.ProjectFileUpload
 import com.ryntra.shared.model.ProjectMemberUpdate
 import com.ryntra.shared.model.ProjectSortMode
@@ -123,6 +125,7 @@ fun DashboardScreen(
     onClearProjectUpdateStatus: () -> Unit = {},
     projectAction: ProjectActionState = ProjectActionState(),
     moderation: ProjectModerationState = ProjectModerationState(),
+    disclosures: ProjectDisclosuresState = ProjectDisclosuresState(),
     memberSearch: MemberSearchState = MemberSearchState(),
     analytics: AnalyticsState = AnalyticsState(),
     notifications: NotificationState = NotificationState(),
@@ -149,6 +152,8 @@ fun DashboardScreen(
     onJoinTeam: (String) -> Unit = {},
     onTransferOwnership: (String, String) -> Unit = { _, _ -> },
     onClearProjectActionStatus: () -> Unit = {},
+    onLoadProjectDisclosures: (String, Boolean) -> Unit = { _, _ -> },
+    onSaveProjectDisclosures: (String, ProjectDisclosureDraft) -> Unit = { _, _ -> },
     onLoadProjectModeration: (String, Boolean) -> Unit = { _, _ -> },
     onSendModerationReply: (String, String, String?) -> Unit = { _, _, _ -> },
     onDeleteModerationMessage: (String, String) -> Unit = { _, _ -> },
@@ -302,6 +307,7 @@ fun DashboardScreen(
                         onClearProjectUpdateStatus = onClearProjectUpdateStatus,
                         projectAction = projectAction,
                         moderation = moderation,
+                        disclosures = disclosures,
                         memberSearch = memberSearch,
                         onChangeProjectIcon = onChangeProjectIcon,
                         onDeleteProjectIcon = onDeleteProjectIcon,
@@ -321,6 +327,8 @@ fun DashboardScreen(
                         onJoinTeam = onJoinTeam,
                         onTransferOwnership = onTransferOwnership,
                         onClearProjectActionStatus = onClearProjectActionStatus,
+                        onLoadDisclosures = onLoadProjectDisclosures,
+                        onSaveDisclosures = onSaveProjectDisclosures,
                         onLoadModeration = onLoadProjectModeration,
                         onSendModerationReply = onSendModerationReply,
                         onDeleteModerationMessage = onDeleteModerationMessage,

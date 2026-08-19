@@ -55,6 +55,7 @@ import com.composables.icons.lucide.Server
 import com.ryntra.mobile.R
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.mobile.ui.components.RyntraEmptyState
+import com.ryntra.mobile.ui.dashboard.project.disclosures.disclosuresContentItems
 import com.ryntra.mobile.ui.dashboard.project.edit.EditProjectContent
 import com.ryntra.mobile.ui.dashboard.project.edit.ProjectEditDraft
 import com.ryntra.mobile.ui.dashboard.project.gallery.ProjectGalleryOverviewStrip
@@ -87,6 +88,7 @@ import com.ryntra.shared.model.Project
 import com.ryntra.shared.model.ProjectCreationMetadata
 import com.ryntra.shared.model.CreateVersionRequest
 import com.ryntra.shared.model.ProjectDependency
+import com.ryntra.shared.model.ProjectDisclosureDraft
 import com.ryntra.shared.model.ProjectFileUpload
 import com.ryntra.shared.model.ProjectMember
 import com.ryntra.shared.model.ProjectMemberUpdate
@@ -94,6 +96,7 @@ import com.ryntra.shared.model.ProjectVersion
 import com.ryntra.shared.model.VersionUpdate
 import com.ryntra.mobile.MemberSearchState
 import com.ryntra.mobile.ProjectActionState
+import com.ryntra.mobile.ProjectDisclosuresState
 import com.ryntra.mobile.ProjectModerationState
 import com.ryntra.mobile.ui.dashboard.project.moderation.moderationContentItems
 import kotlinx.coroutines.Dispatchers
@@ -117,6 +120,7 @@ fun ProjectDetailScreen(
     onClearProjectUpdateStatus: () -> Unit = {},
     projectAction: ProjectActionState = ProjectActionState(),
     moderation: ProjectModerationState = ProjectModerationState(),
+    disclosures: ProjectDisclosuresState = ProjectDisclosuresState(),
     memberSearch: MemberSearchState = MemberSearchState(),
     onChangeProjectIcon: (String, ProjectFileUpload) -> Unit = { _, _ -> },
     onDeleteProjectIcon: (String) -> Unit = {},
@@ -136,6 +140,8 @@ fun ProjectDetailScreen(
     onJoinTeam: (String) -> Unit = {},
     onTransferOwnership: (String, String) -> Unit = { _, _ -> },
     onClearProjectActionStatus: () -> Unit = {},
+    onLoadDisclosures: (String, Boolean) -> Unit = { _, _ -> },
+    onSaveDisclosures: (String, ProjectDisclosureDraft) -> Unit = { _, _ -> },
     onLoadModeration: (String, Boolean) -> Unit = { _, _ -> },
     onSendModerationReply: (String, String, String?) -> Unit = { _, _, _ -> },
     onDeleteModerationMessage: (String, String) -> Unit = { _, _ -> },
@@ -183,7 +189,27 @@ fun ProjectDetailScreen(
     var editBaseline by remember(project.id) { mutableStateOf(ProjectEditDraft.from(project)) }
     var editDraft by remember(project.id) { mutableStateOf(editBaseline) }
     var pendingTab by remember(project.id) { mutableStateOf<ProjectDetailTab?>(null) }
-    val hasUnsavedChanges = editDraft != editBaseline
+    var disclosureDraft by remember(project.id) { mutableStateOf(disclosures.baseline) }
+    // Modrinth owns the disclosure record: every load and every save rebaselines the editor.
+    LaunchedEffect(project.id, disclosures.baseline) { disclosureDraft = disclosures.baseline }
+    val hasEditChanges = editDraft != editBaseline
+    val hasDisclosureChanges = disclosureDraft.hasChangesFrom(disclosures.baseline)
+    val hasUnsavedChanges = hasEditChanges || hasDisclosureChanges
+    val hasPendingChanges = when (selectedTab) {
+        ProjectDetailTab.Edit -> hasEditChanges
+        ProjectDetailTab.Disclosures -> hasDisclosureChanges
+        else -> false
+    }
+    val canSavePendingChanges = when (selectedTab) {
+        ProjectDetailTab.Edit -> editDraft.canSave
+        ProjectDetailTab.Disclosures -> disclosureDraft.canSave
+        else -> false
+    }
+    val isSavingPendingChanges = when (selectedTab) {
+        ProjectDetailTab.Edit -> projectUpdate.isSaving
+        ProjectDetailTab.Disclosures -> disclosures.isSaving
+        else -> false
+    }
     // Prefer project-team membership; fall back to org membership for permission checks.
     val currentMember = remember(members, organizationMembers, currentUserId) {
         members.firstOrNull { it.user.id == currentUserId }
@@ -210,6 +236,12 @@ fun ProjectDetailScreen(
     LaunchedEffect(isReadOnly) {
         if (isReadOnly && selectedTab !in setOf(ProjectDetailTab.Overview, ProjectDetailTab.Versions)) {
             selectedTab = ProjectDetailTab.Overview
+        }
+    }
+
+    LaunchedEffect(selectedTab, project.id, isReadOnly) {
+        if (!isReadOnly && selectedTab == ProjectDetailTab.Disclosures) {
+            onLoadDisclosures(project.slug ?: project.id, false)
         }
     }
 
@@ -245,7 +277,7 @@ fun ProjectDetailScreen(
             start = 16.dp,
             top = 12.dp,
             end = 16.dp,
-            bottom = if (selectedTab == ProjectDetailTab.Edit && hasUnsavedChanges) 116.dp else 36.dp,
+            bottom = if (hasPendingChanges) 116.dp else 36.dp,
         ),
     ) {
         item(key = "identity", contentType = "identity") {
@@ -256,7 +288,7 @@ fun ProjectDetailScreen(
                 selected = selectedTab,
                 isReadOnly = isReadOnly,
                 onSelect = { requestedTab ->
-                    if (selectedTab == ProjectDetailTab.Edit && hasUnsavedChanges && requestedTab != ProjectDetailTab.Edit) {
+                    if (hasPendingChanges && requestedTab != selectedTab) {
                         pendingTab = requestedTab
                     } else {
                         selectedTab = requestedTab
@@ -414,6 +446,17 @@ fun ProjectDetailScreen(
                 }
             }
 
+            ProjectDetailTab.Disclosures -> {
+                disclosuresContentItems(
+                    state = disclosures,
+                    draft = disclosureDraft,
+                    canEdit = canSubmitProject,
+                    versionCount = versions.size,
+                    onChange = { entry -> disclosureDraft = disclosureDraft.replacing(entry) },
+                    onRefresh = { onLoadDisclosures(project.slug ?: project.id, true) },
+                )
+            }
+
             ProjectDetailTab.Members -> {
                 // Org-owned projects share the org roster (read-only here). Personal projects use the project team.
                 val canInviteHere = !isOrganizationProject && canManageMembers && teamId != null
@@ -492,7 +535,7 @@ fun ProjectDetailScreen(
     }
 
         AnimatedVisibility(
-            visible = selectedTab == ProjectDetailTab.Edit && hasUnsavedChanges,
+            visible = hasPendingChanges,
             enter = slideInVertically { it } + fadeIn(),
             exit = slideOutVertically { it } + fadeOut(),
             modifier = Modifier.align(Alignment.BottomCenter),
@@ -509,23 +552,41 @@ fun ProjectDetailScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            stringResource(R.string.project_edit_unsaved),
+                            stringResource(
+                                if (selectedTab == ProjectDetailTab.Disclosures) {
+                                    R.string.disclosures_unsaved
+                                } else {
+                                    R.string.project_edit_unsaved
+                                },
+                            ),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.SemiBold,
                         )
-                        if (!editDraft.canSave) {
+                        if (!canSavePendingChanges) {
                             Text(
-                                stringResource(R.string.project_edit_required_hint),
+                                stringResource(
+                                    if (selectedTab == ProjectDetailTab.Disclosures) {
+                                        R.string.disclosures_required_hint
+                                    } else {
+                                        R.string.project_edit_required_hint
+                                    },
+                                ),
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.bodySmall,
                             )
                         }
                     }
                     Button(
-                        enabled = editDraft.canSave && !projectUpdate.isSaving,
-                        onClick = { onUpdateProject(project.id, editDraft.toUpdate(editBaseline)) },
+                        enabled = canSavePendingChanges && !isSavingPendingChanges,
+                        onClick = {
+                            if (selectedTab == ProjectDetailTab.Disclosures) {
+                                onSaveDisclosures(project.slug ?: project.id, disclosureDraft)
+                            } else {
+                                onUpdateProject(project.id, editDraft.toUpdate(editBaseline))
+                            }
+                        },
                     ) {
-                        if (projectUpdate.isSaving) {
+                        if (isSavingPendingChanges) {
                             CircularProgressIndicator(
                                 color = MaterialTheme.colorScheme.onPrimary,
                                 strokeWidth = 2.dp,
@@ -554,7 +615,11 @@ fun ProjectDetailScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        editDraft = editBaseline
+                        if (selectedTab == ProjectDetailTab.Disclosures) {
+                            disclosureDraft = disclosures.baseline
+                        } else {
+                            editDraft = editBaseline
+                        }
                         selectedTab = requestedTab
                         pendingTab = null
                     },

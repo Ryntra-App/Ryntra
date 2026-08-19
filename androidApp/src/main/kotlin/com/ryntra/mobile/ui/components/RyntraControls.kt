@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -49,6 +50,13 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ryntra.mobile.ui.theme.RyntraDesign
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Switch
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
 
 @Composable
 fun RyntraSearchField(
@@ -331,6 +339,57 @@ fun RyntraSecondaryButton(
             ),
     ) {
         ButtonLabel(text = text, icon = icon, color = color.copy(alpha = if (enabled) 1f else 0.42f))
+    }
+}
+
+@Composable
+fun RyntraSwitch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    contentDescription: String,
+    enabled: Boolean = true,
+) {
+    if (RyntraDesign.isPlatformNative) {
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            enabled = enabled,
+            modifier = Modifier.semantics { this.contentDescription = contentDescription },
+        )
+        return
+    }
+    val motion = RyntraDesign.motion
+    val trackColor by animateColorAsState(
+        targetValue = if (checked) RyntraDesign.colors.accent else RyntraDesign.colors.surfaceRaised,
+        animationSpec = tween(motion.duration(180)),
+        label = "Switch track",
+    )
+    val thumbOffset by animateDpAsState(
+        targetValue = if (checked) 19.dp else 2.dp,
+        animationSpec = tween(motion.duration(180)),
+        label = "Switch thumb",
+    )
+    Box(
+        modifier = Modifier
+            .size(width = 46.dp, height = 28.dp)
+            .alpha(if (enabled) 1f else 0.45f)
+            .clip(CircleShape)
+            .background(trackColor)
+            .border(0.75.dp, Color.White.copy(alpha = if (checked) 0.08f else 0.12f), CircleShape)
+            .semantics { this.contentDescription = contentDescription }
+            .toggleable(
+                value = checked,
+                enabled = enabled,
+                role = Role.Switch,
+                onValueChange = onCheckedChange,
+            ),
+    ) {
+        Box(
+            modifier = Modifier
+                .offset(x = thumbOffset, y = 2.dp)
+                .size(24.dp)
+                .background(Color(0xFFF5F5F7), CircleShape),
+        )
     }
 }
 

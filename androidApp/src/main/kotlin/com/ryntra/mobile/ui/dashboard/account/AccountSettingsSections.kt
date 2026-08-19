@@ -34,6 +34,7 @@ import com.ryntra.mobile.preferences.AppearanceMode
 import com.ryntra.mobile.preferences.RyntraPreferences
 import com.ryntra.mobile.preferences.ThemeStyle
 import com.ryntra.mobile.R
+import com.ryntra.mobile.ui.components.RyntraSwitch
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.shared.model.Account
 

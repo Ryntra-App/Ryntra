@@ -28,6 +28,7 @@ fun RyntraApp(viewModel: RyntraViewModel) {
     val projectUpdate by viewModel.projectUpdate.collectAsStateWithLifecycle()
     val projectAction by viewModel.projectAction.collectAsStateWithLifecycle()
     val moderation by viewModel.moderation.collectAsStateWithLifecycle()
+    val disclosures by viewModel.disclosures.collectAsStateWithLifecycle()
     val memberSearch by viewModel.memberSearch.collectAsStateWithLifecycle()
     val analytics by viewModel.analytics.collectAsStateWithLifecycle()
     val notifications by viewModel.notifications.collectAsStateWithLifecycle()
@@ -90,6 +91,7 @@ fun RyntraApp(viewModel: RyntraViewModel) {
                         projectUpdate = projectUpdate,
                         projectAction = projectAction,
                         moderation = moderation,
+                        disclosures = disclosures,
                         memberSearch = memberSearch,
                         analytics = analytics,
                         notifications = notifications,
@@ -136,6 +138,8 @@ fun RyntraApp(viewModel: RyntraViewModel) {
                         onJoinTeam = viewModel::joinTeam,
                         onTransferOwnership = viewModel::transferTeamOwnership,
                         onClearProjectActionStatus = viewModel::clearProjectActionStatus,
+                        onLoadProjectDisclosures = viewModel::loadProjectDisclosures,
+                        onSaveProjectDisclosures = viewModel::saveProjectDisclosures,
                         onLoadProjectModeration = viewModel::loadProjectModeration,
                         onSendModerationReply = viewModel::sendModerationReply,
                         onDeleteModerationMessage = viewModel::deleteModerationMessage,

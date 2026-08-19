@@ -784,4 +784,88 @@
     <string name="version_editor_warning_changelog">Describe the changes in this release</string>
     <string name="version_editor_warning_file">Attach at least one version file</string>
     <string name="version_editor_file_read_error">Unable to read the selected files.</string>
+    <!-- Content disclosures -->
+    <string name="project_tab_disclosures">Disclosures</string>
+    <string name="disclosures_title">Content disclosures</string>
+    <string name="disclosures_description">Modrinth requires every applicable disclosure to be declared so players know what a project contains before they download it.</string>
+    <string name="disclosures_content_rules">Read the Content Rules</string>
+    <string name="disclosures_refresh">Refresh disclosures</string>
+    <string name="disclosures_unsaved">Unsaved disclosures</string>
+    <string name="disclosures_required_hint">Fill in the details every declared disclosure requires</string>
+    <string name="disclosures_issues_title">Before saving</string>
+    <string name="disclosures_versions_required">Upload a version first</string>
+    <string name="disclosures_versions_required_hint">Modrinth accepts disclosures only on projects that already have at least one version.</string>
+    <string name="disclosures_no_permission">Read-only</string>
+    <string name="disclosures_no_permission_hint">Editing disclosures needs the “Edit details” permission on this project.</string>
+    <string name="disclosures_access_required">Sign in again and grant project access to manage disclosures.</string>
+    <string name="disclosures_none_applicable">No disclosures apply</string>
+    <string name="disclosures_none_applicable_hint">Modrinth does not ask for any disclosure on this kind of project.</string>
+    <string name="disclosures_locked_hint">A moderator applied this disclosure. You can update the details, but not remove it.</string>
+    <string name="disclosures_fully_locked_hint">A moderator locked this disclosure.</string>
+    <string name="disclosures_explanation">Explanation</string>
+    <string name="disclosures_explanation_optional">Explanation (optional)</string>
+
+    <string name="disclosures_ai_title">Contains AI-generated content</string>
+    <string name="disclosures_ai_description">Required when a substantial part of the code is AI-generated, any asset is substantially AI-generated, the functionality relies on generative AI, or the project page was written with it.</string>
+    <string name="disclosures_ai_uses">What is generative AI used for?</string>
+    <string name="disclosures_ai_use_code">Code</string>
+    <string name="disclosures_ai_use_assets">Assets</string>
+    <string name="disclosures_ai_use_text">Text</string>
+    <string name="disclosures_ai_use_functionality">Functionality</string>
+    <string name="disclosures_ai_note_hint">e.g. The Chinese and Arabic translations are AI-generated.</string>
+
+    <string name="disclosures_ads_title">Contains advertisements</string>
+    <string name="disclosures_ads_description">Required when the project contains advertising, sponsorships or promotion of other works.</string>
+    <string name="disclosures_ads_note_hint">e.g. Adds the Modrinth SMP server to your server list automatically.</string>
+
+    <string name="disclosures_epilepsy_title">Photosensitivity warning</string>
+    <string name="disclosures_epilepsy_description">Enable this if the project contains anything that may be dangerous to people sensitive to flashing lights or patterns.</string>
+    <string name="disclosures_epilepsy_note_hint">e.g. Adds a flashlight with a strobe mode. It can be turned off in Accessibility settings.</string>
+
+    <string name="disclosures_system_title">External system interactions</string>
+    <string name="disclosures_system_description">Required when the project reads or changes anything on the player’s system outside the game.</string>
+    <string name="disclosures_system_note_label">Describe the external interactions</string>
+    <string name="disclosures_system_note_hint">e.g. It writes a file called wake_up.txt to the desktop.</string>
+
+    <string name="disclosures_telemetry_title">Contains telemetry</string>
+    <string name="disclosures_telemetry_description">Required when the project sends usage data back to you or to a third party.</string>
+    <string name="disclosures_telemetry_consent">Consent model</string>
+    <string name="disclosures_telemetry_consent_opt_in">Opt-in</string>
+    <string name="disclosures_telemetry_consent_opt_out">Opt-out</string>
+    <string name="disclosures_telemetry_consent_always">Always active</string>
+    <string name="disclosures_telemetry_data_label">What data is collected?</string>
+    <string name="disclosures_telemetry_data_description">Add a privacy policy or list the kinds of data collected. Say whether it is anonymous or contains personally identifiable information.</string>
+    <string name="disclosures_telemetry_data_hint">e.g. Anonymous launch analytics: Minecraft version and loader.</string>
+    <string name="disclosures_telemetry_add_data">Add data type</string>
+    <string name="disclosures_telemetry_remove_data">Remove data type</string>
+
+    <string name="disclosures_derivative_title">Contains derivative content</string>
+    <string name="disclosures_derivative_description">Required when the project is a fork of another project or contains a substantial amount of someone else’s work.</string>
+    <string name="disclosures_derivative_source_index">Original work %1$d</string>
+    <string name="disclosures_derivative_name_label">Name of the original work</string>
+    <string name="disclosures_derivative_name_hint">Example project</string>
+    <string name="disclosures_derivative_link_label">Link to the original work</string>
+    <string name="disclosures_derivative_note_label">How this project builds on it (optional)</string>
+    <string name="disclosures_derivative_note_hint">e.g. A fork that keeps 1.20 support alive.</string>
+    <string name="disclosures_derivative_add_source">Add original work</string>
+    <string name="disclosures_derivative_remove_source">Remove original work</string>
+
+    <string name="disclosures_paid_title">Contains paid features</string>
+    <string name="disclosures_paid_description">Required when the project has features that can be obtained by spending real-world money.</string>
+    <string name="disclosures_paid_features_label">List the kinds of paid feature</string>
+    <string name="disclosures_paid_feature_hint">e.g. Cosmetics available as a Patreon reward</string>
+    <string name="disclosures_paid_add_feature">Add paid feature</string>
+    <string name="disclosures_paid_remove_feature">Remove paid feature</string>
+
+    <string name="disclosures_archived_title">Archive project</string>
+    <string name="disclosures_archived_description">Marks the project as no longer maintained. Archived projects stay discoverable while their visibility is public.</string>
+    <string name="disclosures_archived_note_hint">e.g. I no longer have time for this project — feel free to fork it!</string>
+
+    <string name="disclosures_issue_ads_note">The advertising disclosure needs an explanation.</string>
+    <string name="disclosures_issue_epilepsy_note">The photosensitivity warning needs a description.</string>
+    <string name="disclosures_issue_system_note">The external system interactions disclosure needs a description.</string>
+    <string name="disclosures_issue_telemetry_empty">The telemetry disclosure needs at least one type of collected data.</string>
+    <string name="disclosures_issue_derivative_empty">The derivative content disclosure needs at least one original work.</string>
+    <string name="disclosures_issue_derivative_label">Every original work needs a name.</string>
+    <string name="disclosures_issue_paid_empty">The paid features disclosure needs at least one feature.</string>
 </resources>

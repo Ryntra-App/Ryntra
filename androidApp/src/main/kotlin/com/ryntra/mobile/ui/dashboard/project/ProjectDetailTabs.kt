@@ -34,6 +34,7 @@ import com.composables.icons.lucide.LayoutGrid
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.MessageSquareText
 import com.composables.icons.lucide.Pencil
+import com.composables.icons.lucide.ShieldCheck
 import com.composables.icons.lucide.UsersRound
 import com.ryntra.mobile.R
 import com.ryntra.mobile.ui.components.RyntraIcon
@@ -46,6 +47,7 @@ internal enum class ProjectDetailTab(
     Overview(R.string.project_tab_overview, Lucide.LayoutGrid),
     Versions(R.string.project_tab_versions, Lucide.Download),
     Edit(R.string.project_tab_edit, Lucide.Pencil),
+    Disclosures(R.string.project_tab_disclosures, Lucide.ShieldCheck),
     Members(R.string.project_tab_members, Lucide.UsersRound),
     Moderation(R.string.project_tab_moderation, Lucide.MessageSquareText),
 }
