@@ -33,6 +33,12 @@ final class AppModel: ObservableObject {
     @Published private(set) var pendingNotificationProjectReference: String?
     @Published private(set) var instantNotifications = InstantNotificationStatus()
     @Published private(set) var appUpdate: AppUpdate?
+    @Published private(set) var recentSearches: [String] =
+        UserDefaults.standard.stringArray(forKey: Self.recentSearchesKey) ?? []
+
+    /// Recent catalogue queries. Kept in UserDefaults rather than the keychain: it is
+    /// convenience data, and nothing here identifies the account.
+    private static let recentSearchesKey = "recentModrinthSearches"
 
     private let controller = AppController()
     private let keychain = KeychainTokenStore()
@@ -330,6 +336,36 @@ final class AppModel: ObservableObject {
 
     func deleteModerationMessage(messageID: String) async throws {
         try await controller.deleteModerationMessage(messageId: messageID)
+    }
+
+    func searchProjects(query: ProjectSearchQuery) async throws -> ProjectSearchPage {
+        try await controller.searchProjects(query: query)
+    }
+
+    func loadBrowseMetadata() async throws -> BrowseMetadata {
+        try await controller.loadBrowseMetadata()
+    }
+
+    func loadBrowseHighlights() async throws -> BrowseHighlights {
+        try await controller.loadBrowseHighlights()
+    }
+
+    func rememberSearch(_ query: String) {
+        storeRecentSearches(ProjectSearchHistory.shared.adding(history: recentSearches, query: query))
+    }
+
+    func forgetSearch(_ query: String) {
+        storeRecentSearches(ProjectSearchHistory.shared.removing(history: recentSearches, query: query))
+    }
+
+    func clearRecentSearches() {
+        storeRecentSearches([])
+    }
+
+    private func storeRecentSearches(_ queries: [String]) {
+        guard queries != recentSearches else { return }
+        recentSearches = queries
+        UserDefaults.standard.set(queries, forKey: Self.recentSearchesKey)
     }
 
     func loadProjectDisclosures(project: Project) async throws -> [ProjectDisclosure] {

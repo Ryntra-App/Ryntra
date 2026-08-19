@@ -872,4 +872,35 @@
     <string name="disclosures_issue_derivative_empty">Укажите хотя бы одну оригинальную работу.</string>
     <string name="disclosures_issue_derivative_label">У каждой оригинальной работы должно быть название.</string>
     <string name="disclosures_issue_paid_empty">Укажите хотя бы одну платную функцию.</string>
+
+    <!-- Browse Modrinth -->
+    <string name="browse_title">Обзор Modrinth</string>
+    <string name="browse_open">Обзор Modrinth</string>
+    <string name="browse_search_placeholder">Поиск по Modrinth</string>
+    <string name="browse_result_count">Найдено проектов: %1$d</string>
+    <string name="browse_empty">Ничего не найдено</string>
+    <string name="browse_empty_hint">Попробуйте другой запрос или ослабьте фильтры.</string>
+    <string name="browse_filters">Фильтры</string>
+    <string name="browse_filters_active">Фильтры · %1$d</string>
+    <string name="browse_filters_loading">Загружаем варианты фильтров…</string>
+    <string name="browse_filters_reset">Сбросить фильтры</string>
+    <string name="browse_filter_game_versions">Версия Minecraft</string>
+    <string name="browse_filter_loaders">Загрузчик</string>
+    <string name="browse_category_all">Все</string>
+    <string name="browse_category_mods">Моды</string>
+    <string name="browse_category_plugins">Плагины</string>
+    <string name="browse_category_datapacks">Дата-паки</string>
+    <string name="browse_category_shaders">Шейдеры</string>
+    <string name="browse_category_resourcepacks">Ресурспаки</string>
+    <string name="browse_category_modpacks">Сборки</string>
+    <string name="browse_sort_relevance">Релевантность</string>
+    <string name="browse_sort_downloads">Загрузки</string>
+    <string name="browse_sort_follows">Подписчики</string>
+    <string name="browse_sort_updated">Недавно обновлённые</string>
+    <string name="browse_sort_newest">Новые</string>
+    <string name="browse_popular">Популярное сейчас</string>
+    <string name="browse_recently_updated">Недавно обновлённые</string>
+    <string name="browse_recent">Недавние запросы</string>
+    <string name="browse_recent_clear">Очистить</string>
+    <string name="browse_recent_forget">Убрать из истории</string>
 </resources>

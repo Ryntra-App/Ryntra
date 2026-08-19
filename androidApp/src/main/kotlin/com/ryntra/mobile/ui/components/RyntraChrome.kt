@@ -57,6 +57,7 @@ import coil3.compose.AsyncImage
 import com.ryntra.mobile.R
 import com.composables.icons.lucide.Bell
 import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Search
 import com.ryntra.mobile.preferences.GlassQuality
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import dev.chrisbanes.haze.ExperimentalHazeApi
@@ -84,6 +85,8 @@ fun RyntraTopBar(
     navigationDescription: String? = null,
     onNavigationClick: () -> Unit = {},
     showAvatar: Boolean = true,
+    onSearchClick: (() -> Unit)? = null,
+    searchDescription: String = "",
     onNotificationsClick: (() -> Unit)? = null,
     unreadNotificationCount: Int = 0,
     notificationsDescription: String = "",
@@ -99,6 +102,8 @@ fun RyntraTopBar(
             navigationDescription = navigationDescription,
             onNavigationClick = onNavigationClick,
             showAvatar = showAvatar,
+            onSearchClick = onSearchClick,
+            searchDescription = searchDescription,
             onNotificationsClick = onNotificationsClick,
             unreadNotificationCount = unreadNotificationCount,
             notificationsDescription = notificationsDescription,
@@ -151,6 +156,16 @@ fun RyntraTopBar(
                 modifier = Modifier.padding(end = 12.dp).size(19.dp),
             )
         }
+        if (onSearchClick != null) {
+            IconButton(onClick = onSearchClick) {
+                Icon(
+                    imageVector = Lucide.Search,
+                    contentDescription = searchDescription,
+                    tint = colors.labelSecondary,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+        }
         if (onNotificationsClick != null) {
             NotificationBell(
                 unreadCount = unreadNotificationCount,
@@ -188,6 +203,8 @@ private fun PlatformTopBar(
     navigationDescription: String?,
     onNavigationClick: () -> Unit,
     showAvatar: Boolean,
+    onSearchClick: (() -> Unit)?,
+    searchDescription: String,
     onNotificationsClick: (() -> Unit)?,
     unreadNotificationCount: Int,
     notificationsDescription: String,
@@ -218,6 +235,15 @@ private fun PlatformTopBar(
                         .padding(horizontal = 12.dp)
                         .size(18.dp),
                 )
+            }
+            if (onSearchClick != null) {
+                IconButton(onClick = onSearchClick) {
+                    Icon(
+                        imageVector = Lucide.Search,
+                        contentDescription = searchDescription,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             if (onNotificationsClick != null) {
                 NotificationBell(

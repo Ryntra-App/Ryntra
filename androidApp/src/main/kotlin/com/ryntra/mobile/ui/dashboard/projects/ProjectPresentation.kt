@@ -70,10 +70,14 @@ internal fun ProjectRow(
     showDescription: Boolean = true,
     showStatus: Boolean = true,
     isSelected: Boolean = false,
+    /** Catalogue rows name the author instead of the slug, which the browser already knows. */
+    subtitleOverride: String? = null,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
 ) {
-    val model = project.toProjectRowModel()
+    val model = project.toProjectRowModel().let { row ->
+        subtitleOverride?.let { row.copy(subtitle = it) } ?: row
+    }
     val selectionColor by animateColorAsState(
         targetValue = if (isSelected) MaterialTheme.colorScheme.surfaceContainerHigh else androidx.compose.ui.graphics.Color.Transparent,
         animationSpec = tween(RyntraDesign.motion.duration(160)),

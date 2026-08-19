@@ -868,4 +868,35 @@
     <string name="disclosures_issue_derivative_empty">The derivative content disclosure needs at least one original work.</string>
     <string name="disclosures_issue_derivative_label">Every original work needs a name.</string>
     <string name="disclosures_issue_paid_empty">The paid features disclosure needs at least one feature.</string>
+
+    <!-- Browse Modrinth -->
+    <string name="browse_title">Browse Modrinth</string>
+    <string name="browse_open">Browse Modrinth</string>
+    <string name="browse_search_placeholder">Search Modrinth</string>
+    <string name="browse_result_count">%1$d projects found</string>
+    <string name="browse_empty">Nothing found</string>
+    <string name="browse_empty_hint">Try a different query, or relax the filters.</string>
+    <string name="browse_filters">Filters</string>
+    <string name="browse_filters_active">Filters · %1$d</string>
+    <string name="browse_filters_loading">Loading filter options…</string>
+    <string name="browse_filters_reset">Reset filters</string>
+    <string name="browse_filter_game_versions">Minecraft version</string>
+    <string name="browse_filter_loaders">Loader</string>
+    <string name="browse_category_all">All</string>
+    <string name="browse_category_mods">Mods</string>
+    <string name="browse_category_plugins">Plugins</string>
+    <string name="browse_category_datapacks">Data packs</string>
+    <string name="browse_category_shaders">Shaders</string>
+    <string name="browse_category_resourcepacks">Resource packs</string>
+    <string name="browse_category_modpacks">Modpacks</string>
+    <string name="browse_sort_relevance">Relevance</string>
+    <string name="browse_sort_downloads">Downloads</string>
+    <string name="browse_sort_follows">Followers</string>
+    <string name="browse_sort_updated">Recently updated</string>
+    <string name="browse_sort_newest">Newest</string>
+    <string name="browse_popular">Popular right now</string>
+    <string name="browse_recently_updated">Recently updated</string>
+    <string name="browse_recent">Recent searches</string>
+    <string name="browse_recent_clear">Clear</string>
+    <string name="browse_recent_forget">Remove from history</string>
 </resources>

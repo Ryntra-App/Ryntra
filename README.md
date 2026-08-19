@@ -38,6 +38,7 @@ Join the Ryntra Discord server: https://discord.gg/6H5vDq2wk7
 
 - Sign in with Modrinth OAuth, with PAT login available as a fallback.
 - View, search, and manage your Modrinth projects.
+- Browse the public Modrinth catalogue with search, category tabs, game version and loader filters, and open any project read-only.
 - Edit project metadata, links, descriptions, status, icons, banners, and gallery images.
 - Manage versions, loaders, game versions, dependencies, files, and release metadata.
 - Declare Modrinth content disclosures, including AI-generated content, telemetry, paid features, and derivative work.
@@ -159,6 +160,7 @@ Ryntra — неофициальное нативное мобильное при
 
 - Вход через Modrinth OAuth и запасной вход по PAT.
 - Просмотр, поиск и управление проектами Modrinth.
+- Обзор публичного каталога Modrinth: поиск, категории, фильтры по версии игры и загрузчику, открытие любого проекта в режиме просмотра.
 - Редактирование метаданных, ссылок, описаний, статуса, иконок, баннеров и галереи.
 - Управление версиями, загрузчиками, версиями игры, зависимостями, файлами и метаданными релизов.
 - Раскрытие содержимого Modrinth: контент с ИИ, телеметрия, платные функции и производный контент.

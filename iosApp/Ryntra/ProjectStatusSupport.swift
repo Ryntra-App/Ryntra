@@ -20,7 +20,11 @@ enum ProjectStatusSupport {
     }
 
     static func typeLabel(for project: Project) -> String {
-        switch project.projectType.lowercased() {
+        typeLabel(forType: project.projectType)
+    }
+
+    static func typeLabel(forType type: String) -> String {
+        switch type.lowercased() {
         case "mod": return NSLocalizedString("Mod", comment: "Project type")
         case "plugin": return NSLocalizedString("Plugin", comment: "Project type")
         case "hybrid": return NSLocalizedString("Mod / Plugin", comment: "Project type")
@@ -29,7 +33,7 @@ enum ProjectStatusSupport {
         case "shader": return NSLocalizedString("Shader", comment: "Project type")
         case "datapack", "data_pack": return NSLocalizedString("Data Pack", comment: "Project type")
         case "server": return NSLocalizedString("Server", comment: "Project type")
-        default: return project.projectType.capitalized
+        default: return type.capitalized
         }
     }
 

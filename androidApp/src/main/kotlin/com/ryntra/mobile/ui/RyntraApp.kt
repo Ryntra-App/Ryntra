@@ -29,6 +29,7 @@ fun RyntraApp(viewModel: RyntraViewModel) {
     val projectAction by viewModel.projectAction.collectAsStateWithLifecycle()
     val moderation by viewModel.moderation.collectAsStateWithLifecycle()
     val disclosures by viewModel.disclosures.collectAsStateWithLifecycle()
+    val browse by viewModel.browse.collectAsStateWithLifecycle()
     val memberSearch by viewModel.memberSearch.collectAsStateWithLifecycle()
     val analytics by viewModel.analytics.collectAsStateWithLifecycle()
     val notifications by viewModel.notifications.collectAsStateWithLifecycle()
@@ -92,6 +93,7 @@ fun RyntraApp(viewModel: RyntraViewModel) {
                         projectAction = projectAction,
                         moderation = moderation,
                         disclosures = disclosures,
+                        browse = browse,
                         memberSearch = memberSearch,
                         analytics = analytics,
                         notifications = notifications,
@@ -138,6 +140,15 @@ fun RyntraApp(viewModel: RyntraViewModel) {
                         onJoinTeam = viewModel::joinTeam,
                         onTransferOwnership = viewModel::transferTeamOwnership,
                         onClearProjectActionStatus = viewModel::clearProjectActionStatus,
+                        onOpenBrowse = viewModel::openBrowse,
+                        onCloseBrowse = viewModel::closeBrowse,
+                        onBrowseTextChange = viewModel::setBrowseText,
+                        onBrowseSubmit = viewModel::submitBrowseSearch,
+                        onBrowseQueryChange = viewModel::applyBrowseQuery,
+                        onBrowseLoadMore = viewModel::loadMoreBrowseResults,
+                        onOpenSearchHit = viewModel::openSearchHit,
+                        onForgetRecentSearch = viewModel::forgetRecentSearch,
+                        onClearRecentSearches = viewModel::clearRecentSearches,
                         onLoadProjectDisclosures = viewModel::loadProjectDisclosures,
                         onSaveProjectDisclosures = viewModel::saveProjectDisclosures,
                         onLoadProjectModeration = viewModel::loadProjectModeration,

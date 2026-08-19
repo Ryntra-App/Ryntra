@@ -6,12 +6,17 @@ import com.ryntra.shared.model.Account
 import com.ryntra.shared.model.AnalyticsQuery
 import com.ryntra.shared.model.AnalyticsReport
 import com.ryntra.shared.model.CreateVersionRequest
+import com.ryntra.shared.model.BrowseHighlights
+import com.ryntra.shared.model.BrowseMetadata
 import com.ryntra.shared.model.CreateProjectRequest
 import com.ryntra.shared.model.DisclosureChangeSet
 import com.ryntra.shared.model.ProjectCreationMetadata
 import com.ryntra.shared.model.Project
 import com.ryntra.shared.model.ProjectDependency
 import com.ryntra.shared.model.ProjectDisclosure
+import com.ryntra.shared.model.ProjectSearchPage
+import com.ryntra.shared.model.ProjectSearchQuery
+import com.ryntra.shared.model.ProjectSearchSort
 import com.ryntra.shared.model.ProjectFileUpload
 import com.ryntra.shared.model.Organization
 import com.ryntra.shared.model.ModrinthNotification
@@ -82,6 +87,40 @@ class DashboardRepository(
 
     suspend fun deleteProject(projectIdOrSlug: String, token: String) =
         api.deleteProject(projectIdOrSlug, token)
+
+    suspend fun searchProjects(query: ProjectSearchQuery, token: String?): ProjectSearchPage =
+        api.searchProjects(query, token)
+
+    /** Filter options come from two independent tag routes, so they are fetched together. */
+    suspend fun loadBrowseMetadata(): BrowseMetadata = coroutineScope {
+        val versions = async { api.getGameVersions() }
+        val loaders = async { api.getLoaders() }
+        BrowseMetadata(gameVersions = versions.await(), loaders = loaders.await())
+    }
+
+    /**
+     * Shown before anything is typed. Both lists are the same route with a different sort, so
+     * they run in parallel and a failure of one does not blank the other.
+     */
+    suspend fun loadBrowseHighlights(token: String?): BrowseHighlights = coroutineScope {
+        val popular = async {
+            runCatching {
+                api.searchProjects(
+                    ProjectSearchQuery(sort = ProjectSearchSort.Downloads, limit = HIGHLIGHT_COUNT),
+                    token,
+                ).hits
+            }.getOrDefault(emptyList())
+        }
+        val updated = async {
+            runCatching {
+                api.searchProjects(
+                    ProjectSearchQuery(sort = ProjectSearchSort.Updated, limit = HIGHLIGHT_COUNT),
+                    token,
+                ).hits
+            }.getOrDefault(emptyList())
+        }
+        BrowseHighlights(popular = popular.await(), recentlyUpdated = updated.await())
+    }
 
     suspend fun loadProjectDisclosures(
         projectIdOrSlug: String,
@@ -397,6 +436,11 @@ class DashboardRepository(
     }
 
     fun close() = api.close()
+
+    private companion object {
+        /** Enough to fill a horizontal strip without paying for a full page of results. */
+        const val HIGHLIGHT_COUNT = 10
+    }
 }
 
 data class OrganizationDetail(

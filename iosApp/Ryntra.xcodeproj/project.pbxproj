@@ -34,6 +34,7 @@
 		A025 /* ProjectBannerCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B027 /* ProjectBannerCard.swift */; };
 		A026 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = D006 /* Localizable.strings */; };
 		A027 /* ProjectStatusSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B030 /* ProjectStatusSupport.swift */; };
+		A045 /* BrowseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B052 /* BrowseView.swift */; };
 		A028 /* ProjectImageUploadReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B031 /* ProjectImageUploadReader.swift */; };
 		A029 /* AccountAvatarEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B032 /* AccountAvatarEditor.swift */; };
 		A030 /* ProjectGalleryEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B033 /* ProjectGalleryEditor.swift */; };
@@ -84,6 +85,7 @@
 		B028 /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Localizable.strings; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		B029 /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Localizable.strings; path = ru.lproj/Localizable.strings; sourceTree = "<group>"; };
 		B030 /* ProjectStatusSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectStatusSupport.swift; sourceTree = "<group>"; };
+		B052 /* BrowseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowseView.swift; sourceTree = "<group>"; };
 		B031 /* ProjectImageUploadReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectImageUploadReader.swift; sourceTree = "<group>"; };
 		B032 /* AccountAvatarEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountAvatarEditor.swift; sourceTree = "<group>"; };
 		B033 /* ProjectGalleryEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectGalleryEditor.swift; sourceTree = "<group>"; };
@@ -135,6 +137,7 @@
 				B047 /* RemoteImage.swift */,
 				B021 /* RyntraTheme.swift */,
 				B030 /* ProjectStatusSupport.swift */,
+				B052 /* BrowseView.swift */,
 				B002 /* AppModel.swift */,
 				B003 /* KeychainTokenStore.swift */,
 				B014 /* OAuthCoordinator.swift */,
@@ -324,6 +327,7 @@
 				A040 /* RemoteImage.swift in Sources */,
 				A019 /* RyntraTheme.swift in Sources */,
 				A027 /* ProjectStatusSupport.swift in Sources */,
+				A045 /* BrowseView.swift in Sources */,
 				A002 /* AppModel.swift in Sources */,
 				A003 /* KeychainTokenStore.swift in Sources */,
 				A012 /* OAuthCoordinator.swift in Sources */,

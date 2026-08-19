@@ -5,9 +5,13 @@ import com.ryntra.shared.model.AccountProfileUpdate
 import com.ryntra.shared.model.AnalyticsQuery
 import com.ryntra.shared.model.CreateVersionRequest
 import com.ryntra.shared.model.CreateProjectRequest
+import com.ryntra.shared.model.GameVersion
+import com.ryntra.shared.model.ModLoader
 import com.ryntra.shared.model.DisclosureChangeSet
 import com.ryntra.shared.model.ProjectCategory
 import com.ryntra.shared.model.ProjectDisclosure
+import com.ryntra.shared.model.ProjectSearchPage
+import com.ryntra.shared.model.ProjectSearchQuery
 import com.ryntra.shared.model.ProjectLicense
 import com.ryntra.shared.model.Organization
 import com.ryntra.shared.model.ModrinthNotification
@@ -25,6 +29,7 @@ import com.ryntra.shared.network.modrinth.InsightEndpoints
 import com.ryntra.shared.network.modrinth.NotificationEndpoints
 import com.ryntra.shared.network.modrinth.NotificationContentResolver
 import com.ryntra.shared.network.modrinth.ProjectEndpoints
+import com.ryntra.shared.network.modrinth.SearchEndpoints
 import com.ryntra.shared.network.modrinth.TeamOrganizationEndpoints
 import com.ryntra.shared.network.modrinth.ThreadEndpoints
 import com.ryntra.shared.network.modrinth.TagEndpoints
@@ -39,6 +44,7 @@ class ModrinthApi(
     private val versions = VersionEndpoints(httpClient)
     private val teams = TeamOrganizationEndpoints(httpClient)
     private val disclosures = DisclosureEndpoints(httpClient)
+    private val search = SearchEndpoints(httpClient)
     private val insights = InsightEndpoints(httpClient)
     private val notifications = NotificationEndpoints(httpClient)
     private val threads = ThreadEndpoints(httpClient)
@@ -80,6 +86,13 @@ class ModrinthApi(
         changes: DisclosureChangeSet,
         token: String,
     ) = disclosures.modify(projectIdOrSlug, changes, token)
+
+    suspend fun searchProjects(query: ProjectSearchQuery, token: String?): ProjectSearchPage =
+        search.search(query, token)
+
+    suspend fun getGameVersions(): List<GameVersion> = tags.gameVersions()
+
+    suspend fun getLoaders(): List<ModLoader> = tags.loaders()
 
     suspend fun getProjectTypes(): List<String> = tags.projectTypes()
 

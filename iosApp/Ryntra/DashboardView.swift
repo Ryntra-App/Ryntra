@@ -18,6 +18,7 @@ struct DashboardView: View {
     enum DashboardRoute: Hashable {
         case profile
         case notifications
+        case browse
         case project(String)
         case organization(String)
     }
@@ -109,6 +110,7 @@ struct DashboardView: View {
                 showsBackButton: !path.isEmpty,
                 onBack: pop,
                 showsAvatar: path.isEmpty,
+                onSearchTap: path.isEmpty ? { push(.browse) } : nil,
                 onNotificationsTap: path.isEmpty ? { push(.notifications) } : nil,
                 unreadNotificationCount: model.unreadNotificationCount,
                 windowTitle: "Ryntra"
@@ -144,6 +146,7 @@ struct DashboardView: View {
         switch path.last {
         case .profile: "Profile"
         case .notifications: NSLocalizedString("Notifications", comment: "Screen title")
+        case .browse: NSLocalizedString("Browse Modrinth", comment: "Screen title")
         case .project(let projectID): routedProjects[projectID]?.title ?? ""
         case .organization(let organizationID): routedOrganizations[organizationID]?.name ?? ""
         case nil: selection.label
@@ -162,6 +165,8 @@ struct DashboardView: View {
             )
         case .notifications:
             NotificationsView(onOpenProject: { openNotificationProject($0) })
+        case .browse:
+            BrowseView(onOpenHit: { openSearchHit($0) })
         case .project(let projectID):
             if let project = routedProjects[projectID] {
                 ProjectDetailView(
@@ -287,6 +292,7 @@ struct DashboardView: View {
                     dashboard: dashboard,
                     isRefreshing: isRefreshing,
                     onAvatarTap: { push(.profile, in: destination) },
+                    onSearchTap: { push(.browse, in: destination) },
                     onNotificationsTap: { push(.notifications, in: destination) },
                     unreadNotificationCount: model.unreadNotificationCount
                 )
@@ -322,6 +328,18 @@ struct DashboardView: View {
                     title: NSLocalizedString("Notifications", comment: "Screen title"),
                     dashboard: dashboard,
                     isRefreshing: model.isNotificationsLoading,
+                    onAvatarTap: {},
+                    showsBackButton: true,
+                    onBack: { pop(in: destination) },
+                    showsAvatar: false,
+                    usesSystemBackButton: true
+                )
+        case .browse:
+            BrowseView(onOpenHit: { openSearchHit($0, in: destination) })
+                .ryntraChrome(
+                    title: NSLocalizedString("Browse Modrinth", comment: "Screen title"),
+                    dashboard: dashboard,
+                    isRefreshing: false,
                     onAvatarTap: {},
                     showsBackButton: true,
                     onBack: { pop(in: destination) },
@@ -425,6 +443,23 @@ struct DashboardView: View {
             [organization.id, organization.slug, organization.name]
                 .map(\.normalizedProjectReference)
                 .contains(reference)
+        }
+    }
+
+    /// A catalogue hit carries only what a card showed. Projects the user actually manages are
+    /// matched first so opening one from search lands on the editable screen, not a read-only copy.
+    private func openSearchHit(_ hit: ProjectSearchHit, in destination: RyntraDestination? = nil) {
+        let project = managedProject(for: hit) ?? hit.toProjectSeed()
+        if let destination {
+            openProject(project, in: destination)
+        } else {
+            openProject(project)
+        }
+    }
+
+    private func managedProject(for hit: ProjectSearchHit) -> Project? {
+        dashboard.projects.first { project in
+            project.id == hit.projectId || (project.slug != nil && project.slug == hit.slug)
         }
     }
 

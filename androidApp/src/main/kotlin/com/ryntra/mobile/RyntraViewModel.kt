@@ -18,6 +18,7 @@ import com.ryntra.mobile.preferences.GlassQuality
 import com.ryntra.mobile.preferences.AppearanceMode
 import com.ryntra.mobile.preferences.RyntraPreferences
 import com.ryntra.mobile.preferences.RyntraPreferencesStore
+import com.ryntra.mobile.preferences.SearchHistoryStore
 import com.ryntra.mobile.preferences.ThemeStyle
 import com.ryntra.mobile.notifications.NotificationScheduler
 import com.ryntra.mobile.notifications.NotificationBadgeStore
@@ -38,7 +39,11 @@ import com.ryntra.shared.model.CreateProjectRequest
 import com.ryntra.shared.model.ProjectCreationMetadata
 import com.ryntra.shared.model.Project
 import com.ryntra.shared.model.ProjectDependency
+import com.ryntra.shared.model.BrowseHighlights
+import com.ryntra.shared.model.BrowseMetadata
 import com.ryntra.shared.model.ProjectDisclosureDraft
+import com.ryntra.shared.model.ProjectSearchHit
+import com.ryntra.shared.model.ProjectSearchQuery
 import com.ryntra.shared.model.ProjectFileUpload
 import com.ryntra.shared.model.ProjectMember
 import com.ryntra.shared.model.ProjectMemberUpdate
@@ -64,6 +69,7 @@ import java.time.temporal.ChronoUnit
 class RyntraViewModel(application: Application) : AndroidViewModel(application) {
     private val tokenStore = SecureTokenStore(application)
     private val preferencesStore = RyntraPreferencesStore(application)
+    private val searchHistoryStore = SearchHistoryStore(application)
     private val oauthCoordinator = OAuthCoordinator(application)
     private val instantNotificationCoordinator = InstantNotificationCoordinator(application)
     private val notificationBadgeStore = NotificationBadgeStore(application)
@@ -77,6 +83,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     private val mutableProjectAction = MutableStateFlow(ProjectActionState())
     private val mutableModeration = MutableStateFlow(ProjectModerationState())
     private val mutableDisclosures = MutableStateFlow(ProjectDisclosuresState())
+    private val mutableBrowse = MutableStateFlow(BrowseState())
     private val mutableMemberSearch = MutableStateFlow(MemberSearchState())
     private val mutableAnalytics = MutableStateFlow(AnalyticsState())
     private val mutableNotifications = MutableStateFlow(
@@ -95,6 +102,8 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     private var projectActionJob: Job? = null
     private var moderationJob: Job? = null
     private var disclosuresJob: Job? = null
+    private var browseJob: Job? = null
+    private var browseTypingJob: Job? = null
     private var memberSearchJob: Job? = null
     private var analyticsJob: Job? = null
     private var notificationsJob: Job? = null
@@ -121,6 +130,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     val projectAction: StateFlow<ProjectActionState> = mutableProjectAction.asStateFlow()
     val moderation: StateFlow<ProjectModerationState> = mutableModeration.asStateFlow()
     val disclosures: StateFlow<ProjectDisclosuresState> = mutableDisclosures.asStateFlow()
+    val browse: StateFlow<BrowseState> = mutableBrowse.asStateFlow()
     val memberSearch: StateFlow<MemberSearchState> = mutableMemberSearch.asStateFlow()
     val analytics: StateFlow<AnalyticsState> = mutableAnalytics.asStateFlow()
     val notifications: StateFlow<NotificationState> = mutableNotifications.asStateFlow()
@@ -622,6 +632,183 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
                         requiresNewAuthorization = (error as? ApiException)?.statusCode in setOf(401, 403),
                     )
                 },
+            )
+        }
+    }
+
+    /**
+     * Opens the public catalogue. Filter options and the highlight strips are fetched once and
+     * then reused, so reopening the browser is instant.
+     */
+    fun openBrowse() {
+        mutableBrowse.value = mutableBrowse.value.copy(recentSearches = searchHistoryStore.history.value)
+        if (mutableBrowse.value.metadata.gameVersions.isEmpty()) loadBrowseMetadata()
+        if (mutableBrowse.value.highlights.isEmpty) loadBrowseHighlights()
+    }
+
+    fun closeBrowse() {
+        browseTypingJob?.cancel()
+        browseJob?.cancel()
+        // Results are dropped but metadata and highlights are kept: they never go stale within a
+        // session and refetching them makes every reopen feel slow.
+        mutableBrowse.value = mutableBrowse.value.copy(
+            query = ProjectSearchQuery(),
+            hits = emptyList(),
+            totalHits = 0,
+            hasMore = false,
+            isLoading = false,
+            isLoadingMore = false,
+            errorMessage = null,
+        )
+    }
+
+    /** Typing searches on its own after a short pause, so every keystroke is not a request. */
+    fun setBrowseText(text: String) {
+        val query = mutableBrowse.value.query.withText(text)
+        mutableBrowse.value = mutableBrowse.value.copy(query = query)
+        browseTypingJob?.cancel()
+        if (!query.hasText && !query.hasFilters) {
+            browseJob?.cancel()
+            mutableBrowse.value = mutableBrowse.value.copy(
+                hits = emptyList(),
+                totalHits = 0,
+                hasMore = false,
+                isLoading = false,
+                errorMessage = null,
+            )
+            return
+        }
+        browseTypingJob = viewModelScope.launch {
+            delay(SEARCH_DEBOUNCE_MILLIS)
+            runBrowseSearch(query)
+        }
+    }
+
+    /** Explicit submit from the keyboard: searches at once and remembers the query. */
+    fun submitBrowseSearch() {
+        browseTypingJob?.cancel()
+        val query = mutableBrowse.value.query
+        if (query.hasText) {
+            searchHistoryStore.remember(query.text)
+            mutableBrowse.value = mutableBrowse.value.copy(recentSearches = searchHistoryStore.history.value)
+        }
+        runBrowseSearch(query)
+    }
+
+    fun applyBrowseQuery(query: ProjectSearchQuery) {
+        browseTypingJob?.cancel()
+        mutableBrowse.value = mutableBrowse.value.copy(query = query)
+        if (!query.hasText && !query.hasFilters) {
+            browseJob?.cancel()
+            mutableBrowse.value = mutableBrowse.value.copy(
+                hits = emptyList(),
+                totalHits = 0,
+                hasMore = false,
+                isLoading = false,
+                errorMessage = null,
+            )
+            return
+        }
+        runBrowseSearch(query)
+    }
+
+    fun loadMoreBrowseResults() {
+        val current = mutableBrowse.value
+        if (current.isLoading || current.isLoadingMore || !current.hasMore) return
+        val query = current.query.nextPage()
+        mutableBrowse.value = current.copy(query = query, isLoadingMore = true)
+        browseJob = viewModelScope.launch {
+            val result = suspendCatching { controller.searchProjects(query) }
+            if (mutableBrowse.value.query.offset != query.offset) return@launch
+            mutableBrowse.value = result.fold(
+                onSuccess = { page ->
+                    mutableBrowse.value.copy(
+                        // Modrinth can repeat a project across pages when the index shifts mid-scroll.
+                        hits = (mutableBrowse.value.hits + page.hits).distinctBy { it.projectId },
+                        totalHits = page.totalHits,
+                        hasMore = page.hasMore,
+                        isLoadingMore = false,
+                    )
+                },
+                onFailure = { error ->
+                    mutableBrowse.value.copy(
+                        isLoadingMore = false,
+                        errorMessage = error.message ?: "Unable to load more results.",
+                    )
+                },
+            )
+        }
+    }
+
+    fun forgetRecentSearch(query: String) {
+        searchHistoryStore.forget(query)
+        mutableBrowse.value = mutableBrowse.value.copy(recentSearches = searchHistoryStore.history.value)
+    }
+
+    fun clearRecentSearches() {
+        searchHistoryStore.clear()
+        mutableBrowse.value = mutableBrowse.value.copy(recentSearches = emptyList())
+    }
+
+    fun openSearchHit(hit: ProjectSearchHit) {
+        val managed = currentDashboard()?.projects?.firstOrNull { project ->
+            project.id == hit.projectId || (project.slug != null && project.slug == hit.slug)
+        }
+        if (managed != null) {
+            openProject(managed)
+            return
+        }
+        loadProject(seed = hit.toProjectSeed(), projectKey = hit.reference, initiallyReadOnly = true)
+    }
+
+    private fun runBrowseSearch(query: ProjectSearchQuery) {
+        browseJob?.cancel()
+        val firstPage = query.copy(offset = 0)
+        mutableBrowse.value = mutableBrowse.value.copy(
+            query = firstPage,
+            isLoading = true,
+            isLoadingMore = false,
+            errorMessage = null,
+        )
+        browseJob = viewModelScope.launch {
+            val result = suspendCatching { controller.searchProjects(firstPage) }
+            if (mutableBrowse.value.query != firstPage) return@launch
+            mutableBrowse.value = result.fold(
+                onSuccess = { page ->
+                    mutableBrowse.value.copy(
+                        hits = page.hits,
+                        totalHits = page.totalHits,
+                        hasMore = page.hasMore,
+                        isLoading = false,
+                    )
+                },
+                onFailure = { error ->
+                    mutableBrowse.value.copy(
+                        hits = emptyList(),
+                        totalHits = 0,
+                        hasMore = false,
+                        isLoading = false,
+                        errorMessage = error.message ?: "Unable to search Modrinth.",
+                    )
+                },
+            )
+        }
+    }
+
+    private fun loadBrowseMetadata() {
+        viewModelScope.launch {
+            suspendCatching { controller.loadBrowseMetadata() }
+                .onSuccess { mutableBrowse.value = mutableBrowse.value.copy(metadata = it) }
+        }
+    }
+
+    private fun loadBrowseHighlights() {
+        mutableBrowse.value = mutableBrowse.value.copy(isLoadingHighlights = true)
+        viewModelScope.launch {
+            val result = suspendCatching { controller.loadBrowseHighlights() }
+            mutableBrowse.value = mutableBrowse.value.copy(
+                highlights = result.getOrDefault(BrowseHighlights()),
+                isLoadingHighlights = false,
             )
         }
     }
@@ -1136,6 +1323,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
         mutableProjectAction.value = ProjectActionState()
         mutableModeration.value = ProjectModerationState()
         mutableDisclosures.value = ProjectDisclosuresState()
+        mutableBrowse.value = BrowseState()
         mutableMemberSearch.value = MemberSearchState()
         mutableAnalytics.value = AnalyticsState()
         mutableNotifications.value = NotificationState()
@@ -1144,6 +1332,8 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
         pendingNotificationProjectReference = null
         oauthCoordinator.clear()
         tokenStore.clear()
+        browseJob?.cancel()
+        browseTypingJob?.cancel()
         projectLoadJob?.cancel()
         projectActionJob?.cancel()
         moderationJob?.cancel()
@@ -1166,6 +1356,8 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private companion object {
+        /** Long enough that a typed word is one request, short enough to feel live. */
+        const val SEARCH_DEBOUNCE_MILLIS = 350L
         const val FOREGROUND_REFRESH_INTERVAL_MS = 15_000L
     }
 }
@@ -1248,6 +1440,24 @@ data class ProjectDisclosuresState(
     val saveErrorMessage: String? = null,
     val requiresNewAuthorization: Boolean = false,
 )
+
+data class BrowseState(
+    val query: ProjectSearchQuery = ProjectSearchQuery(),
+    val hits: List<ProjectSearchHit> = emptyList(),
+    val totalHits: Int = 0,
+    val hasMore: Boolean = false,
+    val isLoading: Boolean = false,
+    val isLoadingMore: Boolean = false,
+    val errorMessage: String? = null,
+    /** Popular and recently updated projects, shown while nothing is typed or filtered. */
+    val highlights: BrowseHighlights = BrowseHighlights(),
+    val isLoadingHighlights: Boolean = false,
+    val metadata: BrowseMetadata = BrowseMetadata(),
+    val recentSearches: List<String> = emptyList(),
+) {
+    /** With no query and no filters there is nothing to page through, so the strips take over. */
+    val isShowingHighlights: Boolean get() = !query.hasText && !query.hasFilters
+}
 
 data class MemberSearchState(
     val query: String = "",

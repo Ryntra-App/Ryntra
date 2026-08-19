@@ -45,6 +45,7 @@ struct RyntraTopBar: View {
     var showsBackButton = false
     var onBack: () -> Void = {}
     var showsAvatar = true
+    var onSearchTap: (() -> Void)?
     var onNotificationsTap: (() -> Void)?
     var unreadNotificationCount = 0
 
@@ -65,6 +66,14 @@ struct RyntraTopBar: View {
             Spacer(minLength: 8)
             if isRefreshing {
                 ProgressView().padding(.trailing, 8)
+            }
+            if let onSearchTap {
+                Button(action: onSearchTap) {
+                    Image(systemName: "magnifyingglass")
+                        .ryntraMinimumTouchTarget()
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(NSLocalizedString("Browse Modrinth", comment: "Navigation action"))
             }
             if let onNotificationsTap {
                 Button(action: onNotificationsTap) {
@@ -205,6 +214,7 @@ extension View {
         showsBackButton: Bool = false,
         onBack: @escaping () -> Void = {},
         showsAvatar: Bool = true,
+        onSearchTap: (() -> Void)? = nil,
         onNotificationsTap: (() -> Void)? = nil,
         unreadNotificationCount: Int = 0,
         windowTitle: String? = nil,
@@ -219,6 +229,7 @@ extension View {
                 showsBackButton: showsBackButton,
                 onBack: onBack,
                 showsAvatar: showsAvatar,
+                onSearchTap: onSearchTap,
                 onNotificationsTap: onNotificationsTap,
                 unreadNotificationCount: unreadNotificationCount,
                 windowTitle: windowTitle,
@@ -238,6 +249,7 @@ private struct RyntraChromeModifier: ViewModifier {
     let showsBackButton: Bool
     let onBack: () -> Void
     let showsAvatar: Bool
+    let onSearchTap: (() -> Void)?
     let onNotificationsTap: (() -> Void)?
     let unreadNotificationCount: Int
     /// Window title to use instead of `title`. Changing the navigation title
@@ -267,6 +279,14 @@ private struct RyntraChromeModifier: ViewModifier {
                     }
                     ToolbarItemGroup(placement: .ryntraTrailing) {
                         if isRefreshing { ProgressView() }
+                        if let onSearchTap {
+                            Button(action: onSearchTap) {
+                                Image(systemName: "magnifyingglass")
+                            }
+                            .keyboardShortcut("f", modifiers: .command)
+                            .accessibilityLabel(NSLocalizedString("Browse Modrinth", comment: "Navigation action"))
+                            .help(NSLocalizedString("Browse Modrinth", comment: "Navigation action"))
+                        }
                         if let onNotificationsTap {
                             Button(action: onNotificationsTap) {
                                 Image(systemName: "bell")
@@ -314,6 +334,7 @@ private struct RyntraChromeModifier: ViewModifier {
                         showsBackButton: showsBackButton,
                         onBack: onBack,
                         showsAvatar: showsAvatar,
+                        onSearchTap: onSearchTap,
                         onNotificationsTap: onNotificationsTap,
                         unreadNotificationCount: unreadNotificationCount
                     )

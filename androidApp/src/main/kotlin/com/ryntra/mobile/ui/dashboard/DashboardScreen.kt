@@ -49,6 +49,7 @@ import com.ryntra.mobile.ProfileUpdateState
 import com.ryntra.mobile.NotificationState
 import com.ryntra.mobile.InstantNotificationState
 import com.ryntra.mobile.ProjectActionState
+import com.ryntra.mobile.BrowseState
 import com.ryntra.mobile.ProjectDisclosuresState
 import com.ryntra.mobile.ProjectModerationState
 import com.ryntra.mobile.ProjectDetailState
@@ -62,6 +63,7 @@ import com.ryntra.mobile.ui.components.RyntraTabBar
 import com.ryntra.mobile.ui.components.RyntraTopBar
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.mobile.ui.dashboard.account.AccountScreen
+import com.ryntra.mobile.ui.dashboard.browse.BrowseScreen
 import com.ryntra.mobile.ui.dashboard.notifications.NotificationsScreen
 import com.ryntra.mobile.ui.dashboard.analytics.AnalyticsScreen
 import com.ryntra.mobile.ui.dashboard.organizations.OrganizationDetailScreen
@@ -76,6 +78,8 @@ import com.ryntra.shared.model.ModrinthNotification
 import com.ryntra.shared.model.Project
 import com.ryntra.shared.model.CreateVersionRequest
 import com.ryntra.shared.model.ProjectDisclosureDraft
+import com.ryntra.shared.model.ProjectSearchHit
+import com.ryntra.shared.model.ProjectSearchQuery
 import com.ryntra.shared.model.ProjectFileUpload
 import com.ryntra.shared.model.ProjectMemberUpdate
 import com.ryntra.shared.model.ProjectSortMode
@@ -101,6 +105,7 @@ private enum class DashboardLayer {
     Project,
     Organization,
     Notifications,
+    Browse,
 }
 
 @Composable
@@ -126,6 +131,7 @@ fun DashboardScreen(
     projectAction: ProjectActionState = ProjectActionState(),
     moderation: ProjectModerationState = ProjectModerationState(),
     disclosures: ProjectDisclosuresState = ProjectDisclosuresState(),
+    browse: BrowseState = BrowseState(),
     memberSearch: MemberSearchState = MemberSearchState(),
     analytics: AnalyticsState = AnalyticsState(),
     notifications: NotificationState = NotificationState(),
@@ -152,6 +158,15 @@ fun DashboardScreen(
     onJoinTeam: (String) -> Unit = {},
     onTransferOwnership: (String, String) -> Unit = { _, _ -> },
     onClearProjectActionStatus: () -> Unit = {},
+    onOpenBrowse: () -> Unit = {},
+    onCloseBrowse: () -> Unit = {},
+    onBrowseTextChange: (String) -> Unit = {},
+    onBrowseSubmit: () -> Unit = {},
+    onBrowseQueryChange: (ProjectSearchQuery) -> Unit = {},
+    onBrowseLoadMore: () -> Unit = {},
+    onOpenSearchHit: (ProjectSearchHit) -> Unit = {},
+    onForgetRecentSearch: (String) -> Unit = {},
+    onClearRecentSearches: () -> Unit = {},
     onLoadProjectDisclosures: (String, Boolean) -> Unit = { _, _ -> },
     onSaveProjectDisclosures: (String, ProjectDisclosureDraft) -> Unit = { _, _ -> },
     onLoadProjectModeration: (String, Boolean) -> Unit = { _, _ -> },
@@ -180,6 +195,7 @@ fun DashboardScreen(
     var destination by rememberSaveable { mutableStateOf(DashboardDestination.Overview) }
     var isProfileVisible by rememberSaveable { mutableStateOf(false) }
     var isNotificationsVisible by rememberSaveable { mutableStateOf(false) }
+    var isBrowseVisible by rememberSaveable { mutableStateOf(false) }
     var isCreatingProject by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     var retainedProjectDetail by remember { mutableStateOf<ProjectDetailState?>(null) }
@@ -193,12 +209,14 @@ fun DashboardScreen(
     val retryLabel = stringResource(R.string.common_retry)
     val isPlatformNative = RyntraDesign.isPlatformNative
     val detailTitle = projectDetail?.project?.title ?: organizationDetail?.organization?.name
-    val isDetailVisible = isProfileVisible || isNotificationsVisible || projectDetail != null || organizationDetail != null
+    val isDetailVisible = isProfileVisible || isNotificationsVisible || isBrowseVisible ||
+        projectDetail != null || organizationDetail != null
     val contentLayer = when {
         projectDetail != null -> DashboardLayer.Project
         organizationDetail != null -> DashboardLayer.Organization
         isProfileVisible -> DashboardLayer.Profile
         isNotificationsVisible -> DashboardLayer.Notifications
+        isBrowseVisible -> DashboardLayer.Browse
         else -> DashboardLayer.Tabs
     }
     val requestCloseProject = {
@@ -238,12 +256,19 @@ fun DashboardScreen(
     val tabs = remember(destinationLabels) {
         destinations.mapIndexed { index, item -> RyntraTab(destinationLabels[index], item.icon) }
     }
-    BackHandler(enabled = isProfileVisible || isNotificationsVisible || projectDetail != null || organizationDetail != null) {
+    BackHandler(
+        enabled = isProfileVisible || isNotificationsVisible || isBrowseVisible ||
+            projectDetail != null || organizationDetail != null,
+    ) {
         when {
             projectDetail != null -> requestCloseProject()
             organizationDetail != null -> onCloseOrganization()
             isProfileVisible -> isProfileVisible = false
             isNotificationsVisible -> isNotificationsVisible = false
+            isBrowseVisible -> {
+                isBrowseVisible = false
+                onCloseBrowse()
+            }
         }
     }
 
@@ -384,6 +409,16 @@ fun DashboardScreen(
                         onImportPreferences = onImportPreferences,
                         onSignOut = onSignOut,
                     )
+                    DashboardLayer.Browse -> BrowseScreen(
+                        state = browse,
+                        onTextChange = onBrowseTextChange,
+                        onSubmit = onBrowseSubmit,
+                        onQueryChange = onBrowseQueryChange,
+                        onLoadMore = onBrowseLoadMore,
+                        onOpenHit = onOpenSearchHit,
+                        onForgetRecentSearch = onForgetRecentSearch,
+                        onClearRecentSearches = onClearRecentSearches,
+                    )
                     DashboardLayer.Notifications -> NotificationsScreen(
                         state = notifications,
                         onRefresh = onRefreshNotifications,
@@ -446,6 +481,7 @@ fun DashboardScreen(
                 title = detailTitle ?: when {
                     isProfileVisible -> stringResource(R.string.nav_profile)
                     isNotificationsVisible -> stringResource(R.string.notifications_title)
+                    isBrowseVisible -> stringResource(R.string.browse_title)
                     else -> destinationLabels[destination.ordinal]
                 },
                 avatarUrl = dashboard.account.avatarUrl,
@@ -460,9 +496,22 @@ fun DashboardScreen(
                         organizationDetail != null -> onCloseOrganization()
                         isProfileVisible -> isProfileVisible = false
                         isNotificationsVisible -> isNotificationsVisible = false
+                        isBrowseVisible -> {
+                            isBrowseVisible = false
+                            onCloseBrowse()
+                        }
                     }
                 },
                 showAvatar = !isDetailVisible,
+                onSearchClick = if (!isDetailVisible) {
+                    {
+                        isBrowseVisible = true
+                        onOpenBrowse()
+                    }
+                } else {
+                    null
+                },
+                searchDescription = stringResource(R.string.browse_open),
                 onNotificationsClick = if (!isDetailVisible) {
                     {
                         isNotificationsVisible = true
@@ -482,6 +531,7 @@ fun DashboardScreen(
                     onSelect = {
                         destination = destinations[it]
                         isProfileVisible = false
+                        isBrowseVisible = false
                     },
                     hazeState = hazeState,
                     glassQuality = preferences.glassQuality,

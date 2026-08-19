@@ -10,8 +10,12 @@ import com.ryntra.shared.model.CreateVersionRequest
 import com.ryntra.shared.model.CreateProjectRequest
 import com.ryntra.shared.model.ProjectCreationMetadata
 import com.ryntra.shared.model.Dashboard
+import com.ryntra.shared.model.BrowseHighlights
+import com.ryntra.shared.model.BrowseMetadata
 import com.ryntra.shared.model.ProjectDisclosure
 import com.ryntra.shared.model.ProjectDisclosureDraft
+import com.ryntra.shared.model.ProjectSearchPage
+import com.ryntra.shared.model.ProjectSearchQuery
 import com.ryntra.shared.model.Organization
 import com.ryntra.shared.model.ModrinthNotification
 import com.ryntra.shared.model.ModerationThread
@@ -297,6 +301,17 @@ class AppController internal constructor(
             AppState.SignedOut -> AppState.SignedOut
         }
     }
+
+    /**
+     * Public catalogue search. The route needs no authentication, so a signed-out state still
+     * returns results — the token is passed only to bill the request to the user's own quota.
+     */
+    suspend fun searchProjects(query: ProjectSearchQuery): ProjectSearchPage =
+        repository.searchProjects(query, accessToken)
+
+    suspend fun loadBrowseMetadata(): BrowseMetadata = repository.loadBrowseMetadata()
+
+    suspend fun loadBrowseHighlights(): BrowseHighlights = repository.loadBrowseHighlights(accessToken)
 
     suspend fun loadProjectDisclosures(projectIdOrSlug: String): List<ProjectDisclosure> {
         val token = requireToken("loading content disclosures")
