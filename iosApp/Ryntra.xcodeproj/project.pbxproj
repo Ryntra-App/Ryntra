@@ -410,7 +410,7 @@
 				CODE_SIGN_ENTITLEMENTS = Ryntra/Ryntra.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Ryntra/Ryntra-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 30102;
+				CURRENT_PROJECT_VERSION = 30200;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -424,7 +424,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "$(inherited) @executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 3.1.1;
+				MARKETING_VERSION = 3.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ryntra.mobile;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				RYNTRA_BACKEND_URL = "https://authrinthy.sawiq.org";
@@ -448,7 +448,7 @@
 				CODE_SIGN_ENTITLEMENTS = Ryntra/Ryntra.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Ryntra/Ryntra-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 30102;
+				CURRENT_PROJECT_VERSION = 30200;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -461,7 +461,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "$(inherited) @executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 3.1.1;
+				MARKETING_VERSION = 3.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ryntra.mobile;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				RYNTRA_BACKEND_URL = "https://authrinthy.sawiq.org";
