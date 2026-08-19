@@ -18,8 +18,12 @@ internal object GfmMarkdownParser {
 
     fun parse(markdown: String): List<MarkdownBlock> {
         if (markdown.isBlank()) return emptyList()
-        val root = parser.buildMarkdownTreeFromString(markdown as CharSequence)
-        return root.children.flatMap { node -> node.toNativeBlocks(markdown) }
+        // Modrinth renders the HTML creators embed in descriptions, so it is translated to
+        // Markdown before parsing rather than reaching the reader as literal tags.
+        val normalized = MarkdownHtml.normalize(markdown)
+        if (normalized.isBlank()) return emptyList()
+        val root = parser.buildMarkdownTreeFromString(normalized as CharSequence)
+        return root.children.flatMap { node -> node.toNativeBlocks(normalized) }
     }
 
     private fun ASTNode.toNativeBlocks(source: String): List<MarkdownBlock> {
