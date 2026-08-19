@@ -903,4 +903,9 @@
     <string name="browse_recent">Недавние запросы</string>
     <string name="browse_recent_clear">Очистить</string>
     <string name="browse_recent_forget">Убрать из истории</string>
+
+    <!-- Description embeds -->
+    <string name="markdown_embed_youtube">Видео на YouTube</string>
+    <string name="markdown_embed_discord">Сервер Discord</string>
+    <string name="markdown_embed_open">Открыть: %1$s</string>
 </resources>

@@ -69,6 +69,11 @@ internal fun MarkdownBlockView(block: MarkdownBlock) {
             return
         }
 
+        MarkdownBlockType.Embed -> {
+            block.embed?.let { MarkdownEmbedCard(it) }
+            return
+        }
+
         else -> Unit
     }
 

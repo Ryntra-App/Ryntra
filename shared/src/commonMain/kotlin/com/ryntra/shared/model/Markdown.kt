@@ -14,6 +14,8 @@ data class MarkdownBlock(
     val images: List<MarkdownImage> = emptyList(),
     val checked: Boolean? = null,
     val table: MarkdownTable? = null,
+    /** Set only on [MarkdownBlockType.Embed]. */
+    val embed: MarkdownEmbed? = null,
 )
 
 @Serializable
@@ -45,6 +47,7 @@ enum class MarkdownBlockType {
     Divider,
     Image,
     Table,
+    Embed,
 }
 
 @Serializable

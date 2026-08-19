@@ -21,6 +21,10 @@ struct MarkdownBlockView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+        case .embed:
+            if let embed = block.embed {
+                MarkdownEmbedView(embed: embed)
+            }
         case .table:
             markdownTable
         case .quote:

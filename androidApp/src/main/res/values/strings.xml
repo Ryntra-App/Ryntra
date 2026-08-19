@@ -899,4 +899,9 @@
     <string name="browse_recent">Recent searches</string>
     <string name="browse_recent_clear">Clear</string>
     <string name="browse_recent_forget">Remove from history</string>
+
+    <!-- Description embeds -->
+    <string name="markdown_embed_youtube">YouTube video</string>
+    <string name="markdown_embed_discord">Discord server</string>
+    <string name="markdown_embed_open">Open %1$s</string>
 </resources>

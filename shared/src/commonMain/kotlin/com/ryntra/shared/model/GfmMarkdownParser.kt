@@ -21,10 +21,38 @@ internal object GfmMarkdownParser {
         // Modrinth renders the HTML creators embed in descriptions, so it is translated to
         // Markdown before parsing rather than reaching the reader as literal tags.
         val normalized = MarkdownHtml.normalize(markdown)
-        if (normalized.isBlank()) return emptyList()
-        val root = parser.buildMarkdownTreeFromString(normalized as CharSequence)
-        return root.children.flatMap { node -> node.toNativeBlocks(normalized) }
+        if (normalized.markdown.isBlank()) return emptyList()
+        val source = normalized.markdown
+        val root = parser.buildMarkdownTreeFromString(source as CharSequence)
+        val blocks = root.children.flatMap { node -> node.toNativeBlocks(source) }
+        return if (normalized.embeds.isEmpty()) blocks else blocks.resolveEmbeds(normalized.embeds)
     }
+
+    /**
+     * Swaps the placeholders left by [MarkdownHtml] for real embed blocks. A placeholder that
+     * somehow ended up sharing a paragraph is stripped rather than shown.
+     */
+    private fun List<MarkdownBlock>.resolveEmbeds(embeds: List<MarkdownEmbed>): List<MarkdownBlock> =
+        mapNotNull { block ->
+            val index = MarkdownHtml.embedIndexOf(block.content)
+            if (index != null) {
+                embeds.getOrNull(index)?.let { embed ->
+                    MarkdownBlock(
+                        content = embed.url,
+                        type = MarkdownBlockType.Embed,
+                        url = embed.url,
+                        embed = embed,
+                    )
+                }
+            } else {
+                val cleaned = MarkdownHtml.withoutPlaceholders(block.content)
+                when {
+                    cleaned == block.content -> block
+                    cleaned.isEmpty() -> null
+                    else -> block.copy(content = cleaned)
+                }
+            }
+        }
 
     private fun ASTNode.toNativeBlocks(source: String): List<MarkdownBlock> {
         val raw = source.substring(startOffset, endOffset).trimEnd()
