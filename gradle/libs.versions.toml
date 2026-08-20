@@ -15,7 +15,7 @@ androidxCore = "1.18.0"
 workManager = "2.11.2"
 haze = "1.7.2"
 composeIcons = "2.2.1"
-jetbrainsMarkdown = "0.7.8"
+jetbrainsMarkdown = "0.7.9"
 firebaseBom = "34.17.0"
 
 [libraries]
