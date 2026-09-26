@@ -24,6 +24,8 @@ internal object RyntraWidgets {
     private const val REFRESH_WORK = "ryntra-widget-refresh"
     private const val REFRESH_NOW_WORK = "ryntra-widget-refresh-now"
     private const val SERIES_MAX_AGE_MILLIS = 3 * 60 * 60 * 1000L
+    private const val SNAPSHOT_MAX_AGE_MILLIS = 60 * 60 * 1000L
+    private const val MIN_REFRESH_GAP_MILLIS = 10 * 60 * 1000L
 
     /**
      * Saves what the app just loaded and redraws every placed widget from it. The app does not
@@ -42,6 +44,26 @@ internal object RyntraWidgets {
         if (refreshStaleSeries && isSeriesStale && hasPlacedWidgets(context)) {
             refreshNow(context)
         }
+    }
+
+    /**
+     * Called whenever a widget is drawn: makes sure the hourly refresh exists, and fetches
+     * straight away when there is nothing to show or it is out of date. This is what lets a
+     * widget fill itself after a reboot, an app update, or without the app ever being opened.
+     */
+    fun ensureFresh(context: Context, snapshot: WidgetSnapshot?) {
+        scheduleRefresh(context)
+        val age = snapshot?.let { System.currentTimeMillis() - it.updatedAtEpochMillis }
+        val seriesAge = snapshot?.dailyDownloadsUpdatedAtEpochMillis?.let { System.currentTimeMillis() - it }
+        val isStale = age == null || age > SNAPSHOT_MAX_AGE_MILLIS || seriesAge == null || seriesAge > SERIES_MAX_AGE_MILLIS
+        if (!isStale || SecureTokenStore(context).read() == null) return
+        // Drawing a widget can itself follow a refresh; without a gap, data Modrinth keeps
+        // failing to return would chain refreshes back to back.
+        val store = WidgetSnapshotStore(context)
+        val sinceLastAttempt = System.currentTimeMillis() - store.lastRefreshAttemptEpochMillis()
+        if (sinceLastAttempt < MIN_REFRESH_GAP_MILLIS) return
+        store.recordRefreshAttempt()
+        refreshNow(context)
     }
 
     suspend fun clear(context: Context) {

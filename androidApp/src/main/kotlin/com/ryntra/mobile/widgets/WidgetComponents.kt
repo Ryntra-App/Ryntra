@@ -1,5 +1,10 @@
 package com.ryntra.mobile.widgets
 
+import com.ryntra.shared.model.WidgetSnapshot
+import androidx.glance.layout.fillMaxWidth
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
@@ -73,22 +78,40 @@ internal fun openAppIntent(context: Context, destination: AppScreenRequest): Int
         .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         .putExtra(MainActivity.EXTRA_OPEN_SCREEN, destination.name)
 
-/** The rounded, themed card every Ryntra widget sits in; the whole card opens the app. */
+/**
+ * The rounded, themed card every Ryntra widget sits in. With a [destination] the whole card
+ * opens the app; a widget with its own buttons passes null and makes only its body a link,
+ * because a button nested in a clickable card loses its taps to the card on some launchers.
+ */
 @Composable
 internal fun WidgetCard(
     context: Context,
-    destination: AppScreenRequest,
+    destination: AppScreenRequest?,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val card = GlanceModifier
+        .fillMaxSize()
+        .cornerRadius(24.dp)
+        .background(GlanceTheme.colors.widgetBackground)
+        .padding(16.dp)
     Column(
-        modifier = GlanceModifier
-            .fillMaxSize()
-            .cornerRadius(24.dp)
-            .background(GlanceTheme.colors.widgetBackground)
-            .padding(16.dp)
-            .clickable(actionStartActivity(openAppIntent(context, destination))),
+        modifier = destination?.let { card.clickable(openAppAction(context, it)) } ?: card,
         content = content,
     )
+}
+
+internal fun openAppAction(context: Context, destination: AppScreenRequest) =
+    actionStartActivity(openAppIntent(context, destination))
+
+/**
+ * The snapshot on disk, kept current while the widget is on screen. Glance keeps a widget's
+ * composition alive between updates, so a value read once would never change.
+ */
+@Composable
+internal fun rememberWidgetSnapshot(context: Context, initial: WidgetSnapshot?): WidgetSnapshot? {
+    val snapshots = remember { WidgetSnapshotStore(context).snapshots() }
+    val snapshot by snapshots.collectAsState(initial)
+    return snapshot
 }
 
 @Composable
@@ -134,17 +157,22 @@ internal fun WidgetCaption(text: String, emphasized: Boolean = false, color: Col
 /** Label on the left, value on the right, one line — the rows of the larger layouts. */
 @Composable
 internal fun WidgetRow(label: String, value: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = GlanceModifier.padding(top = 6.dp)) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = GlanceModifier.fillMaxWidth().padding(top = 6.dp),
+    ) {
         Text(
             text = label,
             style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp),
             maxLines = 1,
             modifier = GlanceModifier.defaultWeight(),
         )
+        // A long project name would otherwise run straight into its number.
         Text(
             text = value,
             style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 13.sp, fontWeight = FontWeight.Bold),
             maxLines = 1,
+            modifier = GlanceModifier.padding(start = 12.dp),
         )
     }
 }

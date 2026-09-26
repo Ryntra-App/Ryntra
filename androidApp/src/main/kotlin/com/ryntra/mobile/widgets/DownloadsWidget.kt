@@ -30,7 +30,7 @@ import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
-import androidx.glance.layout.Spacer
+import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
@@ -54,26 +54,39 @@ import kotlin.math.roundToInt
 /**
  * Downloads over the last 7, 30 or 90 days, picked on the widget itself. Each placed widget
  * keeps its own range, so two of them can show a week and a quarter side by side.
+ *
+ * Small is the total and its trend; medium and large add the chart.
  */
 class DownloadsWidget : GlanceAppWidget() {
     override val sizeMode: SizeMode = SizeMode.Responsive(WidgetSize.all)
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val snapshot = withContext(Dispatchers.IO) { WidgetSnapshotStore(context).read() }
+        val initial = withContext(Dispatchers.IO) {
+            WidgetSnapshotStore(context).read().also { RyntraWidgets.ensureFresh(context, it) }
+        }
         provideContent {
+            val snapshot = rememberWidgetSnapshot(context, initial)
             GlanceTheme {
                 val days = currentState(RANGE_KEY)?.takeIf { it in RANGES } ?: DEFAULT_RANGE
                 val size = WidgetSize.current()
-                WidgetCard(context, AppScreenRequest.Analytics) {
+                // Only the body opens the app, so the range buttons above it get their taps.
+                WidgetCard(context, destination = null) {
                     Header(context, days, size)
-                    Spacer(GlanceModifier.defaultWeight())
-                    val window = snapshot?.downloadWindow(days)
-                    when {
-                        snapshot == null -> WidgetSignedOut(context)
-                        window == null -> WidgetCaption(context.getString(R.string.widget_downloads_loading))
-                        size == WidgetSize.Small -> SmallChart(context, window)
-                        size == WidgetSize.Medium -> MediumChart(context, window)
-                        else -> LargeChart(context, window, snapshot)
+                    Column(
+                        modifier = GlanceModifier
+                            .fillMaxSize()
+                            .padding(top = 8.dp)
+                            .clickable(openAppAction(context, AppScreenRequest.Analytics)),
+                        verticalAlignment = Alignment.Bottom,
+                    ) {
+                        val window = snapshot?.downloadWindow(days)
+                        when {
+                            snapshot == null -> WidgetSignedOut(context)
+                            window == null -> WidgetCaption(context.getString(R.string.widget_downloads_loading))
+                            size == WidgetSize.Small -> SmallDownloads(context, window)
+                            size == WidgetSize.Medium -> MediumDownloads(context, window)
+                            else -> LargeDownloads(context, window, snapshot)
+                        }
                     }
                 }
             }
@@ -87,78 +100,85 @@ class DownloadsWidget : GlanceAppWidget() {
                 WidgetHeader(context.getString(R.string.widget_downloads_title))
             }
             if (size == WidgetSize.Small) {
-                // No room for three chips: one shows the range and steps to the next.
-                RangeChip(context, days, selected = true, target = RANGES[(RANGES.indexOf(days) + 1) % RANGES.size])
+                // No room for three buttons: one shows the range and steps to the next.
+                val next = RANGES[(RANGES.indexOf(days) + 1) % RANGES.size]
+                RangeButton(context, days, isSelected = true, target = next)
             } else {
-                RANGES.forEach { range -> RangeChip(context, range, selected = range == days, target = range) }
+                RANGES.forEach { range -> RangeButton(context, range, isSelected = range == days, target = range) }
+            }
+        }
+    }
+
+    /** 32dp tall, like a Material filter chip; anything smaller is hard to hit on a home screen. */
+    @Composable
+    private fun RangeButton(context: Context, days: Int, isSelected: Boolean, target: Int) {
+        val colors = GlanceTheme.colors
+        Box(modifier = GlanceModifier.padding(start = 4.dp)) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = GlanceModifier
+                    .height(32.dp)
+                    .cornerRadius(16.dp)
+                    .background(if (isSelected) colors.primaryContainer else colors.surfaceVariant)
+                    .clickable(actionRunCallback<SelectRangeAction>(actionParametersOf(RANGE_PARAMETER to target)))
+                    .padding(horizontal = 12.dp),
+            ) {
+                Text(
+                    text = context.getString(R.string.widget_range_days, days),
+                    style = TextStyle(
+                        color = if (isSelected) colors.onPrimaryContainer else colors.onSurfaceVariant,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                    ),
+                )
             }
         }
     }
 
     @Composable
-    private fun RangeChip(context: Context, days: Int, selected: Boolean, target: Int) {
-        val colors = GlanceTheme.colors
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = GlanceModifier
-                .padding(start = 4.dp)
-                .cornerRadius(12.dp)
-                .background(if (selected) colors.primaryContainer else colors.surfaceVariant)
-                .padding(horizontal = 8.dp, vertical = 4.dp)
-                .clickable(actionRunCallback<SelectRangeAction>(actionParametersOf(RANGE_PARAMETER to target))),
-        ) {
-            Text(
-                text = context.getString(R.string.widget_range_days, days),
-                style = TextStyle(
-                    color = if (selected) colors.onPrimaryContainer else colors.onSurfaceVariant,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                ),
-            )
-        }
+    private fun SmallDownloads(context: Context, window: DownloadWindow) {
+        WidgetFigure(widgetCount(window.total), size = 26)
+        Change(context, window)
     }
 
     @Composable
-    private fun SmallChart(context: Context, window: DownloadWindow) {
-        WidgetFigure(widgetCount(window.total), size = 22)
-        Chart(context, window, widthDp = LocalSize.current.width.value - 32, heightDp = 26f)
-    }
-
-    @Composable
-    private fun MediumChart(context: Context, window: DownloadWindow) {
+    private fun MediumDownloads(context: Context, window: DownloadWindow) {
         val size = LocalSize.current
+        val contentWidth = size.width.value - CARD_PADDING
         Row(verticalAlignment = Alignment.Bottom, modifier = GlanceModifier.fillMaxWidth()) {
-            Column(modifier = GlanceModifier.width(((size.width.value - 32) * 0.4f).dp)) {
+            Column(modifier = GlanceModifier.width((contentWidth * 0.4f).dp)) {
                 WidgetFigure(widgetCount(window.total), size = 26)
                 Change(context, window)
             }
             Chart(
                 context,
                 window,
-                widthDp = (size.width.value - 32) * 0.6f,
-                heightDp = (size.height.value - 32 - HEADER_HEIGHT).coerceAtLeast(24f),
+                widthDp = contentWidth * 0.6f,
+                heightDp = (size.height.value - CARD_PADDING - HEADER_HEIGHT).coerceAtLeast(MIN_CHART_HEIGHT),
             )
         }
     }
 
     @Composable
-    private fun LargeChart(context: Context, window: DownloadWindow, snapshot: WidgetSnapshot) {
+    private fun LargeDownloads(context: Context, window: DownloadWindow, snapshot: WidgetSnapshot) {
         val size = LocalSize.current
         WidgetFigure(widgetCount(window.total), size = 30)
         Change(context, window)
-        Spacer(GlanceModifier.height(8.dp))
         Chart(
             context,
             window,
-            widthDp = size.width.value - 32,
-            heightDp = (size.height.value - 32 - HEADER_HEIGHT - FIGURE_HEIGHT - AXIS_HEIGHT).coerceAtLeast(40f),
+            widthDp = size.width.value - CARD_PADDING,
+            heightDp = (size.height.value - CARD_PADDING - HEADER_HEIGHT - FIGURE_HEIGHT - AXIS_HEIGHT)
+                .coerceAtLeast(MIN_CHART_HEIGHT),
+            modifier = GlanceModifier.padding(top = 8.dp),
         )
         AxisLabels(window, snapshot)
     }
 
     @Composable
     private fun Change(context: Context, window: DownloadWindow) {
-        val change = window.changePercent ?: run {
+        val change = window.changePercent
+        if (change == null) {
             WidgetCaption(context.getString(R.string.widget_downloads_period, window.days))
             return
         }
@@ -186,7 +206,13 @@ class DownloadsWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun Chart(context: Context, window: DownloadWindow, widthDp: Float, heightDp: Float) {
+    private fun Chart(
+        context: Context,
+        window: DownloadWindow,
+        widthDp: Float,
+        heightDp: Float,
+        modifier: GlanceModifier = GlanceModifier,
+    ) {
         val bitmap = DownloadsChart.render(
             values = window.values,
             widthDp = widthDp,
@@ -198,7 +224,7 @@ class DownloadsWidget : GlanceAppWidget() {
         Image(
             provider = ImageProvider(bitmap),
             contentDescription = context.getString(R.string.widget_downloads_chart, window.days, widgetCount(window.total)),
-            modifier = GlanceModifier.width(widthDp.dp).height(heightDp.dp),
+            modifier = modifier.width(widthDp.dp).height(heightDp.dp),
         )
     }
 
@@ -208,10 +234,12 @@ class DownloadsWidget : GlanceAppWidget() {
         val RANGE_KEY: Preferences.Key<Int> = intPreferencesKey("range_days")
         val RANGE_PARAMETER = ActionParameters.Key<Int>("range_days")
 
-        // Heights, in dp, of what sits above and below the chart in each layout.
-        const val HEADER_HEIGHT = 28f
+        // Sizes, in dp, of what surrounds the chart in each layout.
+        const val CARD_PADDING = 32f
+        const val HEADER_HEIGHT = 44f
         const val FIGURE_HEIGHT = 56f
         const val AXIS_HEIGHT = 22f
+        const val MIN_CHART_HEIGHT = 40f
     }
 }
 
@@ -226,14 +254,6 @@ class SelectRangeAction : ActionCallback {
 
 class DownloadsWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = DownloadsWidget()
-
-    override fun onEnabled(context: Context) {
-        super.onEnabled(context)
-        RyntraWidgets.scheduleRefresh(context)
-        // The daily series is only loaded by the background refresh; do not make a new
-        // chart widget wait up to an hour for its first data.
-        RyntraWidgets.refreshNow(context)
-    }
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)

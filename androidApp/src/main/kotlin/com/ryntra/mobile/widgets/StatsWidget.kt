@@ -32,8 +32,11 @@ class StatsWidget : GlanceAppWidget() {
     override val sizeMode: SizeMode = SizeMode.Responsive(WidgetSize.all)
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val snapshot = withContext(Dispatchers.IO) { WidgetSnapshotStore(context).read() }
+        val initial = withContext(Dispatchers.IO) {
+            WidgetSnapshotStore(context).read().also { RyntraWidgets.ensureFresh(context, it) }
+        }
         provideContent {
+            val snapshot = rememberWidgetSnapshot(context, initial)
             GlanceTheme {
                 WidgetCard(context, AppScreenRequest.Analytics) {
                     WidgetHeader(snapshot?.username ?: context.getString(R.string.app_name))

@@ -976,7 +976,7 @@
     <string name="widget_wallet_title">Modrinth balance</string>
     <string name="widget_wallet_description">Your Modrinth balance and upcoming payouts</string>
     <string name="widget_wallet_next">Next: %1$s on %2$s</string>
-    <string name="widget_wallet_unavailable">Open the wallet once to load your balance</string>
+    <string name="widget_wallet_unavailable">Modrinth did not return your balance. It will retry shortly.</string>
     <string name="widget_stats_title">Creator stats</string>
     <string name="widget_stats_description">Lifetime downloads, followers and your top projects</string>
     <string name="widget_stats_downloads">downloads</string>

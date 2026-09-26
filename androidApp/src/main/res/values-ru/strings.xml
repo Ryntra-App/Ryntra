@@ -980,7 +980,7 @@
     <string name="widget_wallet_title">Баланс Modrinth</string>
     <string name="widget_wallet_description">Баланс Modrinth и ближайшие выплаты</string>
     <string name="widget_wallet_next">Далее: %1$s — %2$s</string>
-    <string name="widget_wallet_unavailable">Откройте кошелёк один раз, чтобы загрузить баланс</string>
+    <string name="widget_wallet_unavailable">Modrinth не вернул баланс. Виджет скоро повторит попытку.</string>
     <string name="widget_stats_title">Статистика автора</string>
     <string name="widget_stats_description">Скачивания, подписчики и самые популярные проекты</string>
     <string name="widget_stats_downloads">скачиваний</string>
