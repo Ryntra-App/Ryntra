@@ -56,10 +56,9 @@ internal fun downloadSeriesRequest(startTime: String, endTime: String, days: Int
 
 /** One total per slice, oldest first, always [days] long so the chart's x axis is fixed. */
 internal fun parseDailyDownloads(root: JsonElement, days: Int): List<Long> {
-    val slices = (root as? JsonArray).orEmpty()
+    val slices = analyticsSlices(root)
     return List(days) { index ->
-        (slices.getOrNull(index) as? JsonArray).orEmpty()
-            .mapNotNull { it as? JsonObject }
+        slices.getOrNull(index).orEmpty()
             .filter { (it["metric_kind"] as? JsonPrimitive)?.content == "downloads" }
             .sumOf { (it["downloads"] as? JsonPrimitive)?.content?.toLongOrNull() ?: 0L }
     }

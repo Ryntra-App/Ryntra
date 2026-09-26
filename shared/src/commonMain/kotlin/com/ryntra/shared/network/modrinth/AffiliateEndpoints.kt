@@ -64,13 +64,11 @@ internal fun affiliateRequest(startTime: String, endTime: String): JsonObject {
 }
 
 /**
- * The response is a list of time slices, each a list of entries. Affiliate entries carry
+ * Affiliate entries in the response's time slices carry
  * `source_affiliate_code` and a `metric_kind`; project entries in the same list are skipped.
  */
 internal fun parseAffiliateStats(root: JsonElement): List<AffiliateCodeStats> {
-    val entries = (root as? JsonArray).orEmpty()
-        .flatMap { slice -> (slice as? JsonArray).orEmpty() }
-        .mapNotNull { it as? JsonObject }
+    val entries = analyticsSlices(root).flatten()
     val byCode = linkedMapOf<String, AffiliateCodeStats>()
     entries.forEach { entry ->
         val code = entry.text("source_affiliate_code") ?: return@forEach

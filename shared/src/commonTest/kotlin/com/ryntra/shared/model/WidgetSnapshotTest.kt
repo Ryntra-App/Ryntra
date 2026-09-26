@@ -48,11 +48,11 @@ class WidgetSnapshotTest {
     @Test
     fun dailyDownloadsSumEveryProjectPerDayAndPadMissingDays() {
         val root = apiJson.parseToJsonElement(
-            """[
+            """{"metrics":[
                 [{"source_project":"a","metric_kind":"downloads","downloads":3},
                  {"source_project":"b","metric_kind":"downloads","downloads":4}],
                 [{"source_project":"a","metric_kind":"downloads","downloads":1}]
-            ]""",
+            ],"projects":{}}""",
         )
 
         assertEquals(listOf(7L, 1L, 0L), parseDailyDownloads(root, days = 3))

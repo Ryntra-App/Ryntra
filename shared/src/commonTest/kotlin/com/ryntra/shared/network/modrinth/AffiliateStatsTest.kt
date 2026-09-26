@@ -10,13 +10,13 @@ class AffiliateStatsTest {
     @Test
     fun metricsOfOneCodeAreMergedAndProjectEntriesIgnored() {
         val root = apiJson.parseToJsonElement(
-            """[[
+            """{"metrics":[[
                 {"source_affiliate_code":"afl1","metric_kind":"clicks","clicks":40},
                 {"source_affiliate_code":"afl1","metric_kind":"conversions","conversions":3},
                 {"source_affiliate_code":"afl1","metric_kind":"revenue","revenue":"4.50"},
                 {"source_affiliate_code":"afl2","metric_kind":"clicks","clicks":90},
                 {"source_project":"proj1","metric_kind":"views","views":12}
-            ]]""",
+            ]]}""",
         )
 
         val stats = parseAffiliateStats(root)
