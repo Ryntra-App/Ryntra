@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.composables.icons.lucide.User
 import com.composables.icons.lucide.ChevronRight
 import com.composables.icons.lucide.ExternalLink
 import com.composables.icons.lucide.Lucide
@@ -46,8 +47,11 @@ import com.ryntra.mobile.ui.components.RyntraEmptyState
 import com.ryntra.mobile.ui.components.RyntraIcon
 import com.ryntra.mobile.ui.components.RyntraSearchField
 import com.ryntra.mobile.ui.components.RyntraSectionLabel
+import com.ryntra.mobile.ui.components.ryntraCard
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.shared.model.Organization
+import com.ryntra.mobile.ui.components.ExpressiveStatTile
+import com.ryntra.mobile.ui.components.StatTone
 
 @Composable
 fun OrganizationsScreen(
@@ -143,12 +147,29 @@ fun OrganizationsScreen(
 
 @Composable
 private fun TeamsSummaryBand(teamCount: Int, memberCount: Int) {
+    if (RyntraDesign.isPlatformNative) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+            ExpressiveStatTile(
+                icon = Lucide.UsersRound,
+                label = stringResource(R.string.nav_teams),
+                value = teamCount.toString(),
+                tone = StatTone.Primary,
+                modifier = Modifier.weight(1f),
+            )
+            ExpressiveStatTile(
+                icon = Lucide.User,
+                label = stringResource(R.string.organizations_members),
+                value = memberCount.toString(),
+                tone = StatTone.Tertiary,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        return
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(RyntraDesign.colors.surface)
-            .border(0.75.dp, RyntraDesign.colors.separator, RoundedCornerShape(10.dp))
+            .ryntraCard(RoundedCornerShape(10.dp))
             .padding(vertical = 13.dp),
     ) {
         SummaryMetric(
@@ -186,9 +207,7 @@ private fun OrganizationCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(shape)
-            .background(RyntraDesign.colors.surface)
-            .border(0.75.dp, RyntraDesign.colors.separator, shape)
+            .ryntraCard(shape)
             .clickable(onClick = onClick)
             .padding(14.dp),
     ) {

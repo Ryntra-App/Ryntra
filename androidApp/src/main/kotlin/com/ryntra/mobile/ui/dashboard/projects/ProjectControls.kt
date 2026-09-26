@@ -1,5 +1,9 @@
 package com.ryntra.mobile.ui.dashboard.projects
 
+import com.ryntra.mobile.ui.components.RyntraChoiceGroup
+import androidx.compose.ui.semantics.role
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -12,9 +16,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,9 +31,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ryntra.mobile.ui.components.formatExactCount
 import com.ryntra.mobile.R
-import com.ryntra.mobile.ui.components.ryntraSegmentedButtonColors
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.shared.model.ProjectSortMode
+import com.ryntra.mobile.ui.components.ExpressiveStatTile
+import com.ryntra.mobile.ui.components.StatTone
+import androidx.compose.foundation.layout.Arrangement
+import com.composables.icons.lucide.Download
+import com.composables.icons.lucide.Heart
+import com.composables.icons.lucide.Package
+import com.composables.icons.lucide.Lucide
 
 @Composable
 internal fun ProjectSummaryBand(
@@ -40,6 +47,36 @@ internal fun ProjectSummaryBand(
     downloads: Long,
     followers: Long,
 ) {
+    if (RyntraDesign.isPlatformNative) {
+        // Downloads are the figure people open this tab for, so it takes the full width;
+        // the other two share the row beneath it.
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+            ExpressiveStatTile(
+                icon = Lucide.Download,
+                label = stringResource(R.string.analytics_downloads),
+                value = formatExactCount(downloads),
+                tone = StatTone.Primary,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                ExpressiveStatTile(
+                    icon = Lucide.Package,
+                    label = stringResource(R.string.analytics_projects),
+                    value = projectCount.toString(),
+                    tone = StatTone.Secondary,
+                    modifier = Modifier.weight(1f),
+                )
+                ExpressiveStatTile(
+                    icon = Lucide.Heart,
+                    label = stringResource(R.string.analytics_followers),
+                    value = formatExactCount(followers),
+                    tone = StatTone.Tertiary,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        return
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -76,17 +113,7 @@ internal fun ProjectSortControl(
     onSelect: (ProjectSortMode) -> Unit,
 ) {
     if (RyntraDesign.isPlatformNative) {
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            ProjectSortMode.entries.forEachIndexed { index, mode ->
-                SegmentedButton(
-                    selected = mode == selected,
-                    onClick = { onSelect(mode) },
-                    shape = SegmentedButtonDefaults.itemShape(index, ProjectSortMode.entries.size),
-                    colors = ryntraSegmentedButtonColors(),
-                    label = { Text(projectSortLabel(mode), maxLines = 1) },
-                )
-            }
-        }
+        PlatformSortGroup(selected, onSelect)
         return
     }
     Row(
@@ -154,3 +181,17 @@ private fun projectSortLabel(mode: ProjectSortMode): String = stringResource(
         ProjectSortMode.Followers -> R.string.projects_sort_followers
     },
 )
+
+// Expressive's connected button group, matching the range and settings pickers: the
+// chosen order morphs to a full pill instead of taking a checkmark inside a segment.
+@Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private fun PlatformSortGroup(selected: ProjectSortMode, onSelect: (ProjectSortMode) -> Unit) {
+    RyntraChoiceGroup(
+        options = ProjectSortMode.entries,
+        isChecked = { it == selected },
+        onToggle = onSelect,
+        label = { projectSortLabel(it) },
+        contentPadding = PaddingValues(horizontal = 8.dp),
+    )
+}

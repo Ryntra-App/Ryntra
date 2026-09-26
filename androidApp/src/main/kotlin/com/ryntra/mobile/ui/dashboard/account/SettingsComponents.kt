@@ -1,10 +1,10 @@
 package com.ryntra.mobile.ui.dashboard.account
 
+import com.ryntra.mobile.ui.components.RyntraChoiceGroup
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -17,17 +17,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -41,7 +39,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -58,7 +55,7 @@ import com.ryntra.mobile.preferences.ThemeStyle
 import com.ryntra.mobile.R
 import com.ryntra.mobile.ui.components.RyntraIcon
 import com.ryntra.mobile.ui.components.RyntraSectionLabel
-import com.ryntra.mobile.ui.components.ryntraSegmentedButtonColors
+import com.ryntra.mobile.ui.components.ryntraCard
 import com.ryntra.mobile.ui.theme.RyntraDesign
 
 @Composable
@@ -70,11 +67,15 @@ internal fun SettingsGroup(
     Column(modifier = modifier.fillMaxWidth()) {
         RyntraSectionLabel(title, modifier = Modifier.padding(start = 4.dp, bottom = 9.dp))
         if (RyntraDesign.isPlatformNative) {
+            // Material's segmented list: every row is its own tile with a thin seam of
+            // background between them. The group clips to a large shape and each tile
+            // to a small one, so the ends of the group round off generously while the
+            // seams inside stay tight.
             Column(
+                verticalArrangement = Arrangement.spacedBy(SettingsTileSeam),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerLow),
+                    .clip(MaterialTheme.shapes.extraLarge),
             ) {
                 content()
             }
@@ -83,9 +84,7 @@ internal fun SettingsGroup(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(RyntraDesign.colors.surface)
-                .border(0.75.dp, RyntraDesign.colors.separator, RoundedCornerShape(12.dp)),
+                .ryntraCard(RoundedCornerShape(12.dp)),
         ) {
             content()
         }
@@ -100,6 +99,9 @@ internal fun SettingsRow(
     onClick: (() -> Unit)? = null,
     isDestructive: Boolean = false,
     trailing: (@Composable RowScope.() -> Unit)? = null,
+    // A control that belongs to this row — a picker under its heading. It sits in the
+    // row's own tile so the two read as one setting rather than two.
+    below: (@Composable () -> Unit)? = null,
 ) {
     if (RyntraDesign.isPlatformNative) {
         PlatformSettingsRow(
@@ -109,9 +111,30 @@ internal fun SettingsRow(
             onClick = onClick,
             isDestructive = isDestructive,
             trailing = trailing,
+            below = below,
         )
         return
     }
+    RyntraSettingsRow(
+        icon = icon,
+        title = title,
+        subtitle = subtitle,
+        onClick = onClick,
+        isDestructive = isDestructive,
+        trailing = trailing,
+    )
+    below?.invoke()
+}
+
+@Composable
+private fun RyntraSettingsRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String?,
+    onClick: (() -> Unit)?,
+    isDestructive: Boolean,
+    trailing: (@Composable RowScope.() -> Unit)?,
+) {
     val contentColor = if (isDestructive) RyntraDesign.colors.destructive else RyntraDesign.colors.labelPrimary
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -204,61 +227,84 @@ private fun PlatformSettingsRow(
     onClick: (() -> Unit)?,
     isDestructive: Boolean,
     trailing: (@Composable RowScope.() -> Unit)?,
+    below: (@Composable () -> Unit)?,
 ) {
-    val contentColor = if (isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-    val interactionModifier = if (onClick == null) Modifier else Modifier.clickable(onClick = onClick)
-    ListItem(
-        headlineContent = {
-            Text(
-                text = title,
-                color = contentColor,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        },
-        supportingContent = subtitle?.let { supportingText ->
-            {
+    val colors = MaterialTheme.colorScheme
+    val titleColor = if (isDestructive) colors.error else colors.onSurface
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.extraSmall)
+            .background(colors.surfaceContainer)
+            .then(if (onClick == null) Modifier else Modifier.clickable(onClick = onClick)),
+    ) {
+        ListItem(
+            headlineContent = {
                 Text(
-                    text = supportingText,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
+                    text = title,
+                    color = titleColor,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-            }
-        },
-        leadingContent = {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = if (isDestructive) contentColor else MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp),
-            )
-        },
-        trailingContent = {
-            when {
-                trailing != null -> Row(content = trailing)
-                onClick != null -> Icon(
-                    imageVector = Lucide.ChevronRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-        },
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = interactionModifier,
-    )
+            },
+            supportingContent = subtitle?.let { supportingText ->
+                {
+                    Text(
+                        text = supportingText,
+                        color = colors.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            },
+            leadingContent = { SettingsIconBadge(icon = icon, isDestructive = isDestructive) },
+            trailingContent = {
+                when {
+                    trailing != null -> Row(verticalAlignment = Alignment.CenterVertically, content = trailing)
+                    onClick != null -> Icon(
+                        imageVector = Lucide.ChevronRight,
+                        contentDescription = null,
+                        tint = colors.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        )
+        below?.invoke()
+    }
 }
+
+// The glyph sits in a tonal circle, as Android's own settings draw it, so a column of
+// rows reads as a set of distinct places rather than a list of lines.
+@Composable
+private fun SettingsIconBadge(icon: ImageVector, isDestructive: Boolean) {
+    val colors = MaterialTheme.colorScheme
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(40.dp)
+            .background(
+                color = if (isDestructive) colors.errorContainer else colors.secondaryContainer,
+                shape = CircleShape,
+            ),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = if (isDestructive) colors.onErrorContainer else colors.onSecondaryContainer,
+            modifier = Modifier.size(20.dp),
+        )
+    }
+}
+
+private val SettingsTileSeam = 2.dp
 
 @Composable
 internal fun SettingsDivider() {
-    if (RyntraDesign.isPlatformNative) {
-        HorizontalDivider(
-            modifier = Modifier.padding(start = 72.dp),
-            color = MaterialTheme.colorScheme.outlineVariant,
-        )
-        return
-    }
+    // Platform rows are separate tiles; the seam between them is the divider.
+    if (RyntraDesign.isPlatformNative) return
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -334,13 +380,24 @@ internal fun AppLanguagePicker(
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     val selectedLabel = selected.displayName()
+    val isPlatformNative = RyntraDesign.isPlatformNative
     Box(modifier = Modifier.fillMaxWidth()) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { isExpanded = true }
-                .padding(start = 61.dp, end = 14.dp, top = 10.dp, bottom = 12.dp),
+            modifier = if (isPlatformNative) {
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                    .clickable { isExpanded = true }
+                    .padding(horizontal = 20.dp, vertical = 14.dp)
+            } else {
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { isExpanded = true }
+                    .padding(start = 61.dp, end = 14.dp, top = 10.dp, bottom = 12.dp)
+            },
         ) {
             Text(
                 text = selectedLabel,
@@ -398,28 +455,7 @@ private fun <T> SettingsSegmentedPicker(
     onSelect: (T) -> Unit,
 ) {
     if (RyntraDesign.isPlatformNative) {
-        SingleChoiceSegmentedButtonRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 61.dp, end = 12.dp, bottom = 12.dp),
-        ) {
-            options.forEachIndexed { index, option ->
-                SegmentedButton(
-                    selected = option == selected,
-                    onClick = { onSelect(option) },
-                    shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                    colors = ryntraSegmentedButtonColors(),
-                    label = {
-                        Text(
-                            text = label(option),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            style = MaterialTheme.typography.labelMedium,
-                        )
-                    },
-                )
-            }
-        }
+        PlatformChoiceGroup(options = options, selected = selected, label = label, onSelect = onSelect)
         return
     }
 
@@ -455,4 +491,23 @@ private fun <T> SettingsSegmentedPicker(
             )
         }
     }
+}
+
+// Expressive replaces the segmented button with a connected button group: the chosen
+// option morphs to a full pill while its neighbours keep their squared inner edges.
+@Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private fun <T> PlatformChoiceGroup(
+    options: List<T>,
+    selected: T,
+    label: @Composable (T) -> String,
+    onSelect: (T) -> Unit,
+) {
+    RyntraChoiceGroup(
+        options = options,
+        isChecked = { it == selected },
+        onToggle = onSelect,
+        label = label,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+    )
 }

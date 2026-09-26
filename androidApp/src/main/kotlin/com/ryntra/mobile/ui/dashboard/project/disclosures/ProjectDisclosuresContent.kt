@@ -1,8 +1,8 @@
 package com.ryntra.mobile.ui.dashboard.project.disclosures
 
+import com.ryntra.mobile.ui.components.RyntraContentLoading
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -87,9 +87,7 @@ internal fun LazyListScope.disclosuresContentItems(
 
     if (state.isLoading && !state.hasLoaded) {
         item(key = "disclosures-loading", contentType = "loading") {
-            Box(Modifier.fillMaxWidth().padding(vertical = 42.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-            }
+            RyntraContentLoading()
         }
         return
     }

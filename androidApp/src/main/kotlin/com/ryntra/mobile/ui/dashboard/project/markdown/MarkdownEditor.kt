@@ -29,6 +29,7 @@ import com.composables.icons.lucide.FileText
 import com.composables.icons.lucide.Lucide
 import com.ryntra.mobile.R
 import com.ryntra.mobile.ui.components.RyntraTextField
+import com.ryntra.mobile.ui.components.ryntraCard
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.shared.model.MarkdownBlock
 import com.ryntra.shared.model.MarkdownParser
@@ -74,8 +75,7 @@ private fun EditorModePicker(selected: MarkdownEditorMode, onSelect: (MarkdownEd
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(RyntraDesign.colors.surface, RoundedCornerShape(9.dp))
-            .border(0.75.dp, RyntraDesign.colors.separator, RoundedCornerShape(9.dp))
+            .ryntraCard(RoundedCornerShape(9.dp))
             .padding(3.dp),
     ) {
         MarkdownEditorMode.entries.forEach { mode ->

@@ -61,7 +61,7 @@ struct BrowseView: View {
             .padding(.bottom, 36)
         }
         .ryntraInteractiveKeyboardDismissal()
-        .ryntraScreenBackground(Color.ryntraBackground)
+        .ryntraScreenBackdrop()
         .task { await loadSupportingData() }
         .onDisappear { searchTask?.cancel() }
     }

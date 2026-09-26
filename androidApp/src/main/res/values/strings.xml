@@ -26,7 +26,6 @@
     <string name="analytics_days_short">%1$dd</string>
     <string name="analytics_last_days">Last %1$d days</string>
     <string name="analytics_wallet">Wallet</string>
-    <string name="analytics_recent_payouts">Recent payouts</string>
     <string name="analytics_downloads">Downloads</string>
     <string name="analytics_views">Views</string>
     <string name="analytics_playtime">Playtime</string>
@@ -58,8 +57,8 @@
     <string name="analytics_status_fresh_sign_in">Analytics needs a fresh Modrinth sign-in. Sign out and connect again.</string>
     <string name="analytics_status_permission">This Modrinth token cannot read analytics. Sign in with analytics permission enabled.</string>
     <string name="analytics_status_rate_limit">Modrinth is rate limiting analytics right now. Try again shortly.</string>
-    <string name="analytics_status_decode">Analytics could not be decoded from Modrinth. Lifetime totals remain exact.</string>
-    <string name="analytics_status_failed">Modrinth analytics request failed (%1$d). Lifetime totals remain exact.</string>
+    <string name="analytics_status_decode">Modrinth sent analytics Ryntra could not read.</string>
+    <string name="analytics_status_failed">Modrinth could not load analytics (error %1$d).</string>
     <string name="analytics_health_visibility">Not publicly listed</string>
     <string name="analytics_health_visibility_ok">All projects are publicly listed</string>
     <string name="analytics_health_icons">Missing project icon</string>
@@ -67,23 +66,12 @@
     <string name="analytics_health_descriptions">Short description body</string>
     <string name="analytics_health_descriptions_ok">Descriptions contain enough detail</string>
 
-    <string name="wallet_modrinth">Modrinth wallet</string>
     <string name="wallet_loading">Loading balance and payouts</string>
-    <string name="wallet_activity">Balance and payout activity</string>
-    <string name="wallet_account">Creator payout account</string>
-    <string name="wallet_open_revenue">Open Modrinth revenue</string>
-    <string name="wallet_current_balance">CURRENT BALANCE</string>
     <string name="wallet_available_now">Available now</string>
-    <string name="wallet_pending">Pending</string>
-    <string name="wallet_paid_out">Paid out</string>
-    <string name="wallet_lifetime_earnings">Lifetime earnings</string>
-    <string name="wallet_no_balance">No balance details were returned for this account.</string>
     <string name="wallet_data_failed">Wallet data could not be loaded.</string>
     <string name="wallet_unreachable">Modrinth wallet could not be reached. Try refreshing.</string>
     <string name="wallet_reconnect">Connect again to allow creator payout access.</string>
     <string name="wallet_no_details">No wallet details were returned for this account.</string>
-    <string name="wallet_payout">Payout</string>
-    <string name="wallet_date_missing">Date unavailable</string>
 
     <string name="projects_search">Search projects</string>
     <string name="projects_empty">No projects yet</string>
@@ -413,6 +401,7 @@
     <string name="notifications_empty">You are all caught up</string>
     <string name="notifications_archive_empty">No read notifications yet</string>
     <string name="notifications_load_failed">Could not load notifications</string>
+    <string name="notifications_loading">Loading notifications</string>
     <string name="notifications_accept_invitation">Accept invitation</string>
     <string name="notifications_accepting_invitation">Accepting…</string>
     <string name="notifications_settings_title">Notifications</string>
@@ -469,6 +458,7 @@
     <string name="markdown_preview">Preview</string>
     <string name="markdown_preview_empty">Nothing to preview</string>
     <string name="common_retry">Retry</string>
+    <string name="common_clear_search">Clear search</string>
     <string name="support_title">Support the author</string>
     <string name="support_donation_alerts">DonationAlerts</string>
     <string name="support_donation_alerts_hint">One-time support for Ryntra development</string>
@@ -806,16 +796,18 @@
     <string name="disclosures_explanation_optional">Explanation (optional)</string>
 
     <string name="disclosures_ai_title">Contains AI-generated content</string>
-    <string name="disclosures_ai_description">Required when a substantial part of the code is AI-generated, any asset is substantially AI-generated, the functionality relies on generative AI, or the project page was written with it.</string>
-    <string name="disclosures_ai_uses">What is generative AI used for?</string>
+    <string name="disclosures_ai_description">Must be enabled if this project contains any AI-generated assets or text, or a substantial amount of AI-generated code. If you would consider AI a co-author of the project, disclose it here.</string>
+    <string name="disclosures_ai_uses">What types of content have been generated with AI?</string>
     <string name="disclosures_ai_use_code">Code</string>
     <string name="disclosures_ai_use_assets">Assets</string>
     <string name="disclosures_ai_use_text">Text</string>
-    <string name="disclosures_ai_use_functionality">Functionality</string>
     <string name="disclosures_ai_note_hint">e.g. The Chinese and Arabic translations are AI-generated.</string>
+    <string name="disclosures_ai_functionality_title">Contains generative AI functionality</string>
+    <string name="disclosures_ai_functionality_description">Must be enabled if the project has functionality that makes use of generative AI, such as an in-game chatbot or dynamically generated textures.</string>
+    <string name="disclosures_ai_functionality_note_hint">e.g. The NPCs use generative AI for dialogue options.</string>
 
     <string name="disclosures_ads_title">Contains advertisements</string>
-    <string name="disclosures_ads_description">Required when the project contains advertising, sponsorships or promotion of other works.</string>
+    <string name="disclosures_ads_description">Must be enabled if this project contains advertisements, sponsorships, or promotions of other works. Unobtrusive links to your own relevant content, and sponsored banners on the project page, do not count.</string>
     <string name="disclosures_ads_note_hint">e.g. Adds the Modrinth SMP server to your server list automatically.</string>
 
     <string name="disclosures_epilepsy_title">Photosensitivity warning</string>
@@ -845,8 +837,8 @@
     <string name="disclosures_derivative_name_label">Name of the original work</string>
     <string name="disclosures_derivative_name_hint">Example project</string>
     <string name="disclosures_derivative_link_label">Link to the original work</string>
-    <string name="disclosures_derivative_note_label">How this project builds on it (optional)</string>
-    <string name="disclosures_derivative_note_hint">e.g. A fork that keeps 1.20 support alive.</string>
+    <string name="disclosures_derivative_note_label">Explain how your project is based on the original work</string>
+    <string name="disclosures_derivative_note_hint">e.g. A fork that adds a few new biomes and ports it to newer Minecraft versions.</string>
     <string name="disclosures_derivative_add_source">Add original work</string>
     <string name="disclosures_derivative_remove_source">Remove original work</string>
 
@@ -858,7 +850,7 @@
     <string name="disclosures_paid_remove_feature">Remove paid feature</string>
 
     <string name="disclosures_archived_title">Archive project</string>
-    <string name="disclosures_archived_description">Marks the project as no longer maintained. Archived projects stay discoverable while their visibility is public.</string>
+    <string name="disclosures_archived_description">Lets users know you are no longer working on the project. Archived projects stay discoverable while their visibility is Public; set it to Unlisted to de-list the project.</string>
     <string name="disclosures_archived_note_hint">e.g. I no longer have time for this project — feel free to fork it!</string>
 
     <string name="disclosures_issue_ads_note">The advertising disclosure needs an explanation.</string>
@@ -904,4 +896,116 @@
     <string name="markdown_embed_youtube">YouTube video</string>
     <string name="markdown_embed_discord">Discord server</string>
     <string name="markdown_embed_open">Open %1$s</string>
+    <string name="version_filter_search">Search versions</string>
+    <string name="version_filter_channel">Channel</string>
+    <string name="version_filter_loader">Loader</string>
+    <string name="version_filter_game_version">Game version</string>
+    <string name="version_filter_featured">Featured</string>
+    <string name="version_filter_clear">Clear</string>
+    <plurals name="version_filter_matches"><item quantity="one">%1$d of %2$d version</item><item quantity="other">%1$d of %2$d versions</item></plurals>
+    <string name="version_filter_empty">No versions match these filters</string>
+    <string name="version_filter_empty_hint">Clear a filter to see more releases.</string>
+    <string name="version_detail_featured">Featured</string>
+    <string name="version_detail_compatibility">Compatibility</string>
+    <string name="version_detail_changelog">Changelog</string>
+    <string name="version_detail_changelog_empty">No changelog was published for this version.</string>
+    <string name="version_detail_files">Files</string>
+    <string name="version_detail_dependencies">Dependencies</string>
+    <string name="version_detail_download">Download file</string>
+    <string name="version_status_title">Visibility</string>
+    <string name="version_status_hint">Archived versions stay downloadable but drop out of the version list.</string>
+    <string name="version_status_listed">Listed</string>
+    <string name="version_status_unlisted">Unlisted</string>
+    <string name="version_status_archived">Archived</string>
+    <string name="project_copy_link">Copy link</string>
+    <string name="project_link_copied">Link copied</string>
+    <string name="notifications_inbox">Inbox</string>
+    <string name="notifications_archive">Archive</string>
+    <string name="analytics_status_timeout">Modrinth took too long to answer. Long ranges take longer to compute.</string>
+    <string name="analytics_status_unreachable">Could not reach Modrinth. Check your connection.</string>
+    <!-- Wallet -->
+    <string name="wallet_title">Wallet</string>
+    <string name="wallet_open">Open wallet</string>
+    <string name="wallet_balance">Balance</string>
+    <string name="wallet_estimated_on">Estimated %1$s</string>
+    <string name="wallet_estimated_hint">May still change until it becomes available.</string>
+    <string name="wallet_processing">Processing</string>
+    <string name="wallet_processing_hint">This month\'s revenue. It stays in processing until the month ends, then becomes available 60 days later.</string>
+    <string name="wallet_how_revenue_works">How Modrinth handles revenue</string>
+    <string name="wallet_unavailable_title">Wallet unavailable</string>
+    <string name="wallet_withdraw">Withdraw</string>
+    <string name="wallet_withdraw_description">Withdraw from your available balance to any payout method. Withdrawals open on modrinth.com, where Modrinth handles payout methods and tax forms.</string>
+    <string name="wallet_withdraw_locked">Withdrawals are locked until your tax form is resolved with Modrinth support.</string>
+    <string name="wallet_withdraw_on_modrinth">Withdraw %1$s on Modrinth</string>
+    <string name="wallet_withdrawn_this_year">Withdrawn this year</string>
+    <string name="wallet_withdrawn_lifetime">Withdrawn all time</string>
+    <string name="wallet_tax_threshold_hint">A tax form is required after %1$s a year.</string>
+    <string name="wallet_tin_mismatch_title">Tax form failed</string>
+    <string name="wallet_tin_mismatch_message">Your withdrawals are temporarily locked because your TIN or SSN didn\'t match IRS records. Contact support to reset and resubmit your tax form.</string>
+    <string name="wallet_contact_support">Contact support</string>
+    <string name="wallet_tax_form_title">Tax form required</string>
+    <string name="wallet_tax_form_message">You\'ve withdrawn over %1$s from Modrinth this year. To comply with tax regulations you need to complete a tax form; withdrawals are paused until it is submitted.</string>
+    <string name="wallet_tax_form_action">Complete tax form</string>
+    <string name="wallet_transactions">Transactions</string>
+    <string name="wallet_export_csv">Export CSV</string>
+    <string name="wallet_export_saved">Transactions saved</string>
+    <string name="wallet_export_failed">Could not save the file</string>
+    <string name="wallet_history_unavailable">Modrinth did not return the transaction history. Pull down to try again.</string>
+    <string name="wallet_no_transactions">No transactions</string>
+    <string name="wallet_no_transactions_hint">Your payouts and withdrawals will appear here.</string>
+    <string name="wallet_all_years">All years</string>
+    <string name="wallet_received">Received</string>
+    <string name="wallet_withdrawn">Withdrawn</string>
+    <string name="wallet_this_month">This month</string>
+    <string name="wallet_last_month_period">Last month</string>
+    <string name="wallet_source_creator_rewards">Creator rewards</string>
+    <string name="wallet_source_affiliates">Affiliate rewards</string>
+    <string name="wallet_status_success">Success</string>
+    <string name="wallet_status_in_transit">In transit</string>
+    <string name="wallet_status_cancelling">Cancelling</string>
+    <string name="wallet_status_cancelled">Cancelled</string>
+    <string name="wallet_status_failed">Failed</string>
+    <string name="wallet_status_unknown">Unknown</string>
+    <string name="wallet_fee">Fee %1$s</string>
+    <string name="wallet_cancel_withdrawal">Cancel</string>
+    <string name="wallet_cancel_withdrawal_title">Cancel this withdrawal?</string>
+    <string name="wallet_cancel_withdrawal_message">%1$s to %2$s will be returned to your balance. Modrinth can only cancel a withdrawal while it is still in transit.</string>
+    <string name="wallet_keep_withdrawal">Keep</string>
+    <plurals name="wallet_transaction_count"><item quantity="one">%1$d</item><item quantity="other">%1$d</item></plurals>
+    <!-- Widgets, notification actions, affiliate links -->
+    <string name="widget_wallet_title">Modrinth balance</string>
+    <string name="widget_wallet_description">Your Modrinth balance and upcoming payouts</string>
+    <string name="widget_wallet_next">Next: %1$s on %2$s</string>
+    <string name="widget_wallet_unavailable">Open the wallet once to load your balance</string>
+    <string name="widget_stats_title">Creator stats</string>
+    <string name="widget_stats_description">Lifetime downloads, followers and your top projects</string>
+    <string name="widget_stats_downloads">downloads</string>
+    <string name="widget_stats_followers">followers</string>
+    <string name="widget_stats_projects">projects</string>
+    <string name="widget_sign_in">Sign in to Ryntra to see your stats</string>
+    <string name="widget_wallet_balance">balance</string>
+    <string name="widget_wallet_available_label">Available now</string>
+    <string name="widget_wallet_estimated">Estimated %1$s</string>
+    <string name="widget_wallet_processing">Processing</string>
+    <string name="widget_downloads_title">Downloads</string>
+    <string name="widget_downloads_description">A downloads chart for the last 7, 30 or 90 days</string>
+    <string name="widget_downloads_loading">The chart appears after the first refresh</string>
+    <string name="widget_downloads_period">in %1$d days</string>
+    <string name="widget_downloads_change">%1$s vs the previous %2$d days</string>
+    <string name="widget_downloads_chart">Downloads chart for %1$d days, %2$s in total</string>
+    <string name="widget_range_days">%1$dd</string>
+    <string name="notification_action_mark_read">Mark as read</string>
+    <string name="notification_action_accept">Accept invitation</string>
+    <string name="notification_action_failed">Modrinth did not accept the action. Try again in the app.</string>
+    <string name="affiliate_title">Affiliate links</string>
+    <string name="affiliate_period">Last %1$d days</string>
+    <string name="affiliate_clicks">Clicks</string>
+    <string name="affiliate_conversions">Purchases</string>
+    <string name="affiliate_revenue">Revenue</string>
+    <string name="affiliate_copy">Copy link</string>
+    <string name="affiliate_copied">Link copied</string>
+    <string name="affiliate_manage">Manage links on Modrinth</string>
+    <string name="affiliate_manage_hint">Modrinth lets only its website create, rename or revoke affiliate links, so links are shown by their code here.</string>
+    <string name="affiliate_none">No affiliate links yet. Create one on Modrinth to start tracking it here.</string>
+    <string name="affiliate_failed">Affiliate statistics could not be loaded.</string>
 </resources>

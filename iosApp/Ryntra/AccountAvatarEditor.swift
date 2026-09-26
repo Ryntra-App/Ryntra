@@ -29,7 +29,7 @@ struct AccountAvatarEditor: View {
                     .tint(.white)
                     .frame(width: 28, height: 28)
                     .background(Color.ryntraGreen, in: Circle())
-                    .overlay(Circle().stroke(Color.ryntraBackground, lineWidth: 2))
+                    .overlay(Circle().stroke(Color.ryntraSurface, lineWidth: 2))
             } else {
                 Menu {
                     Button {
@@ -56,7 +56,7 @@ struct AccountAvatarEditor: View {
                         .foregroundStyle(.white)
                         .frame(width: 28, height: 28)
                         .background(Color.ryntraGreen, in: Circle())
-                        .overlay(Circle().stroke(Color.ryntraBackground, lineWidth: 2))
+                        .overlay(Circle().stroke(Color.ryntraSurface, lineWidth: 2))
                         .ryntraMinimumTouchTarget()
                 }
 #if os(macOS)

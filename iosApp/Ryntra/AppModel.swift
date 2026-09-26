@@ -22,8 +22,18 @@ final class AppModel: ObservableObject {
     @Published private(set) var walletReport: WalletReport?
     @Published private(set) var analyticsRangeDays = 30
     @Published private(set) var isAnalyticsLoading = false
+    /// The chart and the wallet are published as each one lands, so a single flag
+    /// would switch the wallet to its empty state while it is still in flight.
+    @Published private(set) var isWalletLoading = false
     @Published private(set) var analyticsError: String?
     @Published private(set) var walletError: String?
+    /// The withdrawal whose cancellation is in flight; one at a time
+    @Published private(set) var cancellingPayoutID: String?
+    @Published private(set) var walletActionError: String?
+    /// Only accounts in Modrinth's affiliate program ever get a report
+    @Published private(set) var affiliateReport: AffiliateReport?
+    @Published private(set) var isAffiliateLoading = false
+    @Published private(set) var affiliateError: String?
     @Published private(set) var notifications: [ModrinthNotification] = []
     @Published private(set) var isNotificationsLoading = false
     @Published private(set) var notificationsError: String?
@@ -234,21 +244,27 @@ final class AppModel: ObservableObject {
         let projectIDs = projects.map(\.id)
         let requestKey = "\(rangeDays):\(projectIDs.joined(separator: ","))"
         analyticsRangeDays = rangeDays
-        if activeAnalyticsKey == requestKey, analyticsReport != nil, walletReport != nil { return }
+        // A failed report is still a report; treating it as loaded meant picking the same
+        // range again never retried it.
+        if activeAnalyticsKey == requestKey, analyticsReport?.isCoreAvailable == true, walletReport != nil { return }
         activeAnalyticsKey = requestKey
         isAnalyticsLoading = true
+        isWalletLoading = walletReport == nil
         analyticsError = nil
         if walletReport == nil { walletError = nil }
         let end = Date()
         let currentStart = Calendar(identifier: .gregorian).date(byAdding: .day, value: -rangeDays, to: end) ?? end
         let comparisonStart = Calendar(identifier: .gregorian).date(byAdding: .day, value: -(rangeDays * 2), to: end) ?? end
         let formatter = ISO8601DateFormatter()
+        let slicesPerPeriod = AnalyticsResolution.shared.slicesPerPeriod(rangeDays: Int32(rangeDays))
 
         if projectIDs.isEmpty {
+            isWalletLoading = true
             let walletResult = await fetchWalletResult()
             guard activeAnalyticsKey == requestKey else { return }
             analyticsReport = nil
             applyWalletResult(walletResult)
+            isWalletLoading = false
             isAnalyticsLoading = false
             return
         }
@@ -256,24 +272,31 @@ final class AppModel: ObservableObject {
         let query = AnalyticsQuery(
             startTime: formatter.string(from: comparisonStart),
             endTime: formatter.string(from: end),
-            slices: Int32(rangeDays * 2),
+            slices: slicesPerPeriod * 2,
             projectIds: projectIDs,
             currentStartTime: formatter.string(from: currentStart),
-            currentSlices: Int32(rangeDays)
+            currentSlices: slicesPerPeriod,
+            periodDays: Int32(rangeDays)
         )
-        if walletReport == nil {
-            async let analyticsResult = fetchAnalyticsResult(query: query)
-            async let walletResult = fetchWalletResult()
-            let results = await (analyticsResult, walletResult)
-            guard activeAnalyticsKey == requestKey else { return }
-            applyAnalyticsResult(results.0)
-            applyWalletResult(results.1)
-        } else {
+        guard walletReport == nil else {
             let analyticsResult = await fetchAnalyticsResult(query: query)
             guard activeAnalyticsKey == requestKey else { return }
             applyAnalyticsResult(analyticsResult)
+            isAnalyticsLoading = false
+            return
         }
-        if activeAnalyticsKey == requestKey { isAnalyticsLoading = false }
+        // Both requests run together, but the chart is published the moment its own
+        // result lands. The payout endpoint is the slower of the two, and the chart
+        // has no reason to wait behind it.
+        async let walletResult = fetchWalletResult()
+        let analyticsResult = await fetchAnalyticsResult(query: query)
+        guard activeAnalyticsKey == requestKey else { return }
+        applyAnalyticsResult(analyticsResult)
+        isAnalyticsLoading = false
+        let wallet = await walletResult
+        guard activeAnalyticsKey == requestKey else { return }
+        applyWalletResult(wallet)
+        isWalletLoading = false
     }
 
     private func fetchAnalyticsResult(query: AnalyticsQuery) async -> Result<AnalyticsReport, Error> {
@@ -298,6 +321,41 @@ final class AppModel: ObservableObject {
             analyticsReport = report
         case .failure(let error):
             analyticsError = error.localizedDescription
+        }
+    }
+
+    /// Reloads only the wallet; a failed refresh keeps the last balance on screen
+    func refreshWallet() async {
+        Task { await loadAffiliateReport() }
+        isWalletLoading = true
+        walletError = nil
+        applyWalletResult(await fetchWalletResult())
+        isWalletLoading = false
+    }
+
+    func loadAffiliateReport() async {
+        guard case .ready(let dashboard) = state, dashboard.account.isAffiliate, !isAffiliateLoading else { return }
+        isAffiliateLoading = true
+        affiliateError = nil
+        do {
+            affiliateReport = try await controller.loadAffiliateReport(rangeDays: 30)
+        } catch {
+            affiliateError = error.localizedDescription
+        }
+        isAffiliateLoading = false
+    }
+
+    func cancelPayout(id: String) async {
+        guard cancellingPayoutID == nil, !id.isEmpty else { return }
+        cancellingPayoutID = id
+        walletActionError = nil
+        do {
+            try await controller.cancelPayout(payoutId: id)
+            cancellingPayoutID = nil
+            await refreshWallet()
+        } catch {
+            cancellingPayoutID = nil
+            walletActionError = error.localizedDescription
         }
     }
 
@@ -593,9 +651,15 @@ final class AppModel: ObservableObject {
         analyticsReport = nil
         walletReport = nil
         walletError = nil
+        cancellingPayoutID = nil
+        walletActionError = nil
+        affiliateReport = nil
+        affiliateError = nil
+        isAffiliateLoading = false
         analyticsError = nil
         activeAnalyticsKey = nil
         isAnalyticsLoading = false
+        isWalletLoading = false
         notifications = []
         hasLoadedNotifications = false
         cachedUnreadNotificationCount = 0
@@ -659,6 +723,12 @@ final class AppModel: ObservableObject {
                 notificationAccountID = ready.dashboard.account.id
                 Task { await refreshNotifications() }
             }
+            // Modrinth takes seconds to answer an analytics request, so it starts as
+            // soon as the dashboard is known rather than when the tab opens. The shared
+            // controller joins the tab's own request to this one instead of sending two.
+            let projects = ready.dashboard.projects
+            let rangeDays = analyticsRangeDays
+            Task { await loadAnalytics(projects: projects, rangeDays: rangeDays) }
         case let failed as AppStateFailed:
             if failed.isAuthenticationFailure {
                 keychain.clear()

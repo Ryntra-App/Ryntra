@@ -45,7 +45,7 @@ struct MarkdownProjectEditor: View {
                         .background(Color.ryntraBackground)
                 }
             }
-            .background(Color.ryntraBackground)
+            .ryntraScreenBackdrop()
             .navigationTitle(NSLocalizedString("Full description", comment: "Project editor title"))
             .ryntraInlineNavigationTitle()
             .toolbar {

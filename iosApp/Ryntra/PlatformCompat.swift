@@ -135,33 +135,6 @@ extension View {
 #endif
     }
 
-    /// Fills a scrolling screen with an opaque backdrop. On macOS the view is
-    /// stretched to the full window first, so the translucent titlebar always
-    /// samples this colour instead of whatever shows through a short page.
-    @ViewBuilder
-    func ryntraScreenBackground(_ color: Color) -> some View {
-#if os(macOS)
-        frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(color)
-#else
-        background(color)
-#endif
-    }
-
-    /// Replaces a List's own backdrop with the app background on macOS.
-    /// The Mac titlebar is translucent and samples whatever sits beneath it,
-    /// so a screen that keeps the lighter system list background shifts the
-    /// titlebar's tone every time it appears — which reads as flickering.
-    @ViewBuilder
-    func ryntraOpaqueListBackground() -> some View {
-#if os(macOS)
-        scrollContentBackground(.hidden)
-            .background(Color.ryntraBackground)
-#else
-        self
-#endif
-    }
-
     /// Keeps a segmented picker at its natural width. In a Mac list it
     /// otherwise stretches across the full row.
     @ViewBuilder

@@ -26,7 +26,6 @@
     <string name="analytics_days_short">%1$d дн.</string>
     <string name="analytics_last_days">Последние %1$d дней</string>
     <string name="analytics_wallet">Кошелёк</string>
-    <string name="analytics_recent_payouts">Последние выплаты</string>
     <string name="analytics_downloads">Скачивания</string>
     <string name="analytics_views">Просмотры</string>
     <string name="analytics_playtime">Время игры</string>
@@ -58,8 +57,8 @@
     <string name="analytics_status_fresh_sign_in">Для аналитики нужно заново подключить Modrinth. Выйдите из аккаунта и войдите снова.</string>
     <string name="analytics_status_permission">Токен Modrinth не разрешает читать аналитику. Войдите снова с нужным разрешением.</string>
     <string name="analytics_status_rate_limit">Modrinth временно ограничил запросы аналитики. Повторите чуть позже.</string>
-    <string name="analytics_status_decode">Не удалось обработать аналитику Modrinth. Точные данные за всё время по-прежнему доступны.</string>
-    <string name="analytics_status_failed">Запрос аналитики Modrinth завершился ошибкой (%1$d). Точные данные за всё время доступны.</string>
+    <string name="analytics_status_decode">Modrinth прислал аналитику, которую не удалось прочитать.</string>
+    <string name="analytics_status_failed">Modrinth не смог загрузить аналитику (ошибка %1$d).</string>
     <string name="analytics_health_visibility">Не опубликованы</string>
     <string name="analytics_health_visibility_ok">Все проекты опубликованы</string>
     <string name="analytics_health_icons">Нет иконки проекта</string>
@@ -67,23 +66,12 @@
     <string name="analytics_health_descriptions">Короткое описание</string>
     <string name="analytics_health_descriptions_ok">Описания достаточно подробные</string>
 
-    <string name="wallet_modrinth">Кошелёк Modrinth</string>
     <string name="wallet_loading">Загружаем баланс и выплаты</string>
-    <string name="wallet_activity">Баланс и история выплат</string>
-    <string name="wallet_account">Выплаты автору</string>
-    <string name="wallet_open_revenue">Открыть доходы в Modrinth</string>
-    <string name="wallet_current_balance">ТЕКУЩИЙ БАЛАНС</string>
     <string name="wallet_available_now">Доступно сейчас</string>
-    <string name="wallet_pending">В обработке</string>
-    <string name="wallet_paid_out">Выплачено</string>
-    <string name="wallet_lifetime_earnings">Доход за всё время</string>
-    <string name="wallet_no_balance">Modrinth не вернул данные о балансе этого аккаунта.</string>
     <string name="wallet_data_failed">Не удалось загрузить данные кошелька.</string>
     <string name="wallet_unreachable">Не удалось связаться с кошельком Modrinth. Обновите данные.</string>
     <string name="wallet_reconnect">Подключите аккаунт снова, чтобы разрешить доступ к выплатам.</string>
     <string name="wallet_no_details">Modrinth не вернул данные кошелька этого аккаунта.</string>
-    <string name="wallet_payout">Выплата</string>
-    <string name="wallet_date_missing">Дата недоступна</string>
 
     <string name="projects_search">Поиск проектов</string>
     <string name="projects_empty">Проектов пока нет</string>
@@ -417,6 +405,7 @@
     <string name="notifications_empty">Новых уведомлений нет</string>
     <string name="notifications_archive_empty">Прочитанных уведомлений пока нет</string>
     <string name="notifications_load_failed">Не удалось загрузить уведомления</string>
+    <string name="notifications_loading">Загружаем уведомления</string>
     <string name="notifications_accept_invitation">Принять приглашение</string>
     <string name="notifications_accepting_invitation">Принимаем…</string>
     <string name="notifications_settings_title">Уведомления</string>
@@ -473,6 +462,7 @@
     <string name="markdown_preview">Предпросмотр</string>
     <string name="markdown_preview_empty">Здесь пока нечего показывать</string>
     <string name="common_retry">Повторить</string>
+    <string name="common_clear_search">Очистить поиск</string>
     <string name="support_title">Поддержать автора</string>
     <string name="support_donation_alerts">DonationAlerts</string>
     <string name="support_donation_alerts_hint">Разовая поддержка разработки Ryntra</string>
@@ -810,16 +800,18 @@
     <string name="disclosures_explanation_optional">Пояснение (необязательно)</string>
 
     <string name="disclosures_ai_title">Содержит контент, созданный ИИ</string>
-    <string name="disclosures_ai_description">Обязательно, если существенная часть кода создана ИИ, любой ресурс в основном сгенерирован ИИ, функциональность опирается на генеративный ИИ или им написана страница проекта.</string>
-    <string name="disclosures_ai_uses">Для чего используется генеративный ИИ?</string>
+    <string name="disclosures_ai_description">Обязательно, если проект содержит любые ресурсы или тексты, созданные ИИ, или значительный объём кода, написанного ИИ. Если вы считаете ИИ соавтором проекта — укажите это здесь.</string>
+    <string name="disclosures_ai_uses">Какой контент создан с помощью ИИ?</string>
     <string name="disclosures_ai_use_code">Код</string>
     <string name="disclosures_ai_use_assets">Ресурсы</string>
     <string name="disclosures_ai_use_text">Текст</string>
-    <string name="disclosures_ai_use_functionality">Функциональность</string>
     <string name="disclosures_ai_note_hint">Например: переводы на китайский и арабский сделаны ИИ.</string>
+    <string name="disclosures_ai_functionality_title">Содержит функции генеративного ИИ</string>
+    <string name="disclosures_ai_functionality_description">Обязательно, если в проекте есть функции, использующие генеративный ИИ, — например, внутриигровой чат-бот или динамически генерируемые текстуры.</string>
+    <string name="disclosures_ai_functionality_note_hint">Например: реплики NPC генерируются ИИ.</string>
 
     <string name="disclosures_ads_title">Содержит рекламу</string>
-    <string name="disclosures_ads_description">Обязательно, если в проекте есть реклама, спонсорство или продвижение чужих работ.</string>
+    <string name="disclosures_ads_description">Обязательно, если в проекте есть реклама, спонсорство или продвижение других работ. Ненавязчивые ссылки на свой контент и спонсорские баннеры на странице проекта не считаются.</string>
     <string name="disclosures_ads_note_hint">Например: добавляет сервер Modrinth SMP в список серверов автоматически.</string>
 
     <string name="disclosures_epilepsy_title">Предупреждение о светочувствительности</string>
@@ -849,8 +841,8 @@
     <string name="disclosures_derivative_name_label">Название оригинальной работы</string>
     <string name="disclosures_derivative_name_hint">Пример проекта</string>
     <string name="disclosures_derivative_link_label">Ссылка на оригинал</string>
-    <string name="disclosures_derivative_note_label">Как проект основан на оригинале (необязательно)</string>
-    <string name="disclosures_derivative_note_hint">Например: форк, который поддерживает 1.20.</string>
+    <string name="disclosures_derivative_note_label">Объясните, как проект основан на оригинале</string>
+    <string name="disclosures_derivative_note_hint">Например: форк, который добавляет несколько биомов и переносит мод на новые версии Minecraft.</string>
     <string name="disclosures_derivative_add_source">Добавить оригинал</string>
     <string name="disclosures_derivative_remove_source">Удалить оригинал</string>
 
@@ -862,7 +854,7 @@
     <string name="disclosures_paid_remove_feature">Удалить платную функцию</string>
 
     <string name="disclosures_archived_title">Архивировать проект</string>
-    <string name="disclosures_archived_description">Помечает проект как больше не поддерживаемый. Архивные проекты остаются в поиске, пока видимость публичная.</string>
+    <string name="disclosures_archived_description">Сообщает игрокам, что вы больше не работаете над проектом. Архивные проекты остаются в поиске, пока видимость «Публичный»; чтобы убрать проект из поиска, выберите «Не в списке».</string>
     <string name="disclosures_archived_note_hint">Например: больше нет времени на проект — форкайте смело!</string>
 
     <string name="disclosures_issue_ads_note">Раскрытию о рекламе нужно пояснение.</string>
@@ -908,4 +900,116 @@
     <string name="markdown_embed_youtube">Видео на YouTube</string>
     <string name="markdown_embed_discord">Сервер Discord</string>
     <string name="markdown_embed_open">Открыть: %1$s</string>
+    <string name="version_filter_search">Поиск по версиям</string>
+    <string name="version_filter_channel">Канал</string>
+    <string name="version_filter_loader">Загрузчик</string>
+    <string name="version_filter_game_version">Версия игры</string>
+    <string name="version_filter_featured">Избранные</string>
+    <string name="version_filter_clear">Сбросить</string>
+    <plurals name="version_filter_matches"><item quantity="one">%1$d из %2$d версии</item><item quantity="few">%1$d из %2$d версий</item><item quantity="many">%1$d из %2$d версий</item><item quantity="other">%1$d из %2$d версий</item></plurals>
+    <string name="version_filter_empty">Нет версий по этим фильтрам</string>
+    <string name="version_filter_empty_hint">Снимите фильтр, чтобы увидеть больше релизов.</string>
+    <string name="version_detail_featured">Избранная</string>
+    <string name="version_detail_compatibility">Совместимость</string>
+    <string name="version_detail_changelog">Список изменений</string>
+    <string name="version_detail_changelog_empty">Для этой версии список изменений не публиковали.</string>
+    <string name="version_detail_files">Файлы</string>
+    <string name="version_detail_dependencies">Зависимости</string>
+    <string name="version_detail_download">Скачать файл</string>
+    <string name="version_status_title">Видимость</string>
+    <string name="version_status_hint">Архивные версии остаются доступными для скачивания, но пропадают из списка.</string>
+    <string name="version_status_listed">В списке</string>
+    <string name="version_status_unlisted">Скрытая</string>
+    <string name="version_status_archived">Архивная</string>
+    <string name="project_copy_link">Скопировать ссылку</string>
+    <string name="project_link_copied">Ссылка скопирована</string>
+    <string name="notifications_inbox">Входящие</string>
+    <string name="notifications_archive">Архив</string>
+    <string name="analytics_status_timeout">Modrinth не успел ответить. Длинные периоды считаются дольше.</string>
+    <string name="analytics_status_unreachable">Нет связи с Modrinth. Проверьте подключение.</string>
+    <!-- Wallet -->
+    <string name="wallet_title">Кошелёк</string>
+    <string name="wallet_open">Открыть кошелёк</string>
+    <string name="wallet_balance">Баланс</string>
+    <string name="wallet_estimated_on">Ожидается %1$s</string>
+    <string name="wallet_estimated_hint">Сумма может измениться, пока не станет доступной.</string>
+    <string name="wallet_processing">В обработке</string>
+    <string name="wallet_processing_hint">Доход за этот месяц. Он в обработке до конца месяца, а доступным становится через 60 дней после этого.</string>
+    <string name="wallet_how_revenue_works">Как Modrinth начисляет доход</string>
+    <string name="wallet_unavailable_title">Кошелёк недоступен</string>
+    <string name="wallet_withdraw">Вывод</string>
+    <string name="wallet_withdraw_description">Выведите доступный баланс на любой способ выплаты. Вывод открывается на modrinth.com — там Modrinth проверяет способ выплаты и налоговые формы.</string>
+    <string name="wallet_withdraw_locked">Вывод заблокирован, пока налоговая форма не будет исправлена через поддержку Modrinth.</string>
+    <string name="wallet_withdraw_on_modrinth">Вывести %1$s на Modrinth</string>
+    <string name="wallet_withdrawn_this_year">Выведено в этом году</string>
+    <string name="wallet_withdrawn_lifetime">Выведено за всё время</string>
+    <string name="wallet_tax_threshold_hint">После %1$s в год нужна налоговая форма.</string>
+    <string name="wallet_tin_mismatch_title">Налоговая форма не прошла проверку</string>
+    <string name="wallet_tin_mismatch_message">Вывод временно заблокирован: ваш TIN или SSN не совпал с данными IRS. Обратитесь в поддержку, чтобы сбросить и заново отправить налоговую форму.</string>
+    <string name="wallet_contact_support">Связаться с поддержкой</string>
+    <string name="wallet_tax_form_title">Нужна налоговая форма</string>
+    <string name="wallet_tax_form_message">В этом году вы вывели с Modrinth больше %1$s. По налоговым правилам нужно заполнить налоговую форму — до её отправки вывод приостановлен.</string>
+    <string name="wallet_tax_form_action">Заполнить форму</string>
+    <string name="wallet_transactions">Транзакции</string>
+    <string name="wallet_export_csv">Экспорт CSV</string>
+    <string name="wallet_export_saved">Транзакции сохранены</string>
+    <string name="wallet_export_failed">Не удалось сохранить файл</string>
+    <string name="wallet_history_unavailable">Modrinth не вернул историю транзакций. Потяните вниз, чтобы повторить.</string>
+    <string name="wallet_no_transactions">Транзакций нет</string>
+    <string name="wallet_no_transactions_hint">Здесь появятся ваши начисления и выводы.</string>
+    <string name="wallet_all_years">Все годы</string>
+    <string name="wallet_received">Получено</string>
+    <string name="wallet_withdrawn">Выведено</string>
+    <string name="wallet_this_month">Этот месяц</string>
+    <string name="wallet_last_month_period">Прошлый месяц</string>
+    <string name="wallet_source_creator_rewards">Вознаграждение автора</string>
+    <string name="wallet_source_affiliates">Партнёрское вознаграждение</string>
+    <string name="wallet_status_success">Выполнен</string>
+    <string name="wallet_status_in_transit">В пути</string>
+    <string name="wallet_status_cancelling">Отменяется</string>
+    <string name="wallet_status_cancelled">Отменён</string>
+    <string name="wallet_status_failed">Не прошёл</string>
+    <string name="wallet_status_unknown">Неизвестно</string>
+    <string name="wallet_fee">Комиссия %1$s</string>
+    <string name="wallet_cancel_withdrawal">Отменить</string>
+    <string name="wallet_cancel_withdrawal_title">Отменить вывод?</string>
+    <string name="wallet_cancel_withdrawal_message">%1$s на %2$s вернутся на баланс. Modrinth может отменить вывод, только пока он в пути.</string>
+    <string name="wallet_keep_withdrawal">Оставить</string>
+    <plurals name="wallet_transaction_count"><item quantity="one">%1$d</item><item quantity="few">%1$d</item><item quantity="many">%1$d</item><item quantity="other">%1$d</item></plurals>
+    <!-- Widgets, notification actions, affiliate links -->
+    <string name="widget_wallet_title">Баланс Modrinth</string>
+    <string name="widget_wallet_description">Баланс Modrinth и ближайшие выплаты</string>
+    <string name="widget_wallet_next">Далее: %1$s — %2$s</string>
+    <string name="widget_wallet_unavailable">Откройте кошелёк один раз, чтобы загрузить баланс</string>
+    <string name="widget_stats_title">Статистика автора</string>
+    <string name="widget_stats_description">Скачивания, подписчики и самые популярные проекты</string>
+    <string name="widget_stats_downloads">скачиваний</string>
+    <string name="widget_stats_followers">подписчиков</string>
+    <string name="widget_stats_projects">проектов</string>
+    <string name="widget_sign_in">Войдите в Ryntra, чтобы видеть статистику</string>
+    <string name="widget_wallet_balance">баланс</string>
+    <string name="widget_wallet_available_label">Доступно сейчас</string>
+    <string name="widget_wallet_estimated">Ожидается %1$s</string>
+    <string name="widget_wallet_processing">В обработке</string>
+    <string name="widget_downloads_title">Скачивания</string>
+    <string name="widget_downloads_description">График скачиваний за 7, 30 или 90 дней</string>
+    <string name="widget_downloads_loading">График появится после первого обновления</string>
+    <string name="widget_downloads_period">за %1$d дн.</string>
+    <string name="widget_downloads_change">%1$s к прошлым %2$d дн.</string>
+    <string name="widget_downloads_chart">График скачиваний за %1$d дн., всего %2$s</string>
+    <string name="widget_range_days">%1$d дн.</string>
+    <string name="notification_action_mark_read">Прочитано</string>
+    <string name="notification_action_accept">Принять приглашение</string>
+    <string name="notification_action_failed">Modrinth не принял действие. Повторите в приложении.</string>
+    <string name="affiliate_title">Партнёрские ссылки</string>
+    <string name="affiliate_period">За %1$d дней</string>
+    <string name="affiliate_clicks">Переходы</string>
+    <string name="affiliate_conversions">Покупки</string>
+    <string name="affiliate_revenue">Доход</string>
+    <string name="affiliate_copy">Копировать ссылку</string>
+    <string name="affiliate_copied">Ссылка скопирована</string>
+    <string name="affiliate_manage">Управлять ссылками на Modrinth</string>
+    <string name="affiliate_manage_hint">Создавать, переименовывать и отзывать партнёрские ссылки Modrinth разрешает только на сайте, поэтому здесь ссылки показаны по коду.</string>
+    <string name="affiliate_none">Партнёрских ссылок пока нет. Создайте ссылку на Modrinth, и её статистика появится здесь.</string>
+    <string name="affiliate_failed">Не удалось загрузить статистику партнёрских ссылок.</string>
 </resources>

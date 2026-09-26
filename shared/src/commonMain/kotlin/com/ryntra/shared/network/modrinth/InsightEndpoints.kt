@@ -4,10 +4,12 @@ import com.ryntra.shared.model.AnalyticsMetrics
 import com.ryntra.shared.model.AnalyticsPoint
 import com.ryntra.shared.model.AnalyticsProjectEvent
 import com.ryntra.shared.model.AnalyticsQuery
-import com.ryntra.shared.model.PayoutTransaction
+import com.ryntra.shared.model.AnalyticsStatus
+import io.ktor.client.network.sockets.SocketTimeoutException
+import io.ktor.client.plugins.HttpRequestTimeoutException
+import io.ktor.client.plugins.timeout
+import kotlinx.io.IOException
 import com.ryntra.shared.network.AnalyticsResponse
-import com.ryntra.shared.network.PayoutBalanceResponse
-import com.ryntra.shared.network.PayoutHistoryResponse
 import com.ryntra.shared.network.apiJson
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
@@ -32,6 +34,12 @@ internal class InsightEndpoints(
         try {
             val response = client.post("https://api.modrinth.com/v3/analytics") {
                 authorize(token)
+                // Modrinth computes analytics on request, and a long range can take well
+                // past the client-wide 20 seconds that suits every other endpoint.
+                timeout {
+                    requestTimeoutMillis = ANALYTICS_TIMEOUT_MILLIS
+                    socketTimeoutMillis = ANALYTICS_TIMEOUT_MILLIS
+                }
                 contentType(ContentType.Application.Json)
                 setBody(AnalyticsRequest.from(query, includeRevenue))
             }
@@ -47,66 +55,19 @@ internal class InsightEndpoints(
             }
         } catch (error: CancellationException) {
             throw error
+        } catch (_: HttpRequestTimeoutException) {
+            AnalyticsResponse(status = AnalyticsStatus.TIMED_OUT)
+        } catch (_: SocketTimeoutException) {
+            AnalyticsResponse(status = AnalyticsStatus.TIMED_OUT)
+        } catch (_: IOException) {
+            AnalyticsResponse(status = AnalyticsStatus.UNREACHABLE)
         } catch (_: Exception) {
-            AnalyticsResponse(status = 0)
+            AnalyticsResponse(status = AnalyticsStatus.DECODE_FAILED)
         }
 
-    suspend fun getPayoutHistory(userId: String, token: String): PayoutHistoryResponse =
-        try {
-            val response = client.get("user/$userId/payouts") { authorize(token) }
-            if (!response.status.isSuccess()) {
-                PayoutHistoryResponse(status = response.status.value)
-            } else {
-                val root = apiJson.parseToJsonElement(response.bodyAsText()) as? JsonObject
-                val transactions = (root?.get("payouts") as? JsonArray).orEmpty().mapNotNull { element ->
-                    val payout = element as? JsonObject ?: return@mapNotNull null
-                    PayoutTransaction(
-                        created = payout.string("created").orEmpty(),
-                        amount = payout.numberOrNull("amount") ?: 0.0,
-                        status = payout.string("status").orEmpty(),
-                    )
-                }
-                PayoutHistoryResponse(
-                    status = response.status.value,
-                    allTime = root.numberOrNull("all_time", "balance_all_time"),
-                    lastMonth = root.numberOrNull("last_month", "last_30_days"),
-                    transactions = transactions,
-                )
-            }
-        } catch (error: CancellationException) {
-            throw error
-        } catch (_: Exception) {
-            PayoutHistoryResponse(status = 0)
-        }
-
-    suspend fun getPayoutBalance(token: String): PayoutBalanceResponse =
-        try {
-            val response = client.get("https://api.modrinth.com/v3/payout/balance") { authorize(token) }
-            if (!response.status.isSuccess()) {
-                PayoutBalanceResponse(status = response.status.value)
-            } else {
-                val root = apiJson.parseToJsonElement(response.bodyAsText()) as? JsonObject
-                PayoutBalanceResponse(
-                    status = response.status.value,
-                    available = root.numberOrNull(
-                        "available_now",
-                        "availableNow",
-                        "available",
-                        "balance_available",
-                        "balanceAvailable",
-                    ),
-                    pending = root.numberOrNull("pending"),
-                    withdrawnLifetime = root.numberOrNull("withdrawn_lifetime", "withdrawnLifetime"),
-                    total = root.numberOrNull("balance", "total_balance", "totalBalance"),
-                    currency = root?.string("currency"),
-                )
-            }
-        } catch (error: CancellationException) {
-            throw error
-        } catch (_: Exception) {
-            PayoutBalanceResponse(status = 0)
-        }
 }
+
+private const val ANALYTICS_TIMEOUT_MILLIS = 60_000L
 
 @Serializable
 private data class AnalyticsRequest(

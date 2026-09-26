@@ -2,7 +2,7 @@ package com.ryntra.shared.network
 
 import com.ryntra.shared.model.AnalyticsPoint
 import com.ryntra.shared.model.AnalyticsProjectEvent
-import com.ryntra.shared.model.PayoutTransaction
+import com.ryntra.shared.model.WalletTransaction
 
 data class AnalyticsResponse(
     val status: Int,
@@ -12,9 +12,7 @@ data class AnalyticsResponse(
 
 data class PayoutHistoryResponse(
     val status: Int,
-    val allTime: Double? = null,
-    val lastMonth: Double? = null,
-    val transactions: List<PayoutTransaction> = emptyList(),
+    val transactions: List<WalletTransaction> = emptyList(),
 )
 
 data class PayoutBalanceResponse(
@@ -22,6 +20,8 @@ data class PayoutBalanceResponse(
     val available: Double? = null,
     val pending: Double? = null,
     val withdrawnLifetime: Double? = null,
-    val total: Double? = null,
-    val currency: String? = null,
+    val withdrawnThisYear: Double? = null,
+    /** ISO timestamp of each availability date to the revenue released on it. */
+    val dates: Map<String, Double> = emptyMap(),
+    val formCompletionStatus: String? = null,
 )

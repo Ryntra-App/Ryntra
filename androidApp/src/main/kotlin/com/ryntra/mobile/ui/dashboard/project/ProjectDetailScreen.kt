@@ -1,5 +1,8 @@
 package com.ryntra.mobile.ui.dashboard.project
 
+import com.ryntra.mobile.ui.dashboard.project.overview.copyProjectLink
+import com.ryntra.shared.model.modrinthUrl
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -16,11 +19,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -39,13 +40,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import com.composables.icons.lucide.CalendarDays
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Monitor
@@ -80,6 +78,8 @@ import com.ryntra.mobile.ui.dashboard.project.sharecard.ShareCardStudio
 import com.ryntra.mobile.ui.dashboard.project.versions.LoadingVersions
 import com.ryntra.mobile.ui.dashboard.project.versions.VersionCard
 import com.ryntra.mobile.ui.dashboard.project.versions.VersionEditorDialog
+import com.ryntra.mobile.ui.dashboard.project.versions.VersionDetailSheet
+import com.ryntra.mobile.ui.dashboard.project.versions.VersionFilterBar
 import com.ryntra.mobile.ui.dashboard.project.versions.VersionsHeader
 import com.ryntra.mobile.ui.dashboard.projects.DeleteProjectDialog
 import com.ryntra.shared.model.MarkdownParser
@@ -93,6 +93,9 @@ import com.ryntra.shared.model.ProjectFileUpload
 import com.ryntra.shared.model.ProjectMember
 import com.ryntra.shared.model.ProjectMemberUpdate
 import com.ryntra.shared.model.ProjectVersion
+import com.ryntra.shared.model.VersionFilter
+import com.ryntra.shared.model.filteredBy
+import com.ryntra.shared.model.versionFacets
 import com.ryntra.shared.model.VersionUpdate
 import com.ryntra.mobile.MemberSearchState
 import com.ryntra.mobile.ProjectActionState
@@ -178,6 +181,9 @@ fun ProjectDetailScreen(
     var isCreatingVersion by remember(project.id) { mutableStateOf(false) }
     var editingVersion by remember(project.id) { mutableStateOf<ProjectVersion?>(null) }
     var versionPendingDeletion by remember(project.id) { mutableStateOf<ProjectVersion?>(null) }
+    var inspectedVersion by remember(project.id) { mutableStateOf<ProjectVersion?>(null) }
+    // Reset per project: a loader filter from one mod means nothing on the next.
+    var versionFilter by remember(project.id) { mutableStateOf(VersionFilter()) }
     var isInvitingMember by remember(project.id) { mutableStateOf(false) }
     var editingMember by remember(project.id) { mutableStateOf<ProjectMember?>(null) }
     var memberPendingRemoval by remember(project.id) { mutableStateOf<ProjectMember?>(null) }
@@ -270,6 +276,12 @@ fun ProjectDetailScreen(
         }
     }
 
+    val versionFacets = remember(versions) { versions.versionFacets() }
+    val visibleVersions = remember(versions, versionFilter) { versions.filteredBy(versionFilter) }
+
+    val context = LocalContext.current
+    val linkCopied = stringResource(R.string.project_link_copied)
+
     Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -281,7 +293,12 @@ fun ProjectDetailScreen(
         ),
     ) {
         item(key = "identity", contentType = "identity") {
-            ProjectIdentity(project, onCreateShareCard = { isCreatingShareCard = true })
+            ProjectIdentity(
+                project = project,
+                canCreateShareCard = !isReadOnly,
+                onCreateShareCard = { isCreatingShareCard = true },
+                onCopyLink = { context.copyProjectLink(project.modrinthUrl(), linkCopied) },
+            )
         }
         item(key = "tabs", contentType = "tabs") {
             ProjectDetailTabs(
@@ -379,6 +396,15 @@ fun ProjectDetailScreen(
             ProjectDetailTab.Versions -> {
                 item(key = "versions-actions", contentType = "actions") {
                     VersionsHeader(canCreateVersions) { isCreatingVersion = true }
+                    if (versions.size > 1) {
+                        VersionFilterBar(
+                            facets = versionFacets,
+                            filter = versionFilter,
+                            matchCount = visibleVersions.size,
+                            totalCount = versions.size,
+                            onFilterChange = { versionFilter = it },
+                        )
+                    }
                 }
                 projectAction.errorMessage?.let { message ->
                     item(key = "versions-error", contentType = "error") { ProjectActionError(message) }
@@ -399,14 +425,25 @@ fun ProjectDetailScreen(
                             message = stringResource(R.string.project_versions_empty_hint),
                         )
                     }
-                    else -> items(versions, key = ProjectVersion::id, contentType = { "version" }) { version ->
+                    visibleVersions.isEmpty() -> item {
+                        RyntraEmptyState(
+                            title = stringResource(R.string.version_filter_empty),
+                            message = stringResource(R.string.version_filter_empty_hint),
+                            actionLabel = stringResource(R.string.version_filter_clear),
+                            onAction = { versionFilter = VersionFilter() },
+                        )
+                    }
+                    else -> items(visibleVersions, key = ProjectVersion::id, contentType = { "version" }) { version ->
                         Box(modifier = Modifier.animateItem()) {
                             VersionCard(
                                 version = version,
                                 canEdit = canCreateVersions,
                                 canDelete = canDeleteVersions,
                                 isBusy = projectAction.isRunning && projectAction.targetId == version.id,
-                                onOpen = { if (canCreateVersions) editingVersion = version },
+                                // Opening the detail sheet, not the editor: the full
+                                // changelog and the file hashes were previously out of
+                                // reach for anyone without edit rights.
+                                onOpen = { inspectedVersion = version },
                                 onEdit = { editingVersion = version },
                                 onDelete = { versionPendingDeletion = version },
                             )
@@ -660,6 +697,14 @@ fun ProjectDetailScreen(
             onUpdate = onUpdateVersion,
         )
     }
+    inspectedVersion?.let { version ->
+        VersionDetailSheet(
+            version = version,
+            dependencies = version.dependencies,
+            onDismiss = { inspectedVersion = null },
+        )
+    }
+
     versionPendingDeletion?.let { version ->
         DestructiveConfirmationDialog(
             title = stringResource(R.string.version_delete_title),

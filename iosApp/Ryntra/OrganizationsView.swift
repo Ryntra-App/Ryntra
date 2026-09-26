@@ -132,7 +132,7 @@ struct OrganizationsView: View {
             }
         }
         .listStyle(.plain)
-        .ryntraOpaqueListBackground()
+        .ryntraScreenBackdrop()
 #if !os(macOS)
         .searchable(
             text: $query,
@@ -476,6 +476,7 @@ struct OrganizationDetailView: View {
             }
         }
         .listStyle(.plain)
+        .ryntraScreenBackdrop()
         .task(id: organization.id) {
             await loadDetail()
         }

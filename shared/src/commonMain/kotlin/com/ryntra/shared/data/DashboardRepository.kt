@@ -2,6 +2,7 @@ package com.ryntra.shared.data
 
 import com.ryntra.shared.model.Dashboard
 import com.ryntra.shared.model.AccountProfileUpdate
+import com.ryntra.shared.model.AffiliateReport
 import com.ryntra.shared.model.Account
 import com.ryntra.shared.model.AnalyticsQuery
 import com.ryntra.shared.model.AnalyticsReport
@@ -33,6 +34,9 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
+import kotlin.time.ExperimentalTime
 
 class DashboardRepository(
     private val api: ModrinthApi,
@@ -145,60 +149,76 @@ class DashboardRepository(
     suspend fun loadProjectVersions(projectIdOrSlug: String, token: String): List<ProjectVersion> =
         api.getProjectVersions(projectIdOrSlug, token)
 
+    /**
+     * The comparison period and the current one are independent windows, so they are
+     * fetched as two requests in parallel rather than one over both. Each then covers half
+     * the span — 180 days apiece for the longest range instead of 360 — and Modrinth, which
+     * computes analytics on request, answers each well inside the time the single request
+     * could take on its own.
+     */
     suspend fun loadAnalytics(query: AnalyticsQuery, token: String): AnalyticsReport = coroutineScope {
-        val queries = query.batchedByProjectIds()
-        val core = async {
-            queries
-                .map { batchedQuery -> async { api.getAnalytics(batchedQuery, includeRevenue = false, token) } }
-                .awaitAll()
-                .merge()
-        }
-        val revenue = async {
-            queries
-                .map { batchedQuery -> async { api.getAnalytics(batchedQuery, includeRevenue = true, token) } }
-                .awaitAll()
-                .merge()
-        }
-        val coreResponse = core.await()
-        val revenueResponse = revenue.await()
-        val currentSlices = query.currentSlices.coerceIn(0, query.slices)
-        val previousSliceCount = (query.slices - currentSlices).coerceAtLeast(0)
+        val current = query.copy(startTime = query.currentStartTime, slices = query.currentSlices)
+        val previousSlices = (query.slices - query.currentSlices).coerceAtLeast(0)
+        val previous = query.takeIf { previousSlices > 0 }?.copy(
+            endTime = query.currentStartTime,
+            currentStartTime = query.startTime,
+            slices = previousSlices,
+            currentSlices = previousSlices,
+        )
+
+        val coreCurrent = async { fetchAnalytics(current, includeRevenue = false, token) }
+        val corePrevious = previous?.let { async { fetchAnalytics(it, includeRevenue = false, token) } }
+        val revenueCurrent = async { fetchAnalytics(current, includeRevenue = true, token) }
+        val revenuePrevious = previous?.let { async { fetchAnalytics(it, includeRevenue = true, token) } }
+
+        val coreResponses = listOfNotNull(coreCurrent.await(), corePrevious?.await())
+        val revenueResponses = listOfNotNull(revenueCurrent.await(), revenuePrevious?.await())
         AnalyticsReport(
-            points = coreResponse.points.drop(previousSliceCount),
-            revenuePoints = revenueResponse.points.drop(previousSliceCount),
-            previousPoints = coreResponse.points.take(previousSliceCount),
-            previousRevenuePoints = revenueResponse.points.take(previousSliceCount),
-            events = coreResponse.events,
+            points = coreResponses.first().points,
+            revenuePoints = revenueResponses.first().points,
+            previousPoints = coreResponses.getOrNull(1)?.points.orEmpty(),
+            previousRevenuePoints = revenueResponses.getOrNull(1)?.points.orEmpty(),
+            events = coreResponses.first().events,
             periodStartTime = query.currentStartTime,
             periodEndTime = query.endTime,
-            coreStatus = coreResponse.status,
-            revenueStatus = revenueResponse.status,
+            // A comparison against a period that failed to load would be meaningless, so
+            // either window failing marks the whole report as failed.
+            coreStatus = coreResponses.firstFailedStatusOrSuccess(),
+            revenueStatus = revenueResponses.firstFailedStatusOrSuccess(),
         )
     }
 
-    suspend fun loadWallet(account: Account, token: String): WalletReport = coroutineScope {
-        val historyRequest = async { api.getPayoutHistory(account.id, token) }
-        val balanceRequest = async { api.getPayoutBalance(token) }
-        val history = historyRequest.await()
-        val balance = balanceRequest.await()
-        val available = balance.available ?: account.payoutData?.balance
-        val currentBalance = balance.total ?: nullableSum(available, balance.pending)
+    private suspend fun fetchAnalytics(
+        query: AnalyticsQuery,
+        includeRevenue: Boolean,
+        token: String,
+    ): com.ryntra.shared.network.AnalyticsResponse = coroutineScope {
+        query.batchedByProjectIds()
+            .map { batchedQuery -> async { api.getAnalytics(batchedQuery, includeRevenue, token) } }
+            .awaitAll()
+            .merge()
+    }
 
-        WalletReport(
-            currency = balance.currency ?: account.payoutData?.currency ?: "USD",
-            wallet = account.payoutData?.wallet,
-            walletType = account.payoutData?.walletType,
-            payoutAddress = account.payoutData?.address,
-            available = available,
-            pending = balance.pending,
-            withdrawnLifetime = balance.withdrawnLifetime,
-            balance = currentBalance,
-            allTime = history.allTime,
-            lastMonth = history.lastMonth,
-            transactions = history.transactions.sortedByDescending { it.created },
-            balanceStatus = balance.status,
-            historyStatus = history.status,
+    @OptIn(ExperimentalTime::class)
+    suspend fun loadWallet(token: String): WalletReport = coroutineScope {
+        val balance = async { api.getPayoutBalance(token) }
+        val history = async { api.getPayoutHistory(token) }
+        val thresholds = async { api.getTaxFormThresholds() }
+        buildWalletReport(
+            balance = balance.await(),
+            history = history.await(),
+            taxFormThresholds = thresholds.await(),
+            nowEpochMillis = Clock.System.now().toEpochMilliseconds(),
         )
+    }
+
+    suspend fun cancelPayout(payoutId: String, token: String) = api.cancelPayout(payoutId, token)
+
+    @OptIn(ExperimentalTime::class)
+    suspend fun loadAffiliateReport(rangeDays: Int, token: String): AffiliateReport {
+        val end = Clock.System.now()
+        val start = end - rangeDays.days
+        return api.getAffiliateReport(start.toString(), end.toString(), rangeDays, token)
     }
 
     suspend fun enrichDependencies(dependencies: List<ProjectDependency>, token: String): List<ProjectDependency> = coroutineScope {
@@ -448,9 +468,6 @@ data class OrganizationDetail(
     val projects: List<Project>,
     val members: List<ProjectMember>,
 )
-
-private fun nullableSum(first: Double?, second: Double?): Double? =
-    if (first == null && second == null) null else (first ?: 0.0) + (second ?: 0.0)
 
 private const val analyticsProjectBatchSize = 40
 

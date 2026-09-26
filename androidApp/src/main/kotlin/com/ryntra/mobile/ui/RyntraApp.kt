@@ -24,6 +24,7 @@ fun RyntraApp(viewModel: RyntraViewModel) {
     val oauthError by viewModel.oauthError.collectAsStateWithLifecycle()
     val projectDetail by viewModel.projectDetail.collectAsStateWithLifecycle()
     val organizationDetail by viewModel.organizationDetail.collectAsStateWithLifecycle()
+    val requestedScreen by viewModel.requestedScreen.collectAsStateWithLifecycle()
     val profileUpdate by viewModel.profileUpdate.collectAsStateWithLifecycle()
     val projectUpdate by viewModel.projectUpdate.collectAsStateWithLifecycle()
     val projectAction by viewModel.projectAction.collectAsStateWithLifecycle()
@@ -110,6 +111,11 @@ fun RyntraApp(viewModel: RyntraViewModel) {
                         onUpdateProject = viewModel::updateProject,
                         onClearProjectUpdateStatus = viewModel::clearProjectUpdateStatus,
                         onLoadAnalytics = viewModel::loadAnalytics,
+                        onRetryAnalytics = { viewModel.loadAnalytics(it, force = true) },
+                        onRefreshWallet = viewModel::refreshWallet,
+                        requestedScreen = requestedScreen,
+                        onRequestedScreenShown = viewModel::onRequestedScreenShown,
+                        onCancelPayout = viewModel::cancelPayout,
                         onChangeProjectIcon = viewModel::changeProjectIcon,
                         onDeleteProjectIcon = viewModel::deleteProjectIcon,
                         onSubmitProjectForModeration = viewModel::submitProjectForModeration,

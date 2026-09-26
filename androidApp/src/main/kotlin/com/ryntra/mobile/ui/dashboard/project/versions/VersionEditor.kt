@@ -61,6 +61,7 @@ internal fun VersionEditorDialog(
     var dependencies by remember(version?.id) { mutableStateOf(version?.dependencies.orEmpty()) }
     var dependencyInput by remember { mutableStateOf("") }
     var featured by remember(version?.id) { mutableStateOf(version?.featured ?: false) }
+    var versionStatus by remember(version?.id) { mutableStateOf(version?.status ?: "listed") }
     var files by remember(version?.id) { mutableStateOf<List<ProjectFileUpload>>(emptyList()) }
     var primaryFileIndex by remember(version?.id) { mutableIntStateOf(0) }
     var isReadingFiles by remember { mutableStateOf(false) }
@@ -134,6 +135,17 @@ internal fun VersionEditorDialog(
                 item(key = "version-channel", contentType = "choices") {
                     VersionEditorSection(stringResource(R.string.version_editor_channel), stringResource(R.string.version_editor_channel_hint)) {
                         ReleaseChannelPicker(versionType) { versionType = it }
+                    }
+                }
+                // Only an existing version can change visibility; a new one is listed.
+                if (version != null) {
+                    item(key = "version-status", contentType = "choices") {
+                        VersionEditorSection(
+                            stringResource(R.string.version_status_title),
+                            stringResource(R.string.version_status_hint),
+                        ) {
+                            VersionStatusPicker(versionStatus) { versionStatus = it }
+                        }
                     }
                 }
                 item(key = "version-game", contentType = "choices") {
@@ -284,6 +296,7 @@ internal fun VersionEditorDialog(
                                 versionType = versionType,
                                 loaders = loaders,
                                 featured = featured,
+                                status = versionStatus,
                             ),
                         )
                     }

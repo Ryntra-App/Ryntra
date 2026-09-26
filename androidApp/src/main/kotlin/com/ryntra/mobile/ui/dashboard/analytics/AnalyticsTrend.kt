@@ -29,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -42,6 +43,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.ryntra.mobile.ui.components.ryntraCard
+import com.ryntra.mobile.ui.components.ryntraChoice
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.mobile.R
 import com.ryntra.shared.model.AnalyticsMetrics
@@ -52,6 +55,7 @@ import com.ryntra.shared.model.Project
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import kotlin.math.roundToLong
 import java.time.format.DateTimeFormatter
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -157,15 +161,14 @@ internal fun AnalyticsTrend(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(RyntraDesign.colors.surface, shape)
-            .border(0.75.dp, RyntraDesign.colors.separator, shape)
+            .ryntraCard(shape)
             .padding(14.dp)
             .animateContentSize(),
     ) {
         TrendHeader(
             metric = metric,
             selectedValue = selectedValue,
-            selectedDate = dateForIndex(selectedActualIndex, fullAggregateValues.size),
+            selectedDate = dateForIndex(selectedActualIndex, fullAggregateValues.size, rangeDays),
             style = style,
             onStyleChange = { style = it },
         )
@@ -234,6 +237,7 @@ internal fun AnalyticsTrend(
                 windowStart = safeWindowStart,
                 windowEndExclusive = windowEndExclusive,
                 totalCount = fullAggregateValues.size,
+                rangeDays = rangeDays,
                 modifier = Modifier.padding(top = 8.dp),
             )
             TrendFocusPanel(
@@ -327,8 +331,17 @@ private fun TrendControlButton(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .height(48.dp)
-            .background(RyntraDesign.colors.surfaceRaised, shape)
-            .border(0.75.dp, RyntraDesign.colors.separator, shape)
+            .then(
+                if (RyntraDesign.isPlatformNative) {
+                    Modifier
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                } else {
+                    Modifier
+                        .background(RyntraDesign.colors.surfaceRaised, shape)
+                        .border(0.75.dp, RyntraDesign.colors.separator, shape)
+                },
+            )
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = 8.dp),
     ) {
@@ -385,8 +398,7 @@ private fun TrendPresetChip(text: String, selected: Boolean, onClick: () -> Unit
         style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.SemiBold,
         modifier = Modifier
-            .background(if (selected) RyntraDesign.colors.surfaceRaised else RyntraDesign.colors.surface, shape)
-            .border(0.75.dp, if (selected) RyntraDesign.colors.accent else RyntraDesign.colors.separator, shape)
+            .ryntraChoice(isSelected = selected, ryntraShape = shape, ryntraSelectedEdge = RyntraDesign.colors.accent)
             .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 9.dp),
     )
@@ -404,8 +416,7 @@ private fun ProjectChip(
     val shape = RoundedCornerShape(9.dp)
     Column(
         modifier = Modifier
-            .background(if (selected) RyntraDesign.colors.surfaceRaised else RyntraDesign.colors.surface, shape)
-            .border(0.75.dp, if (selected) color else RyntraDesign.colors.separator, shape)
+            .ryntraChoice(isSelected = selected, ryntraShape = shape, ryntraSelectedEdge = color)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = 11.dp, vertical = 9.dp),
     ) {
@@ -547,11 +558,12 @@ private fun TrendRangeFooter(
     windowStart: Int,
     windowEndExclusive: Int,
     totalCount: Int,
+    rangeDays: Int,
     modifier: Modifier = Modifier,
 ) {
     Row(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = dateForIndex(windowStart, totalCount),
+            text = dateForIndex(windowStart, totalCount, rangeDays),
             color = RyntraDesign.colors.labelSecondary,
             style = MaterialTheme.typography.labelSmall,
         )
@@ -563,7 +575,7 @@ private fun TrendRangeFooter(
             modifier = Modifier.weight(1f),
         )
         Text(
-            text = dateForIndex((windowEndExclusive - 1).coerceAtLeast(windowStart), totalCount),
+            text = dateForIndex((windowEndExclusive - 1).coerceAtLeast(windowStart), totalCount, rangeDays),
             color = RyntraDesign.colors.labelSecondary,
             style = MaterialTheme.typography.labelSmall,
             textAlign = TextAlign.End,
@@ -681,9 +693,13 @@ private fun Int.coerceWindowStart(windowSize: Int, pointCount: Int): Int {
 private fun xForIndex(index: Int, count: Int, width: Float): Float =
     if (count <= 1) width / 2f else width * index.coerceIn(0, count - 1) / (count - 1).toFloat()
 
-private fun dateForIndex(index: Int, count: Int): String {
+// A point stands for a bucket of several days on long ranges (AnalyticsResolution), so
+// the label steps back by the bucket length rather than by one day per point.
+private fun dateForIndex(index: Int, count: Int, rangeDays: Int): String {
     if (count <= 0) return ""
-    val daysAgo = (count - 1 - index.coerceIn(0, count - 1)).toLong()
+    val daysPerPoint = rangeDays.toDouble() / count
+    val pointsAgo = count - 1 - index.coerceIn(0, count - 1)
+    val daysAgo = (pointsAgo * daysPerPoint).roundToLong()
     return LocalDate.now().minusDays(daysAgo).format(DateTimeFormatter.ofPattern("d MMM"))
 }
 

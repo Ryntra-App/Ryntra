@@ -1,7 +1,7 @@
 package com.ryntra.mobile.ui.dashboard.organizations
 
+import com.ryntra.mobile.ui.components.RyntraContentLoading
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,8 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,6 +52,7 @@ import com.ryntra.mobile.ui.dashboard.projects.DeleteProjectDialog
 import com.ryntra.mobile.ui.dashboard.projects.ProjectActionsSheet
 import com.ryntra.mobile.ui.dashboard.projects.modrinthPageUrl
 import com.ryntra.mobile.ui.dashboard.projects.toProjectRowModel
+import com.ryntra.mobile.ui.components.ryntraCard
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.shared.model.Organization
 import com.ryntra.shared.model.OrganizationPermissionBits
@@ -143,9 +142,7 @@ fun OrganizationDetailScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(shape)
-                    .background(RyntraDesign.colors.surface)
-                    .border(0.75.dp, RyntraDesign.colors.separator, shape)
+                    .ryntraCard(shape)
                     .padding(16.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -452,12 +449,5 @@ private fun OrgMetricChip(
 
 @Composable
 private fun LoadingRow(text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 20.dp)) {
-        CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
-        Text(
-            text,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 10.dp),
-        )
-    }
+    RyntraContentLoading(label = text)
 }

@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import com.composables.icons.lucide.Archive
+import com.composables.icons.lucide.BrainCog
 import com.composables.icons.lucide.CircleDollarSign
 import com.composables.icons.lucide.CircuitBoard
 import com.composables.icons.lucide.Eye
@@ -24,6 +25,7 @@ internal const val CONTENT_RULES_URL = "https://modrinth.com/legal/rules#generat
 internal val DisclosureType.icon: ImageVector
     get() = when (this) {
         DisclosureType.AiContent -> Lucide.Sparkles
+        DisclosureType.AiFunctionality -> Lucide.BrainCog
         DisclosureType.Advertisements -> Lucide.Megaphone
         DisclosureType.EpilepsyTriggers -> Lucide.Eye
         DisclosureType.SystemInteractions -> Lucide.CircuitBoard
@@ -37,6 +39,7 @@ internal val DisclosureType.icon: ImageVector
 internal fun DisclosureType.title(): String = stringResource(
     when (this) {
         DisclosureType.AiContent -> R.string.disclosures_ai_title
+        DisclosureType.AiFunctionality -> R.string.disclosures_ai_functionality_title
         DisclosureType.Advertisements -> R.string.disclosures_ads_title
         DisclosureType.EpilepsyTriggers -> R.string.disclosures_epilepsy_title
         DisclosureType.SystemInteractions -> R.string.disclosures_system_title
@@ -51,6 +54,7 @@ internal fun DisclosureType.title(): String = stringResource(
 internal fun DisclosureType.description(): String = stringResource(
     when (this) {
         DisclosureType.AiContent -> R.string.disclosures_ai_description
+        DisclosureType.AiFunctionality -> R.string.disclosures_ai_functionality_description
         DisclosureType.Advertisements -> R.string.disclosures_ads_description
         DisclosureType.EpilepsyTriggers -> R.string.disclosures_epilepsy_description
         DisclosureType.SystemInteractions -> R.string.disclosures_system_description
@@ -67,7 +71,6 @@ internal fun AiUsage.label(): String = stringResource(
         AiUsage.Code -> R.string.disclosures_ai_use_code
         AiUsage.Assets -> R.string.disclosures_ai_use_assets
         AiUsage.Text -> R.string.disclosures_ai_use_text
-        AiUsage.Functionality -> R.string.disclosures_ai_use_functionality
     },
 )
 

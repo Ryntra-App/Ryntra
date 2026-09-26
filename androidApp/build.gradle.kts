@@ -14,7 +14,9 @@ fun String.asBuildConfigString(): String =
 
 android {
     namespace = "com.ryntra.mobile"
-    compileSdk = 36
+    compileSdk = 37
+    // Alpha Compose requires the 37.1 minor platform.
+    compileSdkMinor = 1
 
     defaultConfig {
         applicationId = "com.ryntra.mobile"
@@ -84,6 +86,8 @@ dependencies {
     implementation(libs.androidx.browser)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.core)

@@ -3,15 +3,6 @@ import RyntraShared
 import SwiftUI
 
 struct AccountView: View {
-    /// The backdrop behind a grouped list, per platform.
-    private static var groupedBackground: Color {
-#if canImport(UIKit)
-        Color(uiColor: .systemGroupedBackground)
-#elseif canImport(AppKit)
-        Color(nsColor: .windowBackgroundColor)
-#endif
-    }
-
     @EnvironmentObject private var model: AppModel
     @AppStorage("showFavoriteProjects") private var showFavoriteProjects = true
     @AppStorage("showProjectBanners") private var showProjectBanners = true
@@ -329,12 +320,7 @@ struct AccountView: View {
         }
         .ryntraGroupedListStyle()
         .ryntraSettingsRowControls()
-#if os(macOS)
-        .ryntraOpaqueListBackground()
-#else
-        .scrollContentBackground(isPlatformNative ? .visible : .hidden)
-        .background(isPlatformNative ? Self.groupedBackground : Color.ryntraBackground)
-#endif
+        .ryntraGroupedListBackdrop()
         .onAppear(perform: resetDraft)
         .onChange(of: account.username) { _ in synchronizeDraft() }
         .onChange(of: account.bio) { _ in synchronizeDraft() }

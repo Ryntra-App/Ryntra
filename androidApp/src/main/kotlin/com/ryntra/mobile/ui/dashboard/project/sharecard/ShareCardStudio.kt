@@ -1,5 +1,17 @@
 package com.ryntra.mobile.ui.dashboard.project.sharecard
 
+import com.ryntra.mobile.ui.components.RyntraChoiceGroup
+import com.ryntra.mobile.ui.components.ryntraChoiceToggleColors
+import com.ryntra.mobile.ui.theme.RyntraDesign
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.Role
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.animateColorAsState
 import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
@@ -32,7 +44,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -71,7 +82,7 @@ import com.ryntra.shared.model.ProjectVersion
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun ShareCardStudio(
     project: Project,
@@ -183,7 +194,9 @@ internal fun ShareCardStudio(
                                     }
                                 }
                             },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 56.dp),
                         ) {
                             if (isExporting) {
                                 CircularProgressIndicator(
@@ -244,45 +257,66 @@ internal fun ShareCardStudio(
                     modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
                 ) {
                     item(key = "preview") {
-                        ShareCardPreview(
-                            project = project,
-                            version = selectedVersion,
-                            template = template,
-                            format = format,
-                            palette = palette,
-                            headline = headline,
-                            description = description,
-                            modifier = Modifier.fillMaxWidth().aspectRatio(format.ratio),
-                        )
+                        // The card sits on a tonal stage, and the stage eases between
+                        // sizes when the format changes instead of jumping. A story is
+                        // shown narrower so it does not fill the screen; export renders
+                        // from the full-width copy above, so the image is unaffected.
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(MaterialTheme.shapes.extraLarge)
+                                .background(MaterialTheme.colorScheme.surfaceContainer)
+                                .animateContentSize(RyntraDesign.spatialSpec())
+                                .padding(20.dp),
+                        ) {
+                            ShareCardPreview(
+                                project = project,
+                                version = selectedVersion,
+                                template = template,
+                                format = format,
+                                palette = palette,
+                                headline = headline,
+                                description = description,
+                                modifier = Modifier
+                                    .fillMaxWidth(if (format == ShareCardFormat.Story) 0.62f else 1f)
+                                    .aspectRatio(format.ratio),
+                            )
+                        }
                     }
                     item(key = "template") {
                         StudioChoiceSection(stringResource(R.string.share_card_template)) {
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                items(ShareCardTemplate.entries, key = ShareCardTemplate::name) { option ->
-                                    FilterChip(
-                                        selected = template == option,
-                                        onClick = {
+                            // Sized to their labels rather than connected in equal thirds:
+                            // "Нужны тестировщики" does not fit a third of a phone.
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                ShareCardTemplate.entries.forEach { option ->
+                                    ToggleButton(
+                                        colors = ryntraChoiceToggleColors(),
+                                        checked = template == option,
+                                        onCheckedChange = {
                                             template = option
                                             headline = defaultShareCardHeadline(context, option, selectedVersion)
                                             description = defaultShareCardDescription(project, option, selectedVersion)
                                         },
-                                        label = { Text(stringResource(option.labelRes)) },
-                                    )
+                                        modifier = Modifier.semantics { role = Role.RadioButton },
+                                    ) {
+                                        Text(stringResource(option.labelRes), maxLines = 1)
+                                    }
                                 }
                             }
                         }
                     }
                     item(key = "format") {
                         StudioChoiceSection(stringResource(R.string.share_card_format)) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                ShareCardFormat.entries.forEach { option ->
-                                    FilterChip(
-                                        selected = format == option,
-                                        onClick = { format = option },
-                                        label = { Text(stringResource(option.labelRes)) },
-                                    )
-                                }
-                            }
+                            RyntraChoiceGroup(
+                                options = ShareCardFormat.entries,
+                                isChecked = { it == format },
+                                onToggle = { format = it },
+                                label = { stringResource(it.labelRes) },
+                            )
                         }
                     }
                     item(key = "style") {
@@ -357,7 +391,7 @@ internal fun ShareCardStudio(
 @Composable
 private fun StudioChoiceSection(title: String, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+        Text(title, style = MaterialTheme.typography.titleMedium)
         content()
     }
 }
@@ -369,11 +403,24 @@ private fun PaletteChoice(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    OutlinedCard(onClick = onClick, modifier = modifier) {
+    val colors = MaterialTheme.colorScheme
+    val container by animateColorAsState(
+        targetValue = if (selected) colors.secondaryContainer else colors.surfaceContainer,
+        animationSpec = RyntraDesign.effectsSpec(),
+        label = "Palette tone",
+    )
+    Surface(
+        selected = selected,
+        onClick = onClick,
+        shape = MaterialTheme.shapes.large,
+        color = container,
+        contentColor = if (selected) colors.onSecondaryContainer else colors.onSurface,
+        modifier = modifier,
+    ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth().padding(10.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp, horizontal = 8.dp),
         ) {
             PalettePreview(palette = palette, selected = selected)
             Text(stringResource(palette.labelRes), style = MaterialTheme.typography.labelMedium, maxLines = 1)

@@ -1,7 +1,7 @@
 package com.ryntra.mobile.ui.dashboard.analytics
 
+import com.ryntra.shared.model.AnalyticsStatus
 import androidx.annotation.StringRes
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,6 +35,7 @@ import com.composables.icons.lucide.Wallet
 import com.ryntra.mobile.R
 import com.ryntra.mobile.AnalyticsState
 import com.ryntra.mobile.ui.components.RyntraSectionLabel
+import com.ryntra.mobile.ui.dashboard.wallet.WalletSummaryCard
 import com.ryntra.mobile.ui.components.formatExactCount
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.shared.model.AnalyticsMetrics
@@ -75,6 +75,9 @@ fun AnalyticsScreen(
     dashboard: Dashboard,
     state: AnalyticsState,
     onRangeChange: (Int) -> Unit,
+    onRetry: (Int) -> Unit = {},
+    onOpenWallet: () -> Unit = {},
+    onRetryWallet: () -> Unit = {},
 ) {
     var selectedMetricName by rememberSaveable { mutableStateOf(AnalyticsMetric.Downloads.name) }
     var selectedProjectId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -82,7 +85,6 @@ fun AnalyticsScreen(
     val projects = dashboard.projects
     val projectIds = remember(projects) { projects.map(Project::id) }
     val report = state.report
-    val wallet = state.wallet
     val isCoreAvailable = report?.isCoreAvailable != false
     val uriHandler = LocalUriHandler.current
     val lifetimeDownloads = remember(projects) { projects.sumOf(Project::downloads) }
@@ -126,24 +128,14 @@ fun AnalyticsScreen(
             RyntraSectionLabel(stringResource(R.string.analytics_wallet), modifier = Modifier.padding(top = 18.dp, bottom = 10.dp))
         }
         item(key = "analytics-wallet", contentType = "wallet") {
-            WalletSummary(
+            WalletSummaryCard(
                 report = state.wallet,
-                isLoading = state.isLoading && state.wallet == null,
+                isLoading = state.isWalletLoading,
                 errorMessage = state.walletErrorMessage,
-                onOpenRevenue = { uriHandler.openUri("https://modrinth.com/dashboard/revenue") },
+                onOpenWallet = onOpenWallet,
+                onRetry = onRetryWallet,
+                onOpenUrl = uriHandler::openUri,
             )
-        }
-        if (wallet != null && wallet.transactions.isNotEmpty()) {
-            item(key = "analytics-payouts-title", contentType = "heading") {
-                RyntraSectionLabel(stringResource(R.string.analytics_recent_payouts), modifier = Modifier.padding(top = 18.dp, bottom = 4.dp))
-            }
-            itemsIndexed(
-                items = wallet.transactions.take(5),
-                key = { index, payout -> "${payout.created}-${payout.amount}-${payout.status}-$index" },
-                contentType = { _, _ -> "payout" },
-            ) { _, payout ->
-                PayoutTransactionRow(payout, wallet.currency)
-            }
         }
         item(key = "analytics-period-title", contentType = "heading") {
             RyntraSectionLabel(
@@ -157,9 +149,12 @@ fun AnalyticsScreen(
             )
             Spacer(modifier = Modifier.height(14.dp))
             if (report != null && !report.isCoreAvailable) {
-                AnalyticsNotice(report.analyticsAvailabilityMessage())
+                AnalyticsNotice(
+                    message = report.analyticsAvailabilityMessage(),
+                    onRetry = { onRetry(state.rangeDays) },
+                )
             } else if (state.errorMessage != null) {
-                AnalyticsNotice(state.errorMessage)
+                AnalyticsNotice(message = state.errorMessage, onRetry = { onRetry(state.rangeDays) })
             }
         }
         item(key = "analytics-period", contentType = "metrics") {
@@ -309,7 +304,9 @@ private fun AnalyticsReport.analyticsAvailabilityMessage(): String = when (coreS
     401 -> stringResource(R.string.analytics_status_fresh_sign_in)
     403 -> stringResource(R.string.analytics_status_permission)
     429 -> stringResource(R.string.analytics_status_rate_limit)
-    0 -> stringResource(R.string.analytics_status_decode)
+    AnalyticsStatus.TIMED_OUT -> stringResource(R.string.analytics_status_timeout)
+    AnalyticsStatus.UNREACHABLE -> stringResource(R.string.analytics_status_unreachable)
+    AnalyticsStatus.DECODE_FAILED -> stringResource(R.string.analytics_status_decode)
     else -> stringResource(R.string.analytics_status_failed, coreStatus)
 }
 

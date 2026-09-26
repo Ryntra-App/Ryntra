@@ -25,7 +25,53 @@ final class LocalNotificationManager {
     private var backgroundActivity: NSBackgroundActivityScheduler?
 #endif
 
+    /// Buttons on a posted Modrinth notification. They run in the background, so the
+    /// notification can be handled without opening the app
+    static let notificationCategory = "com.ryntra.mobile.notification"
+    static let invitationCategory = "com.ryntra.mobile.invitation"
+    static let markReadAction = "com.ryntra.mobile.notification.markRead"
+    static let acceptInvitationAction = "com.ryntra.mobile.notification.acceptInvitation"
+    static let notificationIDKey = "modrinthNotificationID"
+
     private init() {}
+
+    func registerNotificationActions() {
+        let markRead = UNNotificationAction(
+            identifier: Self.markReadAction,
+            title: NSLocalizedString("Mark as read", comment: "Notification action"),
+            options: []
+        )
+        // Joining a team acts on the account, so it waits for the device to be unlocked
+        let accept = UNNotificationAction(
+            identifier: Self.acceptInvitationAction,
+            title: NSLocalizedString("Accept invitation", comment: "Notification action"),
+            options: [.authenticationRequired]
+        )
+        UNUserNotificationCenter.current().setNotificationCategories([
+            UNNotificationCategory(identifier: Self.notificationCategory, actions: [markRead], intentIdentifiers: []),
+            UNNotificationCategory(identifier: Self.invitationCategory, actions: [accept, markRead], intentIdentifiers: []),
+        ])
+    }
+
+    /// Runs a notification button. Returns false when Modrinth refused or could not be reached
+    func perform(action: String, notificationID: String) async -> Bool {
+        guard let token = KeychainTokenStore().read() else { return false }
+        let client = NotificationPollingClient()
+        defer { client.close() }
+        do {
+            switch action {
+            case Self.markReadAction:
+                try await client.markRead(notificationId: notificationID, token: token)
+            case Self.acceptInvitationAction:
+                try await client.acceptInvitation(notificationId: notificationID, token: token)
+            default:
+                return false
+            }
+            return true
+        } catch {
+            return false
+        }
+    }
 
     func registerBackgroundTask() {
 #if !os(macOS)
@@ -147,7 +193,10 @@ final class LocalNotificationManager {
             content.title = localized.title
             content.body = localized.body
             content.sound = .default
-            content.userInfo = ["modrinthLink": notification.link]
+            content.userInfo = ["modrinthLink": notification.link, Self.notificationIDKey: notification.id]
+            content.categoryIdentifier = notification.actions.contains(where: { $0.teamJoinId != nil })
+                ? Self.invitationCategory
+                : Self.notificationCategory
             let request = UNNotificationRequest(identifier: notification.id, content: content, trigger: nil)
             try? await UNUserNotificationCenter.current().add(request)
         }
@@ -178,6 +227,7 @@ final class RyntraAppDelegate: NSObject, RyntraPlatformAppDelegate, UNUserNotifi
     /// Shared launch work behind each platform's delegate callback.
     private func finishLaunching() {
         UNUserNotificationCenter.current().delegate = self
+        LocalNotificationManager.shared.registerNotificationActions()
         LocalNotificationManager.shared.registerBackgroundTask()
         LocalNotificationManager.shared.restoreScheduleIfNeeded()
     }
@@ -241,6 +291,20 @@ final class RyntraAppDelegate: NSObject, RyntraPlatformAppDelegate, UNUserNotifi
     ) async {
         onRemoteNotificationReceived?()
         let userInfo = response.notification.request.content.userInfo
+        if response.actionIdentifier != UNNotificationDefaultActionIdentifier,
+           response.actionIdentifier != UNNotificationDismissActionIdentifier {
+            guard let notificationID = userInfo[LocalNotificationManager.notificationIDKey] as? String else { return }
+            let succeeded = await LocalNotificationManager.shared.perform(
+                action: response.actionIdentifier,
+                notificationID: notificationID
+            )
+            if succeeded {
+                center.removeDeliveredNotifications(withIdentifiers: [response.notification.request.identifier])
+                // The earlier refresh raced the action; this one sees it applied
+                onRemoteNotificationReceived?()
+            }
+            return
+        }
         guard let link = (userInfo["modrinthLink"] ?? userInfo["modrinth_link"]) as? String else { return }
         let path = link
             .replacingOccurrences(of: "https://modrinth.com/", with: "")

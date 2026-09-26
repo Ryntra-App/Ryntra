@@ -29,6 +29,7 @@ import com.ryntra.shared.model.ProjectTeamRoster
 import com.ryntra.shared.model.ProjectVersion
 import com.ryntra.shared.model.VersionUpdate
 import com.ryntra.shared.model.WalletReport
+import com.ryntra.shared.model.AffiliateReport
 import com.ryntra.shared.network.ModrinthApi
 import com.ryntra.shared.network.ApiException
 import com.ryntra.shared.network.createPlatformHttpClient
@@ -52,6 +53,12 @@ class AppController internal constructor(
     private var accessToken: String? = null
     private var loadJob: Job? = null
 
+    private val analyticsCache = AnalyticsCache()
+
+    // Bumped on every sign-in and sign-out so entries written by a request still in
+    // flight when the account changed can never be read back by the next account.
+    private var analyticsGeneration = 0
+
     val state: StateFlow<AppState> = mutableState.asStateFlow()
 
     constructor() : this(
@@ -65,6 +72,7 @@ class AppController internal constructor(
             return
         }
         accessToken = normalizedToken
+        discardCachedAnalytics()
         load(previousDashboard = null)
     }
 
@@ -83,15 +91,46 @@ class AppController internal constructor(
         return repository.loadProjectVersions(projectIdOrSlug, token)
     }
 
+    /**
+     * Returns a recent report for this range, joins a request for it that is already
+     * running, or starts one. Switching back to a range is instant, and opening the tab
+     * while its prefetch is still in flight waits on that request instead of sending a
+     * second one. Use [refreshAnalytics] to force a round trip.
+     *
+     * The request runs in the controller's own scope, on [Dispatchers.Default]: the
+     * response for a long range is tens of thousands of JSON objects, and parsing it
+     * on the caller's dispatcher put that work on the main thread of both apps.
+     */
     suspend fun loadAnalytics(query: AnalyticsQuery): AnalyticsReport {
         val token = requireToken("loading analytics")
-        return repository.loadAnalytics(query, token)
+        val key = query.analyticsCacheKey(analyticsGeneration)
+        return analyticsCache.getOrLoad(key, scope) { repository.loadAnalytics(query, token) }
+    }
+
+    /** Drops what was cached for this range and fetches it again. */
+    suspend fun refreshAnalytics(query: AnalyticsQuery): AnalyticsReport {
+        analyticsCache.invalidate(query.analyticsCacheKey(analyticsGeneration))
+        return loadAnalytics(query)
+    }
+
+    private fun discardCachedAnalytics() {
+        analyticsGeneration++
+        scope.launch { analyticsCache.clear() }
     }
 
     suspend fun loadWallet(): WalletReport {
-        val token = requireToken("loading wallet")
-        val account = currentDashboard()?.account ?: error("Load the dashboard before loading wallet data.")
-        return repository.loadWallet(account, token)
+        return repository.loadWallet(requireToken("loading wallet"))
+    }
+
+    /** Null for an account outside Modrinth's affiliate program, which has no codes. */
+    suspend fun loadAffiliateReport(rangeDays: Int): AffiliateReport? {
+        val account = currentDashboard()?.account ?: return null
+        if (!account.isAffiliate) return null
+        return repository.loadAffiliateReport(rangeDays, requireToken("loading affiliate links"))
+    }
+
+    suspend fun cancelPayout(payoutId: String) {
+        repository.cancelPayout(payoutId, requireToken("cancelling a withdrawal"))
     }
 
     suspend fun loadNotifications(): List<ModrinthNotification> {
@@ -258,6 +297,7 @@ class AppController internal constructor(
     fun signOut() {
         loadJob?.cancel()
         accessToken = null
+        discardCachedAnalytics()
         mutableState.value = AppState.SignedOut
     }
 

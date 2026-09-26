@@ -1,5 +1,8 @@
 package com.ryntra.mobile
 
+import com.ryntra.mobile.widgets.RyntraWidgets
+import com.ryntra.shared.model.AffiliateReport
+import com.ryntra.shared.model.WidgetSnapshot
 import android.app.Application
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -33,6 +36,7 @@ import com.ryntra.shared.model.ModrinthNotification
 import com.ryntra.shared.model.ModerationThread
 import com.ryntra.shared.model.Account
 import com.ryntra.shared.model.AnalyticsQuery
+import com.ryntra.shared.model.AnalyticsResolution
 import com.ryntra.shared.model.AnalyticsReport
 import com.ryntra.shared.model.CreateVersionRequest
 import com.ryntra.shared.model.CreateProjectRequest
@@ -62,6 +66,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -96,6 +104,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
         ),
     )
     private val mutableAppUpdate = MutableStateFlow<AppUpdate?>(null)
+    private val mutableRequestedScreen = MutableStateFlow<AppScreenRequest?>(null)
     private var pendingToken: String? = null
     private var projectLoadJob: Job? = null
     private var organizationLoadJob: Job? = null
@@ -106,6 +115,8 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     private var browseTypingJob: Job? = null
     private var memberSearchJob: Job? = null
     private var analyticsJob: Job? = null
+    private var walletJob: Job? = null
+    private var affiliateJob: Job? = null
     private var notificationsJob: Job? = null
     private var notificationAccountId: String? = null
     private var pendingNotificationProjectReference: String? = null
@@ -136,6 +147,8 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
     val notifications: StateFlow<NotificationState> = mutableNotifications.asStateFlow()
     val instantNotifications: StateFlow<InstantNotificationState> = mutableInstantNotifications.asStateFlow()
     val appUpdate: StateFlow<AppUpdate?> = mutableAppUpdate.asStateFlow()
+    /** A screen something outside the app asked for, such as a widget tap; consumed once shown. */
+    val requestedScreen: StateFlow<AppScreenRequest?> = mutableRequestedScreen.asStateFlow()
     val preferences: StateFlow<RyntraPreferences> = preferencesStore.preferences
 
     init {
@@ -152,6 +165,7 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
             pendingToken = savedToken
             controller.signIn(savedToken)
         }
+        publishWidgetSnapshots()
         viewModelScope.launch {
             state.collect { currentState ->
                 if (currentState is AppState.Ready) {
@@ -165,6 +179,10 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
                         pendingNotificationProjectReference = null
                         openNotificationProject(reference)
                     }
+                    // Modrinth takes seconds to answer an analytics request, so it starts
+                    // as soon as the dashboard is known rather than when the tab opens.
+                    // A no-op when the current range is already loaded for these projects.
+                    loadAnalytics(mutableAnalytics.value.rangeDays)
                 } else if (currentState is AppState.Failed && currentState.isAuthenticationFailure) {
                     tokenStore.clear()
                     pendingToken = null
@@ -336,10 +354,20 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun requestScreen(screen: AppScreenRequest) {
+        mutableRequestedScreen.value = screen
+    }
+
+    fun onRequestedScreenShown() {
+        mutableRequestedScreen.value = null
+    }
+
     fun toggleFavoriteProject(projectId: String) = preferencesStore.toggleFavoriteProject(projectId)
 
     fun refreshNotifications() {
-        if (state.value !is AppState.Ready) return
+        // A dashboard refresh in flight still has the account; skipping here left the
+        // notifications screen empty whenever it was opened during one.
+        if (currentDashboard() == null) return
         notificationsJob?.cancel()
         mutableNotifications.value = mutableNotifications.value.copy(isLoading = true, errorMessage = null)
         notificationsJob = viewModelScope.launch {
@@ -443,57 +471,147 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
             !force &&
             mutableAnalytics.value.rangeDays == rangeDays &&
             mutableAnalytics.value.projectIds == projectIds &&
-            mutableAnalytics.value.report != null &&
+            // A failed report is still a report; treating it as loaded meant picking the
+            // same range again never retried it.
+            mutableAnalytics.value.report?.isCoreAvailable == true &&
             mutableAnalytics.value.wallet != null
         ) return
 
         analyticsJob?.cancel()
         val end = Instant.now()
         val currentStart = end.minus(rangeDays.toLong(), ChronoUnit.DAYS)
+        val slicesPerPeriod = AnalyticsResolution.slicesPerPeriod(rangeDays)
         val query = AnalyticsQuery(
             startTime = end.minus(rangeDays.toLong() * 2, ChronoUnit.DAYS).toString(),
             endTime = end.toString(),
-            slices = rangeDays * 2,
+            slices = slicesPerPeriod * 2,
             projectIds = projectIds,
             currentStartTime = currentStart.toString(),
-            currentSlices = rangeDays,
+            currentSlices = slicesPerPeriod,
+            periodDays = rangeDays,
         )
+        val existingWallet = mutableAnalytics.value.wallet
+        val willFetchWallet = existingWallet == null || force
         mutableAnalytics.value = mutableAnalytics.value.copy(
             rangeDays = rangeDays,
             isLoading = true,
+            isWalletLoading = willFetchWallet,
             errorMessage = null,
         )
         analyticsJob = viewModelScope.launch {
-            val analyticsRequest = async {
-                if (projectIds.isEmpty()) {
-                    Result.success(AnalyticsReport(coreStatus = 200, revenueStatus = 200))
-                } else {
-                    suspendCatching { controller.loadAnalytics(query) }
+            // Started first so it runs alongside the chart request, but never awaited
+            // before the chart is published: the payout endpoint is the slower of the
+            // two and the chart has no reason to wait behind it.
+            val walletRequest = async {
+                if (willFetchWallet) suspendCatching { controller.loadWallet() }
+                else Result.success(existingWallet)
+            }
+            val analyticsResult = if (projectIds.isEmpty()) {
+                Result.success(AnalyticsReport(coreStatus = 200, revenueStatus = 200))
+            } else {
+                suspendCatching {
+                    if (force) controller.refreshAnalytics(query) else controller.loadAnalytics(query)
                 }
             }
-            val existingWallet = mutableAnalytics.value.wallet
-            val walletRequest = async {
-                if (existingWallet != null && !force) Result.success(existingWallet)
-                else suspendCatching { controller.loadWallet() }
+            mutableAnalytics.update { current ->
+                current.copy(
+                    rangeDays = rangeDays,
+                    projectIds = projectIds,
+                    report = analyticsResult.getOrNull(),
+                    isLoading = false,
+                    errorMessage = analyticsResult.exceptionOrNull()?.message ?: if (analyticsResult.isFailure) {
+                        "Unable to load analytics."
+                    } else {
+                        null
+                    },
+                )
             }
-            val analyticsResult = analyticsRequest.await()
             val walletResult = walletRequest.await()
-            mutableAnalytics.value = AnalyticsState(
-                rangeDays = rangeDays,
-                projectIds = projectIds,
-                report = analyticsResult.getOrNull(),
-                wallet = walletResult.getOrNull(),
-                errorMessage = analyticsResult.exceptionOrNull()?.message ?: if (analyticsResult.isFailure) {
-                    "Unable to load analytics."
-                } else {
-                    null
-                },
-                walletErrorMessage = walletResult.exceptionOrNull()?.message ?: if (walletResult.isFailure) {
-                    "Unable to load wallet data."
-                } else {
-                    null
-                },
-            )
+            mutableAnalytics.update { current ->
+                current.copy(
+                    wallet = walletResult.getOrNull(),
+                    isWalletLoading = false,
+                    walletErrorMessage = walletResult.exceptionOrNull()?.message ?: if (walletResult.isFailure) {
+                        "Unable to load wallet data."
+                    } else {
+                        null
+                    },
+                )
+            }
+        }
+    }
+
+    /**
+     * Keeps the home-screen widgets on whatever the app last loaded, so a widget matches the
+     * app the moment the user leaves it instead of waiting for the hourly refresh.
+     */
+    private fun publishWidgetSnapshots() {
+        val application = getApplication<Application>()
+        viewModelScope.launch {
+            combine(state, mutableAnalytics.map { it.wallet }.distinctUntilChanged(), ::Pair)
+                .collect { (appState, wallet) ->
+                    when (appState) {
+                        is AppState.Ready -> RyntraWidgets.publish(
+                            application,
+                            WidgetSnapshot.from(appState.dashboard, wallet, System.currentTimeMillis()),
+                        )
+                        AppState.SignedOut -> RyntraWidgets.clear(application)
+                        else -> Unit
+                    }
+                }
+        }
+    }
+
+    /** Reloads only the wallet, for its own screen; the analytics report is left alone. */
+    fun refreshWallet() {
+        if (currentDashboard() == null) return
+        walletJob?.cancel()
+        mutableAnalytics.update { it.copy(isWalletLoading = true, walletErrorMessage = null) }
+        loadAffiliateReport()
+        walletJob = viewModelScope.launch {
+            val result = suspendCatching { controller.loadWallet() }
+            mutableAnalytics.update { current ->
+                current.copy(
+                    // A failed refresh keeps the last balance on screen rather than blanking it.
+                    wallet = result.getOrNull() ?: current.wallet,
+                    isWalletLoading = false,
+                    walletErrorMessage = result.exceptionOrNull()?.let { it.message ?: "Unable to load wallet data." },
+                )
+            }
+        }
+    }
+
+    /** Only affiliate accounts get a report; everyone else keeps it null. */
+    private fun loadAffiliateReport() {
+        if (currentDashboard()?.account?.isAffiliate != true) return
+        affiliateJob?.cancel()
+        mutableAnalytics.update { it.copy(isAffiliateLoading = true, affiliateErrorMessage = null) }
+        affiliateJob = viewModelScope.launch {
+            val result = suspendCatching { controller.loadAffiliateReport(AFFILIATE_RANGE_DAYS) }
+            mutableAnalytics.update { current ->
+                current.copy(
+                    affiliate = result.getOrNull() ?: current.affiliate,
+                    isAffiliateLoading = false,
+                    affiliateErrorMessage = result.exceptionOrNull()?.let { it.message ?: "Unable to load affiliate links." },
+                )
+            }
+        }
+    }
+
+    fun cancelPayout(payoutId: String) {
+        if (payoutId.isBlank() || mutableAnalytics.value.cancellingPayoutId != null) return
+        mutableAnalytics.update { it.copy(cancellingPayoutId = payoutId, walletActionErrorMessage = null) }
+        viewModelScope.launch {
+            val result = suspendCatching { controller.cancelPayout(payoutId) }
+            mutableAnalytics.update { current ->
+                current.copy(
+                    cancellingPayoutId = null,
+                    walletActionErrorMessage = result.exceptionOrNull()?.let {
+                        it.message ?: "Unable to cancel the withdrawal."
+                    },
+                )
+            }
+            if (result.isSuccess) refreshWallet()
         }
     }
 
@@ -1352,7 +1470,6 @@ class RyntraViewModel(application: Application) : AndroidViewModel(application) 
         runCatching { getApplication<Application>().unregisterReceiver(notificationRefreshReceiver) }
         instantNotificationCoordinator.close()
         controller.close()
-        super.onCleared()
     }
 
     private companion object {
@@ -1466,14 +1583,29 @@ data class MemberSearchState(
     val errorMessage: String? = null,
 )
 
+private const val AFFILIATE_RANGE_DAYS = 30
+
+/** Screens that can be opened from outside the app. */
+enum class AppScreenRequest { Wallet, Analytics, Notifications }
+
 data class AnalyticsState(
     val rangeDays: Int = 30,
     val projectIds: List<String> = emptyList(),
     val isLoading: Boolean = false,
+    // The chart and the wallet are published as each one lands, so a single flag
+    // would switch the wallet to its empty state while it is still in flight.
+    val isWalletLoading: Boolean = false,
     val report: AnalyticsReport? = null,
     val wallet: WalletReport? = null,
     val errorMessage: String? = null,
     val walletErrorMessage: String? = null,
+    /** The withdrawal whose cancellation is in flight; one at a time. */
+    val cancellingPayoutId: String? = null,
+    val walletActionErrorMessage: String? = null,
+    /** Null for accounts outside Modrinth's affiliate program. */
+    val affiliate: AffiliateReport? = null,
+    val isAffiliateLoading: Boolean = false,
+    val affiliateErrorMessage: String? = null,
 )
 
 data class NotificationState(

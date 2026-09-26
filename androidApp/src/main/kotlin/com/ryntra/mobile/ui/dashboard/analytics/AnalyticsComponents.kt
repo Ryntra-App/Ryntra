@@ -1,5 +1,12 @@
 package com.ryntra.mobile.ui.dashboard.analytics
 
+import com.composables.icons.lucide.CircleAlert
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,6 +36,7 @@ import com.composables.icons.lucide.Check
 import com.ryntra.mobile.R
 import com.composables.icons.lucide.Lucide
 import com.ryntra.mobile.ui.components.RyntraIcon
+import com.ryntra.mobile.ui.components.ryntraCard
 import com.ryntra.mobile.ui.theme.RyntraDesign
 
 internal data class MetricValue(
@@ -190,15 +198,52 @@ internal fun HealthRow(icon: ImageVector, label: String, detail: String, count: 
 }
 
 @Composable
-internal fun AnalyticsNotice(message: String) {
-    Text(
-        text = message,
-        color = RyntraDesign.colors.labelSecondary,
-        style = MaterialTheme.typography.bodySmall,
+internal fun AnalyticsNotice(message: String, onRetry: (() -> Unit)? = null) {
+    if (!RyntraDesign.isPlatformNative) {
+        Text(
+            text = message,
+            color = RyntraDesign.colors.labelSecondary,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier
+                .fillMaxWidth()
+                .ryntraCard(RoundedCornerShape(8.dp))
+                .padding(12.dp),
+        )
+        return
+    }
+    // A failed load reads as a failure — error container, an icon, and a way to try again —
+    // rather than as grey small print that looks like part of the data.
+    val colors = MaterialTheme.colorScheme
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .background(RyntraDesign.colors.surface, RoundedCornerShape(8.dp))
-            .border(0.75.dp, RyntraDesign.colors.separator, RoundedCornerShape(8.dp))
-            .padding(12.dp),
-    )
+            .clip(MaterialTheme.shapes.large)
+            .background(colors.errorContainer)
+            .semantics { liveRegion = LiveRegionMode.Polite }
+            .padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 8.dp),
+    ) {
+        Icon(
+            imageVector = Lucide.CircleAlert,
+            contentDescription = null,
+            tint = colors.onErrorContainer,
+            modifier = Modifier.size(20.dp),
+        )
+        Text(
+            text = message,
+            color = colors.onErrorContainer,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 12.dp),
+        )
+        if (onRetry != null) {
+            TextButton(
+                onClick = onRetry,
+                colors = ButtonDefaults.textButtonColors(contentColor = colors.onErrorContainer),
+            ) {
+                Text(stringResource(R.string.common_retry))
+            }
+        }
+    }
 }

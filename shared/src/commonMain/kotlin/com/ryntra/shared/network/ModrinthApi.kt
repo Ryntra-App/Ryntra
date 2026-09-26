@@ -2,6 +2,7 @@ package com.ryntra.shared.network
 
 import com.ryntra.shared.model.Account
 import com.ryntra.shared.model.AccountProfileUpdate
+import com.ryntra.shared.model.AffiliateReport
 import com.ryntra.shared.model.AnalyticsQuery
 import com.ryntra.shared.model.CreateVersionRequest
 import com.ryntra.shared.model.CreateProjectRequest
@@ -24,10 +25,13 @@ import com.ryntra.shared.model.ProjectUpdate
 import com.ryntra.shared.model.ProjectVersion
 import com.ryntra.shared.model.VersionUpdate
 import com.ryntra.shared.network.modrinth.AccountEndpoints
+import com.ryntra.shared.network.modrinth.AffiliateEndpoints
+import com.ryntra.shared.network.modrinth.DownloadSeriesEndpoints
 import com.ryntra.shared.network.modrinth.DisclosureEndpoints
 import com.ryntra.shared.network.modrinth.InsightEndpoints
 import com.ryntra.shared.network.modrinth.NotificationEndpoints
 import com.ryntra.shared.network.modrinth.NotificationContentResolver
+import com.ryntra.shared.network.modrinth.PayoutEndpoints
 import com.ryntra.shared.network.modrinth.ProjectEndpoints
 import com.ryntra.shared.network.modrinth.SearchEndpoints
 import com.ryntra.shared.network.modrinth.TeamOrganizationEndpoints
@@ -46,6 +50,9 @@ class ModrinthApi(
     private val disclosures = DisclosureEndpoints(httpClient)
     private val search = SearchEndpoints(httpClient)
     private val insights = InsightEndpoints(httpClient)
+    private val payouts = PayoutEndpoints(httpClient)
+    private val affiliates = AffiliateEndpoints(httpClient)
+    private val downloadSeries = DownloadSeriesEndpoints(httpClient)
     private val notifications = NotificationEndpoints(httpClient)
     private val threads = ThreadEndpoints(httpClient)
     private val tags = TagEndpoints(httpClient)
@@ -185,10 +192,19 @@ class ModrinthApi(
     suspend fun getAnalytics(query: AnalyticsQuery, includeRevenue: Boolean, token: String): AnalyticsResponse =
         insights.getAnalytics(query, includeRevenue, token)
 
-    suspend fun getPayoutHistory(userId: String, token: String): PayoutHistoryResponse =
-        insights.getPayoutHistory(userId, token)
+    suspend fun getPayoutHistory(token: String): PayoutHistoryResponse = payouts.getHistory(token)
 
-    suspend fun getPayoutBalance(token: String): PayoutBalanceResponse = insights.getPayoutBalance(token)
+    suspend fun getPayoutBalance(token: String): PayoutBalanceResponse = payouts.getBalance(token)
+
+    suspend fun cancelPayout(payoutId: String, token: String) = payouts.cancel(payoutId, token)
+
+    suspend fun getTaxFormThresholds(): Map<Int, Double> = payouts.getTaxFormThresholds()
+
+    suspend fun getDailyDownloads(startTime: String, endTime: String, days: Int, token: String): List<Long> =
+        downloadSeries.getDailyDownloads(startTime, endTime, days, token)
+
+    suspend fun getAffiliateReport(startTime: String, endTime: String, rangeDays: Int, token: String): AffiliateReport =
+        affiliates.getReport(startTime, endTime, rangeDays, token)
 
     suspend fun getNotifications(userId: String, token: String): List<ModrinthNotification> =
         notificationContent.resolve(notifications.getForUser(userId, token), token)

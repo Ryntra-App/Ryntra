@@ -56,8 +56,12 @@ class MainActivity : AppCompatActivity() {
             ?.let(ModrinthNotificationLink::parse)
             ?.projectIdOrSlug
             ?.let(viewModel::openNotificationProject)
+        intent.getStringExtra(EXTRA_OPEN_SCREEN)
+            ?.let { name -> AppScreenRequest.entries.firstOrNull { it.name == name } }
+            ?.let(viewModel::requestScreen)
         val sanitizedIntent = Intent(intent).setData(null)
         sanitizedIntent.removeExtra(EXTRA_DEEP_LINK)
+        sanitizedIntent.removeExtra(EXTRA_OPEN_SCREEN)
         setIntent(sanitizedIntent)
     }
 
@@ -75,5 +79,6 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_DEEP_LINK = "deep_link"
+        const val EXTRA_OPEN_SCREEN = "open_screen"
     }
 }

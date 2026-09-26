@@ -1,5 +1,9 @@
 package com.ryntra.mobile.ui.dashboard.projects
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Text
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -23,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Search
 import com.composables.icons.lucide.Plus
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import com.ryntra.mobile.R
 import com.ryntra.mobile.ProjectActionState
@@ -73,12 +77,17 @@ fun ProjectsScreen(
             }
             .sortedForDisplay(sortMode, pinnedFavoriteIds)
     }
+    val listState = rememberLazyListState()
+    // Collapses to its icon once the list is scrolled, the way Material's extended FAB
+    // gets out of the way of the content it sits on.
+    val isFabExpanded by remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
     Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
             start = 16.dp,
-            top = 20.dp,
+            top = 12.dp,
             end = 16.dp,
             bottom = RyntraDesign.bottomContentPadding,
         ),
@@ -90,19 +99,23 @@ fun ProjectsScreen(
                 downloads = totalDownloads,
                 followers = totalFollowers,
             )
-            RyntraSearchField(
-                value = query,
-                onValueChange = { query = it },
-                placeholder = stringResource(R.string.projects_search),
-                leadingIcon = Lucide.Search,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp),
-            )
-            ProjectSortControl(
-                selected = sortMode,
-                onSelect = onSortModeChange,
-            )
+        }
+        // Search and sort act on the same list, so they sit together as one group — a
+        // tighter gap inside it than the list's own spacing around it.
+        item(key = "projects-controls", contentType = "controls") {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                RyntraSearchField(
+                    value = query,
+                    onValueChange = { query = it },
+                    placeholder = stringResource(R.string.projects_search),
+                    leadingIcon = Lucide.Search,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                ProjectSortControl(
+                    selected = sortMode,
+                    onSelect = onSortModeChange,
+                )
+            }
         }
         if (filteredProjects.isEmpty()) {
             item(key = "projects-empty", contentType = "empty") {
@@ -118,11 +131,15 @@ fun ProjectsScreen(
         } else {
             items(filteredProjects, key = Project::id, contentType = { "project" }) { project ->
                 val projectId = project.id
+                // Search, sorting and pinning a favourite move cards rather than redraw
+                // the list, so they travel to their new place instead of jumping.
+                Box(modifier = Modifier.animateItem()) {
                 if (!showProjectBanners) {
                     ProjectRow(
                         project = project,
                         showDescription = false,
                         isSelected = actionProject?.id == project.id,
+                        asCard = true,
                         onClick = { onProjectClick(project) },
                         onLongClick = { actionProject = project },
                     )
@@ -136,13 +153,19 @@ fun ProjectsScreen(
                         onLongClick = { actionProject = project },
                     )
                 }
+                }
             }
         }
     }
-        FloatingActionButton(
+        ExtendedFloatingActionButton(
+            text = { Text(stringResource(R.string.project_create)) },
+            icon = { Icon(Lucide.Plus, contentDescription = null) },
             onClick = onCreateProject,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 104.dp),
-        ) { Icon(Lucide.Plus, contentDescription = stringResource(R.string.project_create)) }
+            expanded = isFabExpanded,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 20.dp, bottom = RyntraDesign.floatingActionInset),
+        )
     }
 
     actionProject?.let { project ->

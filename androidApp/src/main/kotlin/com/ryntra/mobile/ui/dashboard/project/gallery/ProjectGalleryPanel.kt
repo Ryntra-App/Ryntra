@@ -3,7 +3,6 @@ package com.ryntra.mobile.ui.dashboard.project.gallery
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -53,7 +52,7 @@ import com.ryntra.mobile.ProjectActionState
 import com.ryntra.mobile.R
 import com.ryntra.mobile.media.ImageUploadReader
 import com.ryntra.mobile.ui.components.RyntraSecondaryButton
-import com.ryntra.mobile.ui.theme.RyntraDesign
+import com.ryntra.mobile.ui.components.ryntraCard
 import com.ryntra.shared.model.GalleryImage
 import com.ryntra.shared.model.ProjectFileUpload
 import com.ryntra.shared.model.ProjectUploadLimits
@@ -279,9 +278,7 @@ private fun GalleryManageTile(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(shape)
-            .background(RyntraDesign.colors.surface)
-            .border(0.75.dp, RyntraDesign.colors.separator, shape)
+            .ryntraCard(shape)
             .padding(10.dp),
     ) {
         Box(

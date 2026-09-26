@@ -106,7 +106,7 @@ struct ProjectsView: View {
             .padding(.top, 12)
             .padding(.bottom, isPlatformNative ? 20 : 96)
         }
-        .background(Color.ryntraBackground)
+        .ryntraScreenBackdrop()
         .refreshable { model.refresh() }
         .toolbar {
             ToolbarItem(placement: .ryntraTrailing) {

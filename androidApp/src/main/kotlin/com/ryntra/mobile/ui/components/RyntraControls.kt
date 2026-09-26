@@ -1,5 +1,15 @@
 package com.ryntra.mobile.ui.components
 
+import com.ryntra.mobile.R
+import androidx.compose.ui.res.stringResource
+import com.composables.icons.lucide.X
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TextField
+import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material3.ToggleButtonColors
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -50,11 +60,14 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.composables.icons.lucide.Check
+import com.composables.icons.lucide.Lucide
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
@@ -67,6 +80,10 @@ fun RyntraSearchField(
     leadingIcon: ImageVector,
     modifier: Modifier = Modifier,
 ) {
+    if (RyntraDesign.isPlatformNative) {
+        PlatformSearchField(value, onValueChange, placeholder, leadingIcon, modifier)
+        return
+    }
     RyntraTextField(
         value = value,
         onValueChange = onValueChange,
@@ -74,6 +91,49 @@ fun RyntraSearchField(
         leadingIcon = leadingIcon,
         leadingIconDescription = null,
         modifier = modifier,
+    )
+}
+
+/**
+ * Material 3's search field: a filled, fully rounded bar rather than an outlined form field,
+ * so a search reads as a search and not as one more input in a form. It clears with one tap.
+ */
+@Composable
+private fun PlatformSearchField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    leadingIcon: ImageVector,
+    modifier: Modifier,
+) {
+    val colors = MaterialTheme.colorScheme
+    TextField(
+        value = value,
+        onValueChange = onValueChange,
+        singleLine = true,
+        shape = CircleShape,
+        placeholder = { Text(placeholder, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        leadingIcon = { Icon(leadingIcon, contentDescription = null) },
+        trailingIcon = if (value.isNotEmpty()) {
+            {
+                IconButton(onClick = { onValueChange("") }) {
+                    Icon(Lucide.X, contentDescription = stringResource(R.string.common_clear_search))
+                }
+            }
+        } else {
+            null
+        },
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = colors.surfaceContainerHigh,
+            unfocusedContainerColor = colors.surfaceContainerHigh,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent,
+            focusedLeadingIconColor = colors.onSurfaceVariant,
+            unfocusedLeadingIconColor = colors.onSurfaceVariant,
+        ),
+        modifier = modifier.heightIn(min = 56.dp),
     )
 }
 
@@ -105,7 +165,13 @@ fun RyntraTextField(
             maxLines = maxLines,
             isError = isError,
             label = label?.let { fieldLabel -> { Text(fieldLabel) } },
-            placeholder = { Text(placeholder, maxLines = if (singleLine) 1 else minLines) },
+            // Material floats the label to the top of the field and then shows the
+            // placeholder inside it, so the same text in both would read twice.
+            placeholder = if (placeholder == label) {
+                null
+            } else {
+                { Text(placeholder, maxLines = if (singleLine) 1 else minLines) }
+            },
             // Multi-line fields keep icons top-aligned; Material centers leadingIcon by default.
             leadingIcon = if (singleLine) {
                 {
@@ -358,6 +424,19 @@ fun RyntraSwitch(
             checked = checked,
             onCheckedChange = onCheckedChange,
             enabled = enabled,
+            // Material's own switch-with-icon: the check makes "on" legible without
+            // relying on the track colour alone.
+            thumbContent = if (checked) {
+                {
+                    Icon(
+                        imageVector = Lucide.Check,
+                        contentDescription = null,
+                        modifier = Modifier.size(SwitchDefaults.IconSize),
+                    )
+                }
+            } else {
+                null
+            },
             modifier = Modifier.semantics { this.contentDescription = contentDescription },
         )
         return
@@ -397,15 +476,11 @@ fun RyntraSwitch(
     }
 }
 
+// Material's own roles for a segmented button: a secondaryContainer active segment
+// on an outline border. Anything else drifts away from the rest of the app under
+// dynamic colour, where primary and secondary are deliberately different hues.
 @Composable
-fun ryntraSegmentedButtonColors(): SegmentedButtonColors = SegmentedButtonDefaults.colors(
-    activeContainerColor = MaterialTheme.colorScheme.primaryContainer,
-    activeContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-    activeBorderColor = MaterialTheme.colorScheme.primary,
-    inactiveContainerColor = Color.Transparent,
-    inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-    inactiveBorderColor = MaterialTheme.colorScheme.outline,
-)
+fun ryntraSegmentedButtonColors(): SegmentedButtonColors = SegmentedButtonDefaults.colors()
 
 @Composable
 private fun ButtonLabel(text: String, icon: ImageVector, color: Color) {
@@ -421,3 +496,18 @@ private fun ButtonLabel(text: String, icon: ImageVector, color: Color) {
         )
     }
 }
+
+/**
+ * Colours for an option in a connected choice group.
+ *
+ * Material's default unchecked container is surfaceContainer — the very tone the platform
+ * style fills its settings tiles and cards with — so on those surfaces an unchecked option
+ * vanished into the tile and read as bare text. One tone higher keeps every option visible
+ * as a button wherever the group sits.
+ */
+@Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+internal fun ryntraChoiceToggleColors(): ToggleButtonColors = ToggleButtonDefaults.colors(
+    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+    contentColor = MaterialTheme.colorScheme.onSurface,
+)

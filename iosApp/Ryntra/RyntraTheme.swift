@@ -109,6 +109,15 @@ extension Color {
         .analyticsCyan, .analyticsViolet, .analyticsRed, .analyticsGold,
     ]
 
+    /// Modrinth's revenue page colours each dated payout in this order; matching it lets a
+    /// creator read the app's balance bar the same way as the site's
+    static let ryntraPayoutEstimates: [Color] = [
+        Color(red: 0.31, green: 0.61, blue: 1.00),
+        Color(red: 0.75, green: 0.52, blue: 0.99),
+        Color(red: 0.98, green: 0.57, blue: 0.24),
+        Color(red: 0.97, green: 0.44, blue: 0.44),
+    ]
+
     static let ryntraGreen = adaptive(
         dark: RyntraNativeColor(red: 0.28, green: 0.85, blue: 0.47, alpha: 1),
         light: RyntraNativeColor(red: 0.08, green: 0.46, blue: 0.23, alpha: 1)
@@ -129,6 +138,8 @@ extension Color {
         light: .ryntraLightBackground
     )
 
+    /// Cards sit one step above `ryntraBackground`, the way a grouped list's
+    /// rows sit above its own backdrop.
     static let ryntraSurface = adaptive(
         dark: RyntraNativeColor(red: 0.047, green: 0.047, blue: 0.055, alpha: 1),
         light: .ryntraLightSurface
@@ -160,10 +171,15 @@ extension Color {
 }
 
 /// Light-mode system colors, named per platform.
+///
+/// The three UIKit values are one ladder, and they have to stay in the same
+/// family as the backdrop every screen paints. Since that is
+/// `systemGroupedBackground`, these are its grouped steps — mixing in a
+/// `systemBackground` step would put white on white.
 private extension RyntraNativeColor {
     static var ryntraLightBackground: RyntraNativeColor {
 #if canImport(UIKit)
-        .systemBackground
+        .systemGroupedBackground
 #elseif canImport(AppKit)
         .windowBackgroundColor
 #endif
@@ -171,7 +187,7 @@ private extension RyntraNativeColor {
 
     static var ryntraLightSurface: RyntraNativeColor {
 #if canImport(UIKit)
-        .secondarySystemBackground
+        .secondarySystemGroupedBackground
 #elseif canImport(AppKit)
         .underPageBackgroundColor
 #endif
@@ -179,7 +195,7 @@ private extension RyntraNativeColor {
 
     static var ryntraLightSurfaceRaised: RyntraNativeColor {
 #if canImport(UIKit)
-        .tertiarySystemBackground
+        .tertiarySystemGroupedBackground
 #elseif canImport(AppKit)
         .controlBackgroundColor
 #endif
@@ -191,6 +207,59 @@ private extension RyntraNativeColor {
 #elseif canImport(AppKit)
         .separatorColor
 #endif
+    }
+}
+
+/// The backdrop every screen paints.
+///
+/// The navigation bar, the tab bar and the Ryntra glass bar are all translucent
+/// and sample whatever sits behind them. A screen that paints a different
+/// backdrop from the one it replaces therefore shifts their tone while a push
+/// animates, which reads as the bars flashing. Grouped screens and scrolling
+/// screens both come through here so there is only ever one tone in flight.
+///
+/// Both themes land on `ryntraBackground`, because it is already the tone each
+/// one wants: pure black in dark, and in light the grouped step below
+/// `ryntraSurface` that keeps a card readable against the page.
+struct RyntraScreenBackdrop: ViewModifier {
+    @AppStorage("themeStyle") private var storedThemeStyle = RyntraThemeStyle.platform.rawValue
+
+    /// True for a grouped `List`, whose system-drawn rows only read correctly
+    /// against the system's own backdrop. Every other screen — scrolling pages
+    /// and plain lists with clear rows alike — gives its backdrop up.
+    let keepsSystemListBackground: Bool
+
+    private var isPlatformNative: Bool {
+        storedThemeStyle == RyntraThemeStyle.platform.rawValue
+    }
+
+    func body(content: Content) -> some View {
+#if os(macOS)
+        // The Mac titlebar samples the window, so every screen — List or not —
+        // gives up its own background for the app's. The view is stretched to
+        // the full window first, or a short page would let the desktop through
+        // under the titlebar.
+        content
+            .scrollContentBackground(.hidden)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.ryntraBackground)
+#else
+        content
+            .scrollContentBackground(keepsSystemListBackground && isPlatformNative ? .visible : .hidden)
+            .background(Color.ryntraBackground)
+#endif
+    }
+}
+
+extension View {
+    /// Backdrop for a scrolling screen, or a plain `List` whose rows are clear.
+    func ryntraScreenBackdrop() -> some View {
+        modifier(RyntraScreenBackdrop(keepsSystemListBackground: false))
+    }
+
+    /// Backdrop for a grouped `List`, which keeps its system row backgrounds.
+    func ryntraGroupedListBackdrop() -> some View {
+        modifier(RyntraScreenBackdrop(keepsSystemListBackground: true))
     }
 }
 

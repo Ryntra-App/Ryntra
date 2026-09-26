@@ -1,7 +1,6 @@
 package com.ryntra.mobile.ui.dashboard.project.moderation
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
+import com.ryntra.mobile.ui.components.RyntraContentLoading
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -87,9 +86,7 @@ internal fun LazyListScope.moderationContentItems(
 
     if (state.isLoading && state.thread == null) {
         item(key = "moderation-loading", contentType = "loading") {
-            Box(Modifier.fillMaxWidth().padding(vertical = 42.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-            }
+            RyntraContentLoading()
         }
         return
     }

@@ -1,5 +1,6 @@
 package com.ryntra.mobile.ui.dashboard.project.versions
 
+import com.ryntra.mobile.ui.components.RyntraContentLoading
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -44,14 +45,7 @@ import com.ryntra.mobile.ui.dashboard.project.markdown.MarkdownBlockView
 
 @Composable
 internal fun LoadingVersions() {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 28.dp)) {
-        RyntraProgressIndicator(RyntraDesign.colors.accent, Modifier.size(18.dp))
-        Text(
-            stringResource(R.string.project_versions_loading),
-            color = RyntraDesign.colors.labelSecondary,
-            modifier = Modifier.padding(start = 10.dp),
-        )
-    }
+    RyntraContentLoading(label = stringResource(R.string.project_versions_loading))
 }
 
 @Composable

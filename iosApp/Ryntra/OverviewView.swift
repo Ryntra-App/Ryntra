@@ -136,7 +136,7 @@ struct OverviewView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, isPlatformNative ? 16 : 84)
         }
-        .ryntraScreenBackground(Color.ryntraBackground)
+        .ryntraScreenBackdrop()
         .refreshable { model.refresh() }
     }
 

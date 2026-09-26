@@ -410,14 +410,19 @@ private fun PermissionChipRow(
 
 @Composable
 private fun MemberField(label: String, value: String, onValueChange: (String) -> Unit, placeholder: String) {
-    Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    // Material puts the name inside the outlined field, where it floats on focus.
+    val isPlatformNative = RyntraDesign.isPlatformNative
+    if (!isPlatformNative) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
     RyntraTextField(
         value = value,
         onValueChange = onValueChange,
         placeholder = placeholder,
+        label = if (isPlatformNative) label else null,
         leadingIcon = Lucide.Pencil,
         leadingIconDescription = null,
-        modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 12.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = if (isPlatformNative) 0.dp else 6.dp, bottom = 12.dp),
     )
 }
 

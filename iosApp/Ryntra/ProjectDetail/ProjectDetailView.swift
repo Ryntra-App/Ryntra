@@ -21,6 +21,7 @@ struct ProjectDetailView: View {
     @State private var memberError: String?
     @State private var isConfirmingSubmission = false
     @State private var isShowingShareCard = false
+    @State private var didCopyLink = false
     @State private var isDeletingProject = false
     @State private var submissionError: String?
     @State private var editHasChanges = false
@@ -127,7 +128,7 @@ struct ProjectDetailView: View {
             .padding(.bottom, 36)
         }
         .ryntraInteractiveKeyboardDismissal()
-        .ryntraScreenBackground(Color.ryntraBackground)
+        .ryntraScreenBackdrop()
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if isEditingTab, editHasChanges {
                 editSaveBar
@@ -507,18 +508,48 @@ struct ProjectDetailView: View {
                 identityArtwork
                 identityDetails
                 Spacer(minLength: 8)
-                shareCardButton
+                headerActions
             }
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .top) {
                     identityArtwork
                     Spacer()
-                    shareCardButton
+                    headerActions
                 }
                 identityDetails
             }
         }
         .padding(.bottom, 22)
+    }
+
+    /// The share card is promotional art for your own project; for one you only browsed
+    /// to, a link is what is useful.
+    private var headerActions: some View {
+        HStack(spacing: 8) {
+            copyLinkButton
+            if !isReadOnly { shareCardButton }
+        }
+    }
+
+    private var copyLinkButton: some View {
+        Button {
+            ryntraCopyToPasteboard(project.modrinthUrl())
+            // iOS has no system confirmation for a copy, so the button answers itself.
+            didCopyLink = true
+            Task {
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                didCopyLink = false
+            }
+        } label: {
+            Image(systemName: didCopyLink ? "checkmark" : "link")
+                .font(.body.weight(.semibold))
+                .frame(width: 44, height: 44)
+                .background(Color.ryntraGreen.opacity(0.12), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.ryntraGreen)
+        .accessibilityLabel(NSLocalizedString("Copy link", comment: "Project link action"))
+        .accessibilityValue(didCopyLink ? NSLocalizedString("Link copied", comment: "Project link action result") : "")
     }
 
     private var shareCardButton: some View {

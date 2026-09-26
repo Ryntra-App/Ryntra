@@ -67,6 +67,7 @@ private fun encodeDisclosure(disclosure: ProjectDisclosure): JsonObject {
             fields["note"] = payload.note.orJsonNull()
             fields["uses"] = JsonArray(payload.uses.map { JsonPrimitive(it.apiValue) })
         }
+        DisclosureType.AiFunctionality,
         DisclosureType.Advertisements,
         DisclosureType.EpilepsyTriggers,
         DisclosureType.Archived,

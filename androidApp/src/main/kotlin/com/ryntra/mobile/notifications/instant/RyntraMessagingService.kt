@@ -8,6 +8,7 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.ryntra.mobile.MainActivity
 import com.ryntra.mobile.R
+import com.ryntra.mobile.notifications.NotificationActionReceiver
 import com.ryntra.mobile.notifications.NotificationChannels
 import com.ryntra.mobile.notifications.NotificationBadgeStore
 import com.ryntra.mobile.notifications.NotificationRefreshSignal
@@ -49,14 +50,19 @@ class RyntraMessagingService : FirebaseMessagingService() {
             launchIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val notification = NotificationCompat.Builder(this, NotificationChannels.MODRINTH_UPDATES)
+        val builder = NotificationCompat.Builder(this, NotificationChannels.MODRINTH_UPDATES)
             .setSmallIcon(R.drawable.ryntra_launcher_monochrome)
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
-            .build()
+        // Only a push the relay tied to a Modrinth notification id can be marked read. The
+        // push does not say whether it is an invitation, so accepting stays in the app.
+        message.data["notification_id"]?.takeIf(String::isNotBlank)?.let { modrinthId ->
+            NotificationActionReceiver.addActions(this, builder, modrinthId, canAcceptInvitation = false)
+        }
+        val notification = builder.build()
         if (NotificationManagerCompat.from(this).areNotificationsEnabled()) {
             NotificationManagerCompat.from(this).notify(notificationId.hashCode(), notification)
         }

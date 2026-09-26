@@ -1,5 +1,6 @@
 package com.ryntra.mobile.ui.dashboard.project.disclosures
 
+import com.ryntra.mobile.ui.components.RyntraChoiceGroup
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -10,19 +11,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,7 +26,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.CircleDollarSign
 import com.composables.icons.lucide.Database
@@ -46,7 +41,6 @@ import com.ryntra.mobile.ui.components.RyntraIcon
 import com.ryntra.mobile.ui.components.RyntraSecondaryButton
 import com.ryntra.mobile.ui.components.RyntraSwitch
 import com.ryntra.mobile.ui.components.RyntraTextField
-import com.ryntra.mobile.ui.components.ryntraSegmentedButtonColors
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.shared.model.DisclosureRules
 import com.ryntra.shared.model.DerivativeSource
@@ -164,20 +158,15 @@ private fun DisclosureEditor(
     when (entry.type) {
         DisclosureType.AiContent -> {
             DisclosureFieldLabel(stringResource(R.string.disclosures_ai_uses))
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-            ) {
-                DisclosureRules.aiUsages.forEach { use ->
-                    FilterChip(
-                        selected = entry.hasUse(use),
-                        enabled = enabled,
-                        onClick = { onChange(entry.withUse(use, !entry.hasUse(use))) },
-                        label = { Text(use.label()) },
-                    )
-                }
-            }
+            RyntraChoiceGroup(
+                options = DisclosureRules.aiUsages,
+                isChecked = entry::hasUse,
+                onToggle = { use -> onChange(entry.withUse(use, !entry.hasUse(use))) },
+                label = { it.label() },
+                isMultipleChoice = true,
+                enabled = enabled,
+                modifier = Modifier.padding(bottom = 16.dp),
+            )
             NoteField(
                 label = stringResource(R.string.disclosures_explanation_optional),
                 value = entry.note,
@@ -186,6 +175,14 @@ private fun DisclosureEditor(
                 onChange = { onChange(entry.withNote(it)) },
             )
         }
+
+        DisclosureType.AiFunctionality -> NoteField(
+            label = stringResource(R.string.disclosures_explanation_optional),
+            value = entry.note,
+            placeholder = stringResource(R.string.disclosures_ai_functionality_note_hint),
+            enabled = enabled,
+            onChange = { onChange(entry.withNote(it)) },
+        )
 
         DisclosureType.Advertisements -> NoteField(
             label = stringResource(R.string.disclosures_explanation),
@@ -221,25 +218,14 @@ private fun DisclosureEditor(
 
         DisclosureType.Telemetry -> {
             DisclosureFieldLabel(stringResource(R.string.disclosures_telemetry_consent))
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-                DisclosureRules.telemetryConsents.forEachIndexed { index, consent ->
-                    SegmentedButton(
-                        selected = entry.consent == consent,
-                        enabled = enabled,
-                        onClick = { onChange(entry.withConsent(consent)) },
-                        shape = SegmentedButtonDefaults.itemShape(index = index, count = DisclosureRules.telemetryConsents.size),
-                        colors = ryntraSegmentedButtonColors(),
-                        label = {
-                            Text(
-                                text = consent.label(),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                style = MaterialTheme.typography.labelMedium,
-                            )
-                        },
-                    )
-                }
-            }
+            RyntraChoiceGroup(
+                options = DisclosureRules.telemetryConsents,
+                isChecked = { it == entry.consent },
+                onToggle = { onChange(entry.withConsent(it)) },
+                label = { it.label() },
+                enabled = enabled,
+                modifier = Modifier.padding(bottom = 16.dp),
+            )
             DisclosureFieldLabel(stringResource(R.string.disclosures_telemetry_data_label))
             Text(
                 text = stringResource(R.string.disclosures_telemetry_data_description),
@@ -411,7 +397,8 @@ private fun DisclosureField(
     enabled: Boolean,
     onChange: (String) -> Unit,
 ) {
-    DisclosureFieldLabel(label)
+    // The outlined field floats its own label in the platform style.
+    if (!RyntraDesign.isPlatformNative) DisclosureFieldLabel(label)
     RyntraTextField(
         value = value,
         onValueChange = onChange,
@@ -432,7 +419,8 @@ private fun NoteField(
     enabled: Boolean,
     onChange: (String) -> Unit,
 ) {
-    DisclosureFieldLabel(label)
+    // The outlined field floats its own label in the platform style.
+    if (!RyntraDesign.isPlatformNative) DisclosureFieldLabel(label)
     RyntraTextField(
         value = value,
         onValueChange = onChange,

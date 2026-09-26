@@ -1,5 +1,6 @@
 package com.ryntra.mobile.ui.dashboard.projects
 
+import com.ryntra.mobile.ui.components.expressiveSelectableCard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -14,7 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -79,9 +79,16 @@ internal fun ProjectBannerCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(shape)
-                .background(containerColor)
-                .border(if (isSelected) 1.dp else 0.75.dp, borderColor, shape)
+                .then(
+                    if (RyntraDesign.isPlatformNative) {
+                        Modifier.expressiveSelectableCard(isSelected)
+                    } else {
+                        Modifier
+                            .clip(shape)
+                            .background(containerColor)
+                            .border(if (isSelected) 1.dp else 0.75.dp, borderColor, shape)
+                    },
+                )
                 .then(
                     if (onLongClick != null) {
                         Modifier.combinedClickable(

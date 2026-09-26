@@ -1,5 +1,13 @@
 package com.ryntra.mobile.ui.dashboard.project.overview
 
+import com.ryntra.mobile.ui.components.RyntraContentLoading
+import com.composables.icons.lucide.Link
+import androidx.compose.material3.IconButton
+import android.widget.Toast
+import android.os.Build
+import android.content.Context
+import android.content.ClipboardManager
+import android.content.ClipData
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -7,11 +15,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.MaterialTheme
@@ -73,24 +79,27 @@ internal fun ProjectDependencyRow(dependency: ProjectDependency) {
 
 @Composable
 internal fun LoadingMembers() {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 28.dp)) {
-        CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
-        Text(
-            stringResource(R.string.project_members_loading),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 10.dp),
-        )
-    }
+    RyntraContentLoading(label = stringResource(R.string.project_members_loading))
 }
 
+/**
+ * @param canCreateShareCard false for a project the user only browsed to. The share card
+ * is promotional art for your own project; for anyone else's, a link is what is useful.
+ */
 @Composable
-internal fun ProjectIdentity(project: Project, onCreateShareCard: () -> Unit) {
+internal fun ProjectIdentity(
+    project: Project,
+    canCreateShareCard: Boolean,
+    onCreateShareCard: () -> Unit,
+    onCopyLink: () -> Unit,
+) {
+    val isPlatformNative = RyntraDesign.isPlatformNative
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 22.dp)) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(76.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .clip(if (isPlatformNative) RoundedCornerShape(24.dp) else RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant),
         ) {
             Text(project.title.take(1).uppercase(), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black)
@@ -104,7 +113,13 @@ internal fun ProjectIdentity(project: Project, onCreateShareCard: () -> Unit) {
             }
         }
         Column(modifier = Modifier.padding(start = 14.dp).weight(1f)) {
-            Text(project.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(
+                project.title,
+                style = if (isPlatformNative) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleLarge,
+                fontWeight = if (isPlatformNative) FontWeight.SemiBold else FontWeight.Bold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
             Text(
                 project.displayTypeLabel(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -118,13 +133,33 @@ internal fun ProjectIdentity(project: Project, onCreateShareCard: () -> Unit) {
                 )
             }
         }
-        FilledTonalIconButton(onClick = onCreateShareCard) {
+        IconButton(onClick = onCopyLink) {
             Icon(
-                Lucide.Share2,
-                contentDescription = stringResource(R.string.share_card_action),
+                Lucide.Link,
+                contentDescription = stringResource(R.string.project_copy_link),
                 modifier = Modifier.size(20.dp),
             )
         }
+        if (canCreateShareCard) {
+            FilledTonalIconButton(onClick = onCreateShareCard) {
+                Icon(
+                    Lucide.Share2,
+                    contentDescription = stringResource(R.string.share_card_action),
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Copies [url] and confirms it. Android 13 and later show their own clipboard
+ * confirmation, so the toast is only for older releases that would otherwise say nothing.
+ */
+internal fun Context.copyProjectLink(url: String, confirmation: String) {
+    getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Modrinth", url))
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+        Toast.makeText(this, confirmation, Toast.LENGTH_SHORT).show()
     }
 }
 

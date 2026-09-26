@@ -1,7 +1,5 @@
 package com.ryntra.mobile.ui.dashboard.account
 
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -35,7 +33,6 @@ import com.ryntra.mobile.preferences.RyntraPreferences
 import com.ryntra.mobile.preferences.ThemeStyle
 import com.ryntra.mobile.R
 import com.ryntra.mobile.ui.components.RyntraSwitch
-import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.shared.model.Account
 
 @Composable
@@ -98,16 +95,16 @@ internal fun AppearanceSettingsSection(
             } else {
                 stringResource(R.string.settings_ryntra_style)
             },
+            below = { ThemeStylePicker(selected = preferences.themeStyle, onSelect = onThemeStyleChange) },
         )
-        ThemeStylePicker(selected = preferences.themeStyle, onSelect = onThemeStyleChange)
         if (preferences.themeStyle == ThemeStyle.Platform) {
             SettingsDivider()
             SettingsRow(
                 icon = Lucide.Monitor,
                 title = stringResource(R.string.settings_appearance),
                 subtitle = stringResource(R.string.settings_appearance_hint),
+                below = { AppearanceModePicker(selected = preferences.appearanceMode, onSelect = onAppearanceModeChange) },
             )
-            AppearanceModePicker(selected = preferences.appearanceMode, onSelect = onAppearanceModeChange)
         }
         SettingsDivider()
         SettingsRow(
@@ -127,8 +124,8 @@ internal fun AppearanceSettingsSection(
             icon = Lucide.Globe,
             title = stringResource(R.string.settings_language),
             subtitle = stringResource(R.string.settings_language_hint),
+            below = { AppLanguagePicker(selected = preferences.appLanguage, onSelect = onAppLanguageChange) },
         )
-        AppLanguagePicker(selected = preferences.appLanguage, onSelect = onAppLanguageChange)
         SettingsDivider()
         SettingsRow(
             icon = Lucide.Star,
@@ -161,8 +158,8 @@ internal fun AppearanceSettingsSection(
                 icon = Lucide.Sparkles,
                 title = stringResource(R.string.settings_glass_quality),
                 subtitle = stringResource(R.string.settings_glass_quality_hint),
+                below = { GlassQualityPicker(selected = preferences.glassQuality, onSelect = onGlassQualityChange) },
             )
-            GlassQualityPicker(selected = preferences.glassQuality, onSelect = onGlassQualityChange)
             SettingsDivider()
         }
         SettingsRow(

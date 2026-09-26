@@ -14,7 +14,15 @@ data class Account(
     val bio: String? = null,
     val role: String = "developer",
     @SerialName("payout_data") val payoutData: PayoutData? = null,
-)
+    /** labrinth's `Badges` bit set. */
+    val badges: Long = 0,
+) {
+    /** Only accounts Modrinth has invited to its affiliate program own affiliate links. */
+    val isAffiliate: Boolean get() = badges and AFFILIATE_BADGE != 0L
+}
+
+/** labrinth `Badges::AFFILIATE`. Kept out of a companion, which serialization owns. */
+private const val AFFILIATE_BADGE = 1L shl 7
 
 @Serializable
 data class PayoutData(

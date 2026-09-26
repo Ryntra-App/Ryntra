@@ -1,5 +1,6 @@
 package com.ryntra.mobile.ui.dashboard.browse
 
+import com.ryntra.mobile.ui.components.RyntraContentLoading
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,7 +22,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -155,9 +155,7 @@ fun BrowseScreen(
 
         if (state.isLoading) {
             item(key = "browse-loading", contentType = "loading") {
-                Box(Modifier.fillMaxWidth().padding(vertical = 48.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                }
+                RyntraContentLoading()
             }
             return@LazyColumn
         }
@@ -222,9 +220,7 @@ private fun LazyListScope.highlightItems(
 
     if (state.isLoadingHighlights && state.highlights.isEmpty) {
         item(key = "browse-highlights-loading", contentType = "loading") {
-            Box(Modifier.fillMaxWidth().padding(vertical = 48.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-            }
+            RyntraContentLoading()
         }
         return
     }

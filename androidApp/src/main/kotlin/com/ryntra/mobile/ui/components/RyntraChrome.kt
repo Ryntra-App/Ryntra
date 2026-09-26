@@ -23,16 +23,21 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MediumFlexibleTopAppBar
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
@@ -74,6 +79,7 @@ data class RyntraTab(
 )
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun RyntraTopBar(
     title: String,
     avatarUrl: String?,
@@ -90,6 +96,7 @@ fun RyntraTopBar(
     onNotificationsClick: (() -> Unit)? = null,
     unreadNotificationCount: Int = 0,
     notificationsDescription: String = "",
+    scrollBehavior: TopAppBarScrollBehavior? = null,
 ) {
     if (RyntraDesign.isPlatformNative) {
         PlatformTopBar(
@@ -107,6 +114,7 @@ fun RyntraTopBar(
             onNotificationsClick = onNotificationsClick,
             unreadNotificationCount = unreadNotificationCount,
             notificationsDescription = notificationsDescription,
+            scrollBehavior = scrollBehavior,
             modifier = modifier,
         )
         return
@@ -192,7 +200,7 @@ fun RyntraTopBar(
 }
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 private fun PlatformTopBar(
     title: String,
     avatarUrl: String?,
@@ -208,74 +216,83 @@ private fun PlatformTopBar(
     onNotificationsClick: (() -> Unit)?,
     unreadNotificationCount: Int,
     notificationsDescription: String,
+    scrollBehavior: TopAppBarScrollBehavior?,
     modifier: Modifier,
 ) {
-    TopAppBar(
-        title = {
-            Crossfade(
-                targetState = title,
-                animationSpec = tween(RyntraDesign.motion.duration(180)),
-                label = "Top app bar title",
-            ) { currentTitle ->
-                Text(currentTitle, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    // A plain Text, not a Crossfade: a flexible app bar measures and scales its own
+    // title, and a nested transition with its own layout fights that.
+    val titleContent: @Composable () -> Unit = {
+        Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+    val navigationContent: @Composable () -> Unit = {
+        navigationIcon?.let { icon ->
+            IconButton(onClick = onNavigationClick) {
+                Icon(icon, contentDescription = navigationDescription)
             }
-        },
-        navigationIcon = {
-            navigationIcon?.let { icon ->
-                IconButton(onClick = onNavigationClick) {
-                    Icon(icon, contentDescription = navigationDescription)
-                }
+        }
+    }
+    val actionsContent: @Composable RowScope.() -> Unit = {
+        if (onSearchClick != null) {
+            IconButton(onClick = onSearchClick) {
+                Icon(imageVector = Lucide.Search, contentDescription = searchDescription)
             }
-        },
-        actions = {
-            if (isRefreshing) {
-                RyntraProgressIndicator(
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+        }
+        if (onNotificationsClick != null) {
+            NotificationBell(
+                unreadCount = unreadNotificationCount,
+                onClick = onNotificationsClick,
+                tint = LocalContentColor.current,
+                contentDescription = notificationsDescription,
+            )
+        }
+        if (showAvatar) {
+            IconButton(onClick = onAvatarClick) {
+                AsyncImage(
+                    model = avatarUrl,
+                    contentDescription = avatarDescription,
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .padding(horizontal = 12.dp)
-                        .size(18.dp),
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                 )
             }
-            if (onSearchClick != null) {
-                IconButton(onClick = onSearchClick) {
-                    Icon(
-                        imageVector = Lucide.Search,
-                        contentDescription = searchDescription,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            if (onNotificationsClick != null) {
-                NotificationBell(
-                    unreadCount = unreadNotificationCount,
-                    onClick = onNotificationsClick,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    contentDescription = notificationsDescription,
-                )
-            }
-            if (showAvatar) {
-                IconButton(onClick = onAvatarClick) {
-                    AsyncImage(
-                        model = avatarUrl,
-                        contentDescription = avatarDescription,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-                    )
-                }
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.background,
-            scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-        ),
-        modifier = modifier,
-    )
+        }
+    }
+
+    // A background refresh is a thin bar along the bottom edge of the app bar, Material's
+    // place for "this screen's content is updating". It overlays the bar instead of taking
+    // a slot among the actions, so the icons never shift while a refresh runs.
+    Box(modifier) {
+        // A tab root gets the collapsing headline; a pushed screen keeps the compact
+        // bar so its back button and title stay on one line.
+        if (navigationIcon == null) {
+            MediumFlexibleTopAppBar(
+                title = titleContent,
+                navigationIcon = navigationContent,
+                actions = actionsContent,
+                scrollBehavior = scrollBehavior,
+            )
+        } else {
+            TopAppBar(
+                title = titleContent,
+                navigationIcon = navigationContent,
+                actions = actionsContent,
+                scrollBehavior = scrollBehavior,
+            )
+        }
+        if (isRefreshing) {
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth(),
+            )
+        }
+    }
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun NotificationBell(
     unreadCount: Int,
     onClick: () -> Unit,
@@ -286,6 +303,20 @@ private fun NotificationBell(
         "$contentDescription, ${stringResource(R.string.notifications_unread_count, unreadCount)}"
     } else {
         contentDescription
+    }
+    if (RyntraDesign.isPlatformNative) {
+        IconButton(onClick = onClick) {
+            BadgedBox(
+                badge = {
+                    if (unreadCount > 0) {
+                        Badge { Text(if (unreadCount > 9) "9+" else unreadCount.toString()) }
+                    }
+                },
+            ) {
+                Icon(Lucide.Bell, contentDescription = resolvedDescription)
+            }
+        }
+        return
     }
     Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
         IconButton(onClick = onClick) {
@@ -321,23 +352,19 @@ fun RyntraTabBar(
     modifier: Modifier = Modifier,
 ) {
     if (RyntraDesign.isPlatformNative) {
-        NavigationBar(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-            modifier = modifier.fillMaxWidth(),
-        ) {
+        // NavigationBar, not the expressive ShortNavigationBar: this is the app's only
+        // way between tabs, so it stays on the component that ships in stable Material.
+        // The defaults are the point of the change — they carry the spec's own roles, a
+        // secondaryContainer indicator with onSecondaryContainer content. Overriding
+        // them to primary/primaryContainer drew the selected icon in the container's
+        // own hue under dynamic colour.
+        NavigationBar(modifier = modifier.fillMaxWidth()) {
             tabs.forEachIndexed { index, tab ->
                 NavigationBarItem(
                     selected = selectedIndex == index,
                     onClick = { onSelect(index) },
                     icon = { Icon(tab.icon, contentDescription = null) },
                     label = { Text(tab.label, maxLines = 1) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = MaterialTheme.colorScheme.primary,
-                        selectedTextColor = MaterialTheme.colorScheme.primary,
-                        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
                 )
             }
         }

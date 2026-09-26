@@ -7,7 +7,48 @@ data class AnalyticsQuery(
     val projectIds: List<String>,
     val currentStartTime: String = startTime,
     val currentSlices: Int = slices,
+    /**
+     * Days in the current period. Once long ranges share a slice count (see
+     * [AnalyticsResolution]) the slices alone no longer tell 90 days from 180, so the
+     * span has to travel with the query.
+     */
+    val periodDays: Int,
 )
+
+/**
+ * Statuses an analytics report carries when Modrinth never produced an HTTP answer.
+ *
+ * They used to share a single 0, so a request that simply timed out on a long range was
+ * reported to the user as a response that could not be read.
+ */
+object AnalyticsStatus {
+    const val DECODE_FAILED = 0
+    const val UNREACHABLE = -1
+    const val TIMED_OUT = 408
+}
+
+/**
+ * How finely a range is sliced for Modrinth.
+ *
+ * Every slice comes back as one object per project per metric, and the range is asked
+ * for twice over to compare against the previous period. At one slice a day, 180 days
+ * was 360 slices before revenue doubled it again — tens of thousands of objects for a
+ * chart a phone draws a few dozen points wide. Long ranges therefore use whole-day
+ * buckets of several days. The count always divides the range so every bucket spans
+ * the same number of days, which is what the charts rely on to label them.
+ */
+object AnalyticsResolution {
+    private const val MAX_SLICES_PER_PERIOD = 45
+
+    fun slicesPerPeriod(rangeDays: Int): Int {
+        require(rangeDays > 0) { "An analytics range must span at least one day." }
+        var slices = minOf(rangeDays, MAX_SLICES_PER_PERIOD)
+        while (rangeDays % slices != 0) slices--
+        return slices
+    }
+
+    fun daysPerSlice(rangeDays: Int): Int = rangeDays / slicesPerPeriod(rangeDays)
+}
 
 data class AnalyticsMetrics(
     val downloads: Double = 0.0,

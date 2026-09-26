@@ -41,6 +41,7 @@ import com.ryntra.mobile.R
 import com.ryntra.mobile.ui.components.RyntraIcon
 import com.ryntra.mobile.ui.components.RyntraPrimaryButton
 import com.ryntra.mobile.ui.components.RyntraSecondaryButton
+import com.ryntra.mobile.ui.components.ryntraCard
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.shared.model.ProjectFileUpload
 import com.ryntra.shared.model.ProjectVersion
@@ -165,8 +166,7 @@ internal fun FeaturedToggle(featured: Boolean, onToggle: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .background(RyntraDesign.colors.surface, RoundedCornerShape(8.dp))
-            .border(0.75.dp, RyntraDesign.colors.separator, RoundedCornerShape(8.dp))
+            .ryntraCard(RoundedCornerShape(8.dp))
             .toggleable(value = featured, role = Role.Switch, onValueChange = { onToggle() })
             .padding(12.dp),
     ) {
@@ -184,8 +184,7 @@ internal fun ReleaseChecklist(warnings: List<String>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(RyntraDesign.colors.surface, RoundedCornerShape(8.dp))
-            .border(0.75.dp, RyntraDesign.colors.separator, RoundedCornerShape(8.dp))
+            .ryntraCard(RoundedCornerShape(8.dp))
             .padding(12.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

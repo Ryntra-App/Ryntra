@@ -6,6 +6,7 @@ package com.ryntra.shared.model
  */
 enum class DisclosureType(val apiValue: String) {
     AiContent("ai_content"),
+    AiFunctionality("ai_functionality"),
     Advertisements("advertisements"),
     EpilepsyTriggers("epilepsy_triggers"),
     SystemInteractions("system_interactions"),
@@ -20,12 +21,14 @@ enum class DisclosureType(val apiValue: String) {
     }
 }
 
-/** What generative AI was used for, on the `ai_content` disclosure. */
+/**
+ * What generative AI produced, on the `ai_content` disclosure. Generative AI running inside the
+ * project is its own disclosure, [DisclosureType.AiFunctionality], not a usage.
+ */
 enum class AiUsage(val apiValue: String) {
     Code("code"),
     Assets("assets"),
     Text("text"),
-    Functionality("functionality"),
     ;
 
     companion object {
@@ -168,6 +171,7 @@ data class ProjectDisclosure(
             note = note.trim(),
             uses = AiUsage.entries.filter { it in uses },
         )
+        DisclosureType.AiFunctionality,
         DisclosureType.Advertisements,
         DisclosureType.EpilepsyTriggers,
         DisclosureType.Archived,
@@ -252,7 +256,7 @@ data class ProjectDisclosureDraft(
             }
             DisclosureType.PaidFeatures ->
                 DisclosureIssue.PaidFeaturesEmpty.takeIf { normalized.features.isEmpty() }
-            DisclosureType.AiContent, DisclosureType.Archived -> null
+            DisclosureType.AiContent, DisclosureType.AiFunctionality, DisclosureType.Archived -> null
         }
     }
 
@@ -291,15 +295,16 @@ data class ProjectDisclosureDraft(
 
 /** Which disclosures apply to which kinds of project, mirroring Modrinth's own matrix. */
 object DisclosureRules {
-    /** Modrinth renders the disclosures in this order; the apps follow it. */
+    /** Modrinth's project settings render the disclosures in this order; the apps follow it. */
     val orderedTypes: List<DisclosureType> = listOf(
         DisclosureType.AiContent,
+        DisclosureType.AiFunctionality,
         DisclosureType.Advertisements,
-        DisclosureType.EpilepsyTriggers,
-        DisclosureType.SystemInteractions,
+        DisclosureType.PaidFeatures,
         DisclosureType.Telemetry,
         DisclosureType.DerivativeWork,
-        DisclosureType.PaidFeatures,
+        DisclosureType.EpilepsyTriggers,
+        DisclosureType.SystemInteractions,
         DisclosureType.Archived,
     )
 

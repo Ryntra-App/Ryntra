@@ -3,7 +3,13 @@ package com.ryntra.mobile.ui.theme
 import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
@@ -18,6 +24,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -153,18 +160,63 @@ object RyntraDesign {
         @ReadOnlyComposable
         get() = LocalRyntraColors.current.isPlatformNative
 
+    /**
+     * Spec for content that moves, resizes or scales.
+     *
+     * The platform style takes Material's own motion tokens, so components and screens
+     * share one physics. The Ryntra style keeps its shorter, flatter timing because it
+     * is deliberately not Material. Reduce-motion collapses either to a snap.
+     */
+    @Composable
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    fun <T> spatialSpec(): FiniteAnimationSpec<T> = when {
+        motion.isReduced -> snap()
+        isPlatformNative -> MaterialTheme.motionScheme.defaultSpatialSpec()
+        else -> tween(SPATIAL_MILLIS)
+    }
+
+    /** Spec for content that only changes colour or opacity. */
+    @Composable
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    fun <T> effectsSpec(): FiniteAnimationSpec<T> = when {
+        motion.isReduced -> snap()
+        isPlatformNative -> MaterialTheme.motionScheme.defaultEffectsSpec()
+        else -> tween(EFFECTS_MILLIS)
+    }
+
+    private const val SPATIAL_MILLIS = 300
+    private const val EFFECTS_MILLIS = 180
+
+    // Trailing space a scrolling screen adds under its last row.
+    // Material's navigation bar is a Scaffold `bottomBar`, so the scaffold already
+    // insets content above it and only breathing room is left to add. The Ryntra
+    // tab bar floats over the content instead, so that screen has to clear it here.
     val bottomContentPadding
         @Composable
         @ReadOnlyComposable
-        get() = if (isPlatformNative) 112.dp else 188.dp
+        get() = if (isPlatformNative) 24.dp else 96.dp
 
-    // One outer surface language across project, organization, and summary cards.
-    // Controls can still use the smaller Material 3 shape tokens below.
-    val contentShape = RoundedCornerShape(16.dp)
-    val chromeShape = RoundedCornerShape(22.dp)
+    // Space a floating button keeps from the bottom of the content area. Mirrors
+    // bottomContentPadding for the same reason: the scaffold already excludes
+    // Material's navigation bar, while the Ryntra tab bar floats over content.
+    val floatingActionInset
+        @Composable
+        @ReadOnlyComposable
+        get() = if (isPlatformNative) 16.dp else 104.dp
+
+    /**
+     * One outer surface language across project, organization and summary cards.
+     *
+     * The platform style defers to Material's own large-shape token, so the corners
+     * follow whatever the active theme defines rather than a number pinned here. The
+     * Ryntra style keeps its own radius.
+     */
+    val contentShape: Shape
+        @Composable
+        @ReadOnlyComposable
+        get() = if (isPlatformNative) MaterialTheme.shapes.large else RyntraContentShape
 
     val largeTitle = TextStyle(fontSize = 34.sp, lineHeight = 41.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.sp)
-    val title = TextStyle(fontSize = 17.sp, lineHeight = 22.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.sp)
     val body = TextStyle(fontSize = 15.sp, lineHeight = 21.sp, fontWeight = FontWeight.Normal, letterSpacing = 0.sp)
     val sectionLabel = TextStyle(fontSize = 13.sp, lineHeight = 18.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.sp)
     val caption = TextStyle(fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.sp)
@@ -177,6 +229,8 @@ fun RyntraMotionProvider(
 ) {
     CompositionLocalProvider(LocalRyntraMotion provides RyntraMotion(isReduced = reduceMotion), content = content)
 }
+
+private val RyntraContentShape = RoundedCornerShape(16.dp)
 
 private val RyntraShapes = Shapes(
     extraSmall = RoundedCornerShape(6.dp),
@@ -206,6 +260,7 @@ private val RyntraTypography = Typography(
 )
 
 @Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 fun RyntraTheme(
     themeStyle: ThemeStyle = ThemeStyle.Platform,
     appearanceMode: AppearanceMode = AppearanceMode.System,
@@ -274,13 +329,26 @@ fun RyntraTheme(
     }
 
     CompositionLocalProvider(LocalRyntraColors provides semanticColors) {
-        MaterialTheme(
-            colorScheme = colorScheme,
-            typography = if (isPlatformNative) Typography() else RyntraTypography,
-            shapes = if (isPlatformNative) Shapes() else RyntraShapes,
-        ) {
-            CompositionLocalProvider(LocalContentColor provides semanticColors.labelPrimary) {
+        if (isPlatformNative) {
+            // Expressive owns the shape, typography and motion tokens here on purpose:
+            // the platform style is meant to be current Material 3, not a re-skin of it.
+            // Components pick up spring motion from the scheme without any call site
+            // asking for it.
+            MaterialExpressiveTheme(
+                colorScheme = colorScheme,
+                motionScheme = MotionScheme.expressive(),
+            ) {
                 content()
+            }
+        } else {
+            MaterialTheme(
+                colorScheme = colorScheme,
+                typography = RyntraTypography,
+                shapes = RyntraShapes,
+            ) {
+                CompositionLocalProvider(LocalContentColor provides semanticColors.labelPrimary) {
+                    content()
+                }
             }
         }
     }

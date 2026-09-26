@@ -1,5 +1,6 @@
 package com.ryntra.mobile.ui.dashboard.project.versions
 
+import com.ryntra.mobile.ui.components.RyntraChoiceGroup
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,6 +39,7 @@ import com.ryntra.mobile.R
 import com.ryntra.mobile.ui.components.RyntraIcon
 import com.ryntra.mobile.ui.components.RyntraSectionLabel
 import com.ryntra.mobile.ui.components.RyntraTextField
+import com.ryntra.mobile.ui.components.ryntraChoice
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.shared.model.ProjectDependency
 
@@ -72,32 +74,42 @@ internal fun VersionEditorField(
     modifier: Modifier = Modifier,
     leadingIcon: ImageVector = Lucide.Pencil,
 ) {
-    Text(label, color = RyntraDesign.colors.labelSecondary, style = MaterialTheme.typography.labelMedium)
+    // Material puts the name inside the outlined field, where it floats on focus.
+    val isPlatformNative = RyntraDesign.isPlatformNative
+    if (!isPlatformNative) {
+        Text(label, color = RyntraDesign.colors.labelSecondary, style = MaterialTheme.typography.labelMedium)
+    }
     RyntraTextField(
         value = value,
         onValueChange = onValueChange,
         placeholder = placeholder,
+        label = if (isPlatformNative) label else null,
         leadingIcon = leadingIcon,
         leadingIconDescription = null,
-        modifier = modifier.fillMaxWidth().padding(top = 6.dp),
+        modifier = modifier.fillMaxWidth().padding(top = if (isPlatformNative) 0.dp else 6.dp),
     )
 }
 
 @Composable
 internal fun ReleaseChannelPicker(selected: String, onSelect: (String) -> Unit) {
+    if (RyntraDesign.isPlatformNative) {
+        RyntraChoiceGroup(
+            options = RELEASE_CHANNELS,
+            isChecked = { it == selected },
+            onToggle = onSelect,
+            label = { stringResource(channelLabel(it)) },
+        )
+        return
+    }
     Row(horizontalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.fillMaxWidth()) {
-        listOf("release", "beta", "alpha").forEach { channel ->
+        RELEASE_CHANNELS.forEach { channel ->
             val isSelected = selected == channel
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp)
-                    .background(
-                        if (isSelected) RyntraDesign.colors.surfaceRaised else RyntraDesign.colors.surface,
-                        RoundedCornerShape(8.dp),
-                    )
-                    .border(0.75.dp, RyntraDesign.colors.separator, RoundedCornerShape(8.dp))
+                    .ryntraChoice(isSelected = isSelected, ryntraShape = RoundedCornerShape(8.dp))
                     .selectable(selected = isSelected, role = Role.RadioButton) { onSelect(channel) },
             ) {
                 Text(
@@ -109,6 +121,51 @@ internal fun ReleaseChannelPicker(selected: String, onSelect: (String) -> Unit) 
             }
         }
     }
+}
+
+// Archiving an old build is routine Modrinth housekeeping, and VersionUpdate has
+// carried `status` all along — it just had nowhere to be set from.
+@Composable
+internal fun VersionStatusPicker(selected: String, onSelect: (String) -> Unit) {
+    if (RyntraDesign.isPlatformNative) {
+        RyntraChoiceGroup(
+            options = VERSION_STATUSES,
+            isChecked = { it == selected },
+            onToggle = onSelect,
+            label = { stringResource(versionStatusLabel(it)) },
+        )
+        return
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.fillMaxWidth()) {
+        VERSION_STATUSES.forEach { status ->
+            val isSelected = selected == status
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+                    .ryntraChoice(isSelected = isSelected, ryntraShape = RoundedCornerShape(8.dp))
+                    .selectable(selected = isSelected, role = Role.RadioButton) { onSelect(status) },
+            ) {
+                Text(
+                    stringResource(versionStatusLabel(status)),
+                    color = if (isSelected) RyntraDesign.colors.labelPrimary else RyntraDesign.colors.labelSecondary,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                )
+            }
+        }
+    }
+}
+
+internal val VERSION_STATUSES = listOf("listed", "unlisted", "archived")
+
+private val RELEASE_CHANNELS = listOf("release", "beta", "alpha")
+
+private fun versionStatusLabel(status: String) = when (status) {
+    "unlisted" -> R.string.version_status_unlisted
+    "archived" -> R.string.version_status_archived
+    else -> R.string.version_status_listed
 }
 
 @Composable

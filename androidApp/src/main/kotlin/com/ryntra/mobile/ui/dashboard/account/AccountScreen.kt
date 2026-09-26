@@ -301,19 +301,28 @@ private fun android.content.Context.copyToClipboard(label: String, value: String
 
 @Composable
 private fun SettingsNotice(message: String) {
+    val isPlatformNative = RyntraDesign.isPlatformNative
+    val shape = RyntraDesign.contentShape
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 18.dp)
-            .background(RyntraDesign.colors.accent.copy(alpha = 0.10f), RyntraDesign.contentShape)
-            .border(0.75.dp, RyntraDesign.colors.accent.copy(alpha = 0.24f), RyntraDesign.contentShape)
+            .then(
+                if (isPlatformNative) {
+                    Modifier.background(MaterialTheme.colorScheme.secondaryContainer, shape)
+                } else {
+                    Modifier
+                        .background(RyntraDesign.colors.accent.copy(alpha = 0.10f), shape)
+                        .border(0.75.dp, RyntraDesign.colors.accent.copy(alpha = 0.24f), shape)
+                },
+            )
             .semantics { liveRegion = LiveRegionMode.Polite }
-            .padding(horizontal = 13.dp, vertical = 11.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         Text(
             text = message,
-            color = RyntraDesign.colors.labelPrimary,
-            style = MaterialTheme.typography.bodySmall,
+            color = if (isPlatformNative) MaterialTheme.colorScheme.onSecondaryContainer else RyntraDesign.colors.labelPrimary,
+            style = if (isPlatformNative) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.SemiBold,
         )
     }

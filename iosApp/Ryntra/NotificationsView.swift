@@ -13,8 +13,27 @@ struct NotificationsView: View {
     var body: some View {
         List {
             Section {
+                Picker(NSLocalizedString("Notifications", comment: "Notifications filter"), selection: $isArchiveVisible) {
+                    Text(NSLocalizedString("Inbox", comment: "Notifications filter")).tag(false)
+                    Text(NSLocalizedString("Archive", comment: "Notifications filter")).tag(true)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .ryntraCompactSegments()
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+            }
+
+            Section {
                 if model.isNotificationsLoading && model.notifications.isEmpty {
-                    HStack { Spacer(); ProgressView(); Spacer() }
+                    HStack(spacing: 10) {
+                        Spacer()
+                        ProgressView()
+                        Text(NSLocalizedString("Loading notifications", comment: "Notifications loading"))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(.vertical, 24)
                 } else if visibleNotifications.isEmpty {
                     VStack(spacing: 10) {
                         Image(systemName: isArchiveVisible ? "archivebox" : "bell")
@@ -56,17 +75,6 @@ struct NotificationsView: View {
                 HStack {
                     Text(String(format: NSLocalizedString("%d unread", comment: "Notification unread count"), model.unreadNotificationCount))
                     Spacer()
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) { isArchiveVisible.toggle() }
-                    } label: {
-                        Image(systemName: isArchiveVisible ? "tray" : "archivebox")
-                            .ryntraMinimumTouchTarget()
-                    }
-                    .foregroundStyle(isArchiveVisible ? Color.ryntraGreen : .secondary)
-                    .accessibilityLabel(NSLocalizedString(
-                        isArchiveVisible ? "Show unread notifications" : "Show read notifications",
-                        comment: "Notifications archive action"
-                    ))
                     if !isArchiveVisible && model.unreadNotificationCount > 0 {
                         Button(NSLocalizedString("Mark all read", comment: "Notifications action")) {
                             Task { await model.markAllNotificationsRead() }
@@ -77,6 +85,8 @@ struct NotificationsView: View {
                 Text(NSLocalizedString("Loaded directly from your Modrinth account.", comment: "Notification source"))
             }
 
+            // With nothing listed the error is the whole screen; with a list it is a note
+            // under it, and the list stays usable
             if let error = model.notificationsError {
                 Section {
                     Text(error).foregroundStyle(.red)
@@ -87,7 +97,7 @@ struct NotificationsView: View {
             }
         }
         .ryntraGroupedListStyle()
-        .ryntraOpaqueListBackground()
+        .ryntraGroupedListBackdrop()
         .refreshable { await model.refreshNotifications() }
         .task { await model.refreshNotifications() }
     }

@@ -28,9 +28,12 @@ lights included — leaving no way out of the screen. `.navigationBar` and
 If two screens have different background colors, the titlebar changes tone as
 one fades into the other. It reads as the tab bar flickering.
 
-Every screen must therefore paint the same backdrop: `ryntraScreenBackground(_:)`
-for scrolling screens, `ryntraOpaqueListBackground()` for `List`-based ones — a
-`List` otherwise keeps its own lighter system background.
+Every screen must therefore paint the same backdrop: `ryntraScreenBackdrop()`
+for scrolling screens and plain lists, `ryntraGroupedListBackdrop()` for grouped
+ones, which keep their system row backgrounds. Both live in `RyntraTheme.swift`
+and resolve the backdrop per theme, so iOS gets the same guarantee: its
+navigation and tab bars are translucent too, and a backdrop that changes
+mid-push reads there as the bars flashing.
 
 ## Changing navigationTitle rebuilds the whole toolbar
 

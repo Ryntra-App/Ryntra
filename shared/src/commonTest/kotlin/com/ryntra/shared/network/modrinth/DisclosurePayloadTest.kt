@@ -50,6 +50,17 @@ class DisclosurePayloadTest {
     }
 
     @Test
+    fun aiFunctionalityIsItsOwnDisclosureCarryingOnlyANote() {
+        val payload = firstSet(
+            ProjectDisclosure(type = DisclosureType.AiFunctionality, enabled = true, note = "  NPC dialogue  "),
+        )
+
+        assertEquals(JsonPrimitive("ai_functionality"), payload["type"])
+        assertEquals(JsonPrimitive("NPC dialogue"), payload["note"])
+        assertEquals(setOf("type", "note"), payload.keys)
+    }
+
+    @Test
     fun telemetrySendsConsentAndTrimmedDataEntries() {
         val payload = firstSet(
             ProjectDisclosure(

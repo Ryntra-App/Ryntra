@@ -308,13 +308,22 @@ private struct DisclosureEditorView: View {
         VStack(alignment: .leading, spacing: 12) {
             switch entry.type.apiValue {
             case "ai_content":
-                fieldLabel(NSLocalizedString("What is generative AI used for?", comment: "AI disclosure"))
+                fieldLabel(NSLocalizedString("What types of content have been generated with AI?", comment: "AI disclosure"))
                 aiUsagePicker
                 noteField(
                     label: NSLocalizedString("Explanation (optional)", comment: "Disclosure field"),
                     placeholder: NSLocalizedString(
                         "e.g. The Chinese and Arabic translations are AI-generated.",
                         comment: "AI disclosure placeholder"
+                    )
+                )
+
+            case "ai_functionality":
+                noteField(
+                    label: NSLocalizedString("Explanation (optional)", comment: "Disclosure field"),
+                    placeholder: NSLocalizedString(
+                        "e.g. The NPCs use generative AI for dialogue options.",
+                        comment: "AI functionality disclosure placeholder"
                     )
                 )
 
@@ -410,16 +419,26 @@ private struct DisclosureEditorView: View {
         .disabled(!isEnabled)
     }
 
+    /// Several may be on at once, so this is a row of toggle buttons rather than a
+    /// segmented control — but laid out like the consent picker below it, so the two
+    /// choice questions on this screen read as the same kind of control
     private var aiUsagePicker: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        HStack(spacing: 8) {
             ForEach(DisclosureRules.shared.aiUsages, id: \.apiValue) { use in
                 Toggle(isOn: Binding(
                     get: { entry.hasUse(use: use) },
                     set: { onChange(entry.withUse(use: use, selected: $0)) }
                 )) {
-                    Text(DisclosureCopy.usageLabel(use))
-                        .font(.subheadline)
+                    Label(
+                        DisclosureCopy.usageLabel(use),
+                        systemImage: entry.hasUse(use: use) ? "checkmark" : "plus"
+                    )
+                    .font(.subheadline.weight(.medium))
+                    .frame(maxWidth: .infinity)
                 }
+                .toggleStyle(.button)
+                .buttonStyle(.bordered)
+                .tint(entry.hasUse(use: use) ? .ryntraGreen : .secondary)
             }
         }
     }
@@ -472,9 +491,9 @@ private struct DisclosureEditorView: View {
                         isURL: true
                     )
                     labelledField(
-                        NSLocalizedString("How this project builds on it (optional)", comment: "Derivative disclosure"),
+                        NSLocalizedString("Explain how your project is based on the original work", comment: "Derivative disclosure"),
                         placeholder: NSLocalizedString(
-                            "e.g. A fork that keeps 1.20 support alive.",
+                            "e.g. A fork that adds a few new biomes and ports it to newer Minecraft versions.",
                             comment: "Derivative disclosure placeholder"
                         ),
                         text: Binding(
@@ -599,6 +618,7 @@ enum DisclosureCopy {
     static func symbol(_ type: DisclosureType) -> String {
         switch type.apiValue {
         case "ai_content": return "sparkles"
+        case "ai_functionality": return "brain"
         case "advertisements": return "megaphone.fill"
         case "epilepsy_triggers": return "eye.fill"
         case "system_interactions": return "cpu.fill"
@@ -614,6 +634,8 @@ enum DisclosureCopy {
         switch type.apiValue {
         case "ai_content":
             return NSLocalizedString("Contains AI-generated content", comment: "Disclosure title")
+        case "ai_functionality":
+            return NSLocalizedString("Contains generative AI functionality", comment: "Disclosure title")
         case "advertisements":
             return NSLocalizedString("Contains advertisements", comment: "Disclosure title")
         case "epilepsy_triggers":
@@ -637,12 +659,17 @@ enum DisclosureCopy {
         switch type.apiValue {
         case "ai_content":
             return NSLocalizedString(
-                "Required when a substantial part of the code is AI-generated, any asset is substantially AI-generated, the functionality relies on generative AI, or the project page was written with it.",
+                "Must be enabled if this project contains any AI-generated assets or text, or a substantial amount of AI-generated code. If you would consider AI a co-author of the project, disclose it here.",
+                comment: "Disclosure detail"
+            )
+        case "ai_functionality":
+            return NSLocalizedString(
+                "Must be enabled if the project has functionality that makes use of generative AI, such as an in-game chatbot or dynamically generated textures.",
                 comment: "Disclosure detail"
             )
         case "advertisements":
             return NSLocalizedString(
-                "Required when the project contains advertising, sponsorships or promotion of other works.",
+                "Must be enabled if this project contains advertisements, sponsorships, or promotions of other works. Unobtrusive links to your own relevant content, and sponsored banners on the project page, do not count.",
                 comment: "Disclosure detail"
             )
         case "epilepsy_triggers":
@@ -672,7 +699,7 @@ enum DisclosureCopy {
             )
         case "archived":
             return NSLocalizedString(
-                "Marks the project as no longer maintained. Archived projects stay discoverable while their visibility is public.",
+                "Lets users know you are no longer working on the project. Archived projects stay discoverable while their visibility is Public; set it to Unlisted to de-list the project.",
                 comment: "Disclosure detail"
             )
         default:
@@ -685,7 +712,6 @@ enum DisclosureCopy {
         case "code": return NSLocalizedString("Code", comment: "AI usage")
         case "assets": return NSLocalizedString("Assets", comment: "AI usage")
         case "text": return NSLocalizedString("Text", comment: "AI usage")
-        case "functionality": return NSLocalizedString("Functionality", comment: "AI usage")
         default: return usage.apiValue
         }
     }

@@ -52,6 +52,42 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+        <receiver
+            android:name=".widgets.WalletWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_wallet_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/wallet_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.StatsWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_stats_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/stats_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.DownloadsWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_downloads_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/downloads_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".notifications.NotificationActionReceiver"
+            android:exported="false" />
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

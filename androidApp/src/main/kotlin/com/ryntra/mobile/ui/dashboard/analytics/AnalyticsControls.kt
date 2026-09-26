@@ -1,5 +1,10 @@
 package com.ryntra.mobile.ui.dashboard.analytics
 
+import com.ryntra.mobile.ui.components.RyntraChoiceGroup
+import androidx.compose.ui.semantics.role
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -40,6 +45,8 @@ import com.composables.icons.lucide.Layers
 import com.ryntra.mobile.ui.components.RyntraIcon
 import com.ryntra.mobile.R
 import com.ryntra.mobile.ui.components.RyntraProgressIndicator
+import com.ryntra.mobile.ui.components.ryntraCard
+import com.ryntra.mobile.ui.components.ryntraChoice
 import com.ryntra.mobile.ui.theme.RyntraDesign
 
 import com.ryntra.shared.model.Project
@@ -53,6 +60,10 @@ internal fun AnalyticsRangeHeader(
     isLive: Boolean,
     onSelect: (Int) -> Unit,
 ) {
+    if (RyntraDesign.isPlatformNative) {
+        PlatformRangeHeader(selectedDays, isLoading, isLive, onSelect)
+        return
+    }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.weight(1f)) {
             Text(stringResource(R.string.analytics_performance), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
@@ -98,8 +109,7 @@ internal fun AnalyticsProjectPicker(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .background(RyntraDesign.colors.surface, RoundedCornerShape(9.dp))
-                .border(0.75.dp, RyntraDesign.colors.separator, RoundedCornerShape(9.dp))
+                .ryntraCard(RoundedCornerShape(9.dp))
                 .clickable { expanded = true }
                 .padding(horizontal = 12.dp, vertical = 11.dp),
         ) {
@@ -145,8 +155,7 @@ private fun RangePicker(selectedDays: Int, onSelect: (Int) -> Unit) {
     val shape = RoundedCornerShape(9.dp)
     Row(
         modifier = Modifier
-            .background(RyntraDesign.colors.surface, shape)
-            .border(0.75.dp, RyntraDesign.colors.separator, shape)
+            .ryntraCard(shape)
             .padding(3.dp),
     ) {
         analyticsRanges.forEach { days ->
@@ -208,8 +217,15 @@ internal fun AnalyticsMetricPicker(selected: AnalyticsMetric, onSelect: (Analyti
                     .weight(1f)
                     .padding(start = if (index == 0) 0.dp else 6.dp)
                     .heightIn(min = 48.dp)
-                    .background(background, RoundedCornerShape(8.dp))
-                    .border(0.75.dp, RyntraDesign.colors.separator, RoundedCornerShape(8.dp))
+                    .then(
+                        if (RyntraDesign.isPlatformNative) {
+                            Modifier.ryntraChoice(isSelected = isSelected, ryntraShape = RoundedCornerShape(8.dp))
+                        } else {
+                            Modifier
+                                .background(background, RoundedCornerShape(8.dp))
+                                .border(0.75.dp, RyntraDesign.colors.separator, RoundedCornerShape(8.dp))
+                        },
+                    )
                     .clickable(role = Role.Tab) { onSelect(metric) }
                     .semantics { this.selected = isSelected },
             ) {
@@ -221,5 +237,53 @@ internal fun AnalyticsMetricPicker(selected: AnalyticsMetric, onSelect: (Analyti
                 )
             }
         }
+    }
+}
+
+// The range gets the full width under the title as a connected button group: four
+// ranges squeezed beside the heading left the title truncating on a phone.
+@Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private fun PlatformRangeHeader(
+    selectedDays: Int,
+    isLoading: Boolean,
+    isLive: Boolean,
+    onSelect: (Int) -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.analytics_performance),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+            if (isLoading) {
+                CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(14.dp))
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .background(if (isLive) colors.primary else colors.tertiary, CircleShape),
+                )
+            }
+            Text(
+                text = when {
+                    isLoading -> stringResource(R.string.analytics_refreshing)
+                    isLive -> stringResource(R.string.analytics_live)
+                    else -> stringResource(R.string.analytics_limited)
+                },
+                color = colors.onSurfaceVariant,
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
+        RyntraChoiceGroup(
+            options = analyticsRanges,
+            isChecked = { it == selectedDays },
+            onToggle = onSelect,
+            label = { stringResource(R.string.analytics_days_short, it) },
+            modifier = Modifier.padding(top = 14.dp),
+        )
     }
 }

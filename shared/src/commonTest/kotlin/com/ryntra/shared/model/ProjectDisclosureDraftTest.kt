@@ -19,6 +19,26 @@ class ProjectDisclosureDraftTest {
     }
 
     @Test
+    fun disclosuresFollowModrinthsSettingsOrder() {
+        val types = ProjectDisclosureDraft.from(mod, emptyList()).entries.map { it.type }
+
+        assertEquals(
+            listOf(
+                DisclosureType.AiContent,
+                DisclosureType.AiFunctionality,
+                DisclosureType.Advertisements,
+                DisclosureType.PaidFeatures,
+                DisclosureType.Telemetry,
+                DisclosureType.DerivativeWork,
+                DisclosureType.EpilepsyTriggers,
+                DisclosureType.SystemInteractions,
+                DisclosureType.Archived,
+            ),
+            types,
+        )
+    }
+
+    @Test
     fun resourcePacksCannotDeclareTelemetryOrSystemInteractions() {
         val types = ProjectDisclosureDraft.from(resourcePack, emptyList()).entries.map { it.type }
 

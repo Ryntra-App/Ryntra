@@ -1,5 +1,6 @@
 package com.ryntra.mobile.ui.dashboard.projects
 
+import com.ryntra.mobile.ui.components.expressiveSelectableCard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -74,7 +75,13 @@ internal fun ProjectRow(
     subtitleOverride: String? = null,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
+    /**
+     * Draw the row as its own card. The projects tab lists projects as separate
+     * objects; the dashboard and search keep plain rows inside their sections.
+     */
+    asCard: Boolean = false,
 ) {
+    val isCard = asCard && RyntraDesign.isPlatformNative
     val model = project.toProjectRowModel().let { row ->
         subtitleOverride?.let { row.copy(subtitle = it) } ?: row
     }
@@ -87,7 +94,13 @@ internal fun ProjectRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .background(selectionColor, RoundedCornerShape(10.dp))
+            .then(
+                if (isCard) {
+                    Modifier.expressiveSelectableCard(isSelected)
+                } else {
+                    Modifier.background(selectionColor, RoundedCornerShape(10.dp))
+                },
+            )
             .then(
                 when {
                     onClick != null && onLongClick != null -> Modifier.combinedClickable(
@@ -103,7 +116,7 @@ internal fun ProjectRow(
                     else -> Modifier
                 },
             )
-            .padding(vertical = 13.dp),
+            .padding(horizontal = if (isCard) 14.dp else 0.dp, vertical = if (isCard) 14.dp else 13.dp),
     ) {
         ProjectArtwork(project)
         Spacer(Modifier.width(12.dp))
@@ -189,7 +202,7 @@ private fun ProjectMetric(
 
 @Composable
 internal fun ProjectArtwork(project: Project, modifier: Modifier = Modifier) {
-    val shape = RoundedCornerShape(10.dp)
+    val shape = if (RyntraDesign.isPlatformNative) MaterialTheme.shapes.large else RoundedCornerShape(10.dp)
     Box(
         modifier = modifier
             .size(56.dp)

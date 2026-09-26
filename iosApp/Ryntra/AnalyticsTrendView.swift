@@ -231,9 +231,14 @@ struct AnalyticsTrendView: View {
         }
     }
 
+    /// A point stands for a bucket of several days on long ranges
+    /// (`AnalyticsResolution`), so the label steps back by the bucket length rather
+    /// than by one day per point.
     private func dateLabel(_ index: Int) -> String {
         guard !aggregateValues.isEmpty else { return "" }
-        let daysAgo = max(aggregateValues.count - 1 - index, 0)
+        let daysPerPoint = Double(rangeDays) / Double(aggregateValues.count)
+        let pointsAgo = max(aggregateValues.count - 1 - index, 0)
+        let daysAgo = Int((Double(pointsAgo) * daysPerPoint).rounded())
         let date = Calendar.current.date(byAdding: .day, value: -daysAgo, to: Date()) ?? Date()
         return date.formatted(.dateTime.day().month(.abbreviated))
     }

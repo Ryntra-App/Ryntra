@@ -27,7 +27,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -62,6 +61,7 @@ import com.ryntra.mobile.ui.components.RyntraIcon
 import com.ryntra.mobile.ui.components.RyntraPrimaryButton
 import com.ryntra.mobile.ui.components.RyntraSecondaryButton
 import com.ryntra.mobile.ui.components.RyntraTextField
+import com.ryntra.mobile.ui.components.ryntraCard
 import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.shared.model.ProjectUploadLimits
 import com.ryntra.shared.model.Account
@@ -69,6 +69,19 @@ import com.ryntra.shared.model.ProjectFileUpload
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.MaterialShapes
+import androidx.compose.material3.Surface
+import androidx.compose.material3.toShape
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.text.style.TextAlign
+import com.ryntra.mobile.ui.components.ExpressiveStatTile
+import com.ryntra.mobile.ui.components.StatTone
 
 @Composable
 internal fun ProfileHeader(
@@ -115,109 +128,121 @@ internal fun ProfileHeader(
         }
     }
 
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(76.dp)
-                .clip(CircleShape)
-                .background(RyntraDesign.colors.surface)
-                .border(1.dp, RyntraDesign.colors.accent.copy(alpha = 0.38f), CircleShape)
-                .then(
-                    if (isEditing) {
-                        Modifier.clickable(enabled = !isAvatarBusy) {
-                            picker.launch(arrayOf("image/png", "image/jpeg", "image/webp", "image/gif"))
-                        }
-                    } else {
-                        Modifier
-                    },
-                ),
+    val pickAvatar = { picker.launch(arrayOf("image/png", "image/jpeg", "image/webp", "image/gif")) }
+    if (RyntraDesign.isPlatformNative) {
+        PlatformProfileHero(
+            account = account,
+            isEditing = isEditing,
+            isAvatarBusy = isAvatarBusy,
+            avatarOverlayAlpha = avatarOverlayAlpha,
+            onPickAvatar = pickAvatar,
+            onEditClick = onEditClick,
+        )
+    } else {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
         ) {
-            AsyncImage(
-                model = account.avatarUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-            // Camera overlay only while profile edit is open (matches name/bio editor).
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer { alpha = avatarOverlayAlpha }
-                    .background(RyntraDesign.colors.surface.copy(alpha = 0.42f)),
+                    .size(76.dp)
+                    .clip(CircleShape)
+                    .background(RyntraDesign.colors.surface)
+                    .border(1.dp, RyntraDesign.colors.accent.copy(alpha = 0.38f), CircleShape)
+                    .then(
+                        if (isEditing) {
+                            Modifier.clickable(enabled = !isAvatarBusy) {
+                                picker.launch(arrayOf("image/png", "image/jpeg", "image/webp", "image/gif"))
+                            }
+                        } else {
+                            Modifier
+                        },
+                    ),
             ) {
-                if (isAvatarBusy) {
-                    CircularProgressIndicator(
-                        strokeWidth = 2.dp,
-                        color = RyntraDesign.colors.accent,
-                        modifier = Modifier.size(22.dp),
-                    )
-                } else if (isEditing) {
-                    RyntraIcon(
-                        Lucide.Camera,
-                        contentDescription = stringResource(R.string.profile_avatar_change),
-                        tint = RyntraDesign.colors.accent,
-                        modifier = Modifier.size(20.dp),
+                AsyncImage(
+                    model = account.avatarUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+                // Camera overlay only while profile edit is open (matches name/bio editor).
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { alpha = avatarOverlayAlpha }
+                        .background(RyntraDesign.colors.surface.copy(alpha = 0.42f)),
+                ) {
+                    if (isAvatarBusy) {
+                        CircularProgressIndicator(
+                            strokeWidth = 2.dp,
+                            color = RyntraDesign.colors.accent,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    } else if (isEditing) {
+                        RyntraIcon(
+                            Lucide.Camera,
+                            contentDescription = stringResource(R.string.profile_avatar_change),
+                            tint = RyntraDesign.colors.accent,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
+            }
+            Column(modifier = Modifier.weight(1f).padding(start = 15.dp, end = 10.dp)) {
+                Text(
+                    text = account.username,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = account.role.replaceFirstChar(Char::uppercase),
+                    color = RyntraDesign.colors.accent,
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+                Text(
+                    text = account.id,
+                    color = RyntraDesign.colors.labelSecondary,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 3.dp),
+                )
+                AnimatedVisibility(
+                    visible = isEditing,
+                    enter = fadeIn(tween(motion.duration(180))),
+                    exit = fadeOut(tween(motion.duration(130))),
+                ) {
+                    Text(
+                        text = stringResource(R.string.profile_avatar_hint),
+                        color = RyntraDesign.colors.labelSecondary,
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 4.dp),
                     )
                 }
             }
-        }
-        Column(modifier = Modifier.weight(1f).padding(start = 15.dp, end = 10.dp)) {
-            Text(
-                text = account.username,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = account.role.replaceFirstChar(Char::uppercase),
-                color = RyntraDesign.colors.accent,
-                style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.padding(top = 2.dp),
-            )
-            Text(
-                text = account.id,
-                color = RyntraDesign.colors.labelSecondary,
-                style = MaterialTheme.typography.labelSmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 3.dp),
-            )
-            AnimatedVisibility(
-                visible = isEditing,
-                enter = fadeIn(tween(motion.duration(180))),
-                exit = fadeOut(tween(motion.duration(130))),
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(RyntraDesign.colors.surfaceRaised)
+                    .border(0.75.dp, RyntraDesign.colors.separator, CircleShape)
+                    .clickable(onClick = onEditClick),
             ) {
-                Text(
-                    text = stringResource(R.string.profile_avatar_hint),
-                    color = RyntraDesign.colors.labelSecondary,
-                    style = MaterialTheme.typography.labelSmall,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 4.dp),
+                RyntraIcon(
+                    icon = Lucide.Pencil,
+                    contentDescription = stringResource(R.string.profile_edit),
+                    tint = RyntraDesign.colors.accent,
+                    modifier = Modifier.size(19.dp),
                 )
             }
-        }
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(44.dp)
-                .clip(CircleShape)
-                .background(RyntraDesign.colors.surfaceRaised)
-                .border(0.75.dp, RyntraDesign.colors.separator, CircleShape)
-                .clickable(onClick = onEditClick),
-        ) {
-            RyntraIcon(
-                icon = Lucide.Pencil,
-                contentDescription = stringResource(R.string.profile_edit),
-                tint = RyntraDesign.colors.accent,
-                modifier = Modifier.size(19.dp),
-            )
         }
     }
     AnimatedVisibility(
@@ -323,6 +348,28 @@ internal fun ProfileEditor(
 
 @Composable
 internal fun WorkspaceMetrics(projectCount: Int, organizationCount: Int) {
+    if (RyntraDesign.isPlatformNative) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            ExpressiveStatTile(
+                icon = Lucide.Package,
+                label = stringResource(R.string.analytics_projects),
+                value = projectCount.toString(),
+                tone = StatTone.Primary,
+                modifier = Modifier.weight(1f),
+            )
+            ExpressiveStatTile(
+                icon = Lucide.UsersRound,
+                label = stringResource(R.string.profile_teams),
+                value = organizationCount.toString(),
+                tone = StatTone.Tertiary,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        return
+    }
     Row(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier.fillMaxWidth(),
@@ -338,14 +385,126 @@ private fun AccountMetric(icon: ImageVector, label: String, value: String, modif
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
-            .background(RyntraDesign.colors.surface, shape)
-            .border(0.75.dp, RyntraDesign.colors.separator, shape)
+            .ryntraCard(shape)
             .padding(horizontal = 13.dp, vertical = 14.dp),
     ) {
         RyntraIcon(icon, contentDescription = null, tint = RyntraDesign.colors.accent, modifier = Modifier.size(20.dp))
         Column(modifier = Modifier.padding(start = 10.dp)) {
             Text(value, fontWeight = FontWeight.Bold)
             Text(label, color = RyntraDesign.colors.labelSecondary, style = MaterialTheme.typography.labelSmall)
+        }
+    }
+}
+
+/**
+ * The account as Pixel's own profile screens present it: the avatar cut into one of
+ * Material's expressive shapes and centred over the name, with the role as a tonal chip.
+ */
+@Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private fun PlatformProfileHero(
+    account: Account,
+    isEditing: Boolean,
+    isAvatarBusy: Boolean,
+    avatarOverlayAlpha: Float,
+    onPickAvatar: () -> Unit,
+    onEditClick: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val motion = RyntraDesign.motion
+    val avatarShape = MaterialShapes.Cookie9Sided.toShape()
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.extraLarge)
+            .background(colors.surfaceContainer)
+            .padding(horizontal = 24.dp, vertical = 28.dp),
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(112.dp)
+                .clip(avatarShape)
+                .background(colors.primaryContainer)
+                .then(
+                    if (isEditing) Modifier.clickable(enabled = !isAvatarBusy, onClick = onPickAvatar) else Modifier,
+                ),
+        ) {
+            AsyncImage(
+                model = account.avatarUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { alpha = avatarOverlayAlpha }
+                    .background(colors.scrim.copy(alpha = 0.36f)),
+            ) {
+                if (isAvatarBusy) {
+                    LoadingIndicator(color = colors.inversePrimary)
+                } else if (isEditing) {
+                    Icon(
+                        imageVector = Lucide.Camera,
+                        contentDescription = stringResource(R.string.profile_avatar_change),
+                        tint = colors.inverseOnSurface,
+                        modifier = Modifier.size(28.dp),
+                    )
+                }
+            }
+        }
+        Text(
+            text = account.username,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 18.dp),
+        )
+        Surface(
+            shape = CircleShape,
+            color = colors.secondaryContainer,
+            contentColor = colors.onSecondaryContainer,
+            modifier = Modifier.padding(top = 10.dp),
+        ) {
+            Text(
+                text = account.role.replaceFirstChar(Char::uppercase),
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+            )
+        }
+        Text(
+            text = account.id,
+            color = colors.onSurfaceVariant,
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 10.dp),
+        )
+        AnimatedVisibility(
+            visible = isEditing,
+            enter = fadeIn(tween(motion.duration(180))),
+            exit = fadeOut(tween(motion.duration(130))),
+        ) {
+            Text(
+                text = stringResource(R.string.profile_avatar_hint),
+                color = colors.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
+        FilledTonalButton(
+            onClick = onEditClick,
+            modifier = Modifier.padding(top = 18.dp),
+        ) {
+            Icon(Lucide.Pencil, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+            Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+            Text(stringResource(R.string.profile_edit))
         }
     }
 }

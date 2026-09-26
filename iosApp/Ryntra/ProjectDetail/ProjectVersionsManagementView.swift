@@ -15,7 +15,27 @@ struct ProjectVersionsManagementView: View {
     let onReload: () async -> Void
 
     @State private var editingVersion: ProjectVersion?
+    @State private var inspectedVersion: ProjectVersion?
+    /// Set by the detail sheet's Edit button and opened once that sheet has finished
+    /// dismissing; presenting the editor while the detail is still animating out is
+    /// silently dropped by SwiftUI
+    @State private var versionPendingEdit: ProjectVersion?
     @State private var isCreating = false
+    @State private var filter = VersionFilter(
+        query: "",
+        channels: Set<String>(),
+        loaders: Set<String>(),
+        gameVersions: Set<String>(),
+        featuredOnly: false
+    )
+
+    private var facets: VersionFacets {
+        VersionFiltering.shared.facets(versions: versions)
+    }
+
+    private var visibleVersions: [ProjectVersion] {
+        VersionFiltering.shared.apply(versions: versions, filter: filter)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -44,10 +64,28 @@ struct ProjectVersionsManagementView: View {
             } else if versions.isEmpty {
                 managementEmpty(title: "No versions yet", message: "Published releases for this project will appear here.")
             } else {
-                LazyVStack(spacing: 0) {
-                    ForEach(versions, id: \.id) { version in
-                        ManagedVersionCard(version: version, isActionable: canCreateOrEdit || canDelete) {
-                            if canCreateOrEdit || canDelete { editingVersion = version }
+                if versions.count > 1 {
+                    VersionFilterBarView(
+                        facets: facets,
+                        filter: $filter,
+                        matchCount: visibleVersions.count,
+                        totalCount: versions.count
+                    )
+                }
+                if visibleVersions.isEmpty {
+                    managementEmpty(
+                        title: NSLocalizedString("No versions match these filters", comment: "Version filter empty"),
+                        message: NSLocalizedString("Clear a filter to see more releases.", comment: "Version filter empty hint")
+                    )
+                } else {
+                    LazyVStack(spacing: 0) {
+                        ForEach(visibleVersions, id: \.id) { version in
+                            // Opens the detail sheet rather than the editor: the full
+                            // changelog and the file hashes were out of reach for anyone
+                            // without edit rights.
+                            ManagedVersionCard(version: version, isActionable: true) {
+                                inspectedVersion = version
+                            }
                         }
                     }
                 }
@@ -55,6 +93,27 @@ struct ProjectVersionsManagementView: View {
 
             if let error = model.projectActionError {
                 Text(error).font(.caption).foregroundStyle(.red)
+            }
+        }
+        .sheet(
+            isPresented: Binding(
+                get: { inspectedVersion != nil },
+                set: { if !$0 { inspectedVersion = nil } }
+            ),
+            onDismiss: {
+                editingVersion = versionPendingEdit
+                versionPendingEdit = nil
+            }
+        ) {
+            if let inspectedVersion {
+                VersionDetailSheet(
+                    version: inspectedVersion,
+                    canEdit: canCreateOrEdit || canDelete,
+                    onEdit: {
+                        versionPendingEdit = inspectedVersion
+                        self.inspectedVersion = nil
+                    }
+                )
             }
         }
         .sheet(isPresented: $isCreating) {
@@ -212,6 +271,7 @@ private struct VersionEditorSheet: View {
     @State private var dependencyInput = ""
     @State private var versionType: String
     @State private var isFeatured: Bool
+    @State private var versionStatus: String
     @State private var changelogMode = 0
     @State private var changelogPreview: [MarkdownBlock] = []
     @State private var selectedFiles: [ProjectFileUpload] = []
@@ -247,6 +307,7 @@ private struct VersionEditorSheet: View {
         _dependencies = State(initialValue: version?.dependencies ?? [])
         _versionType = State(initialValue: version?.versionType ?? "release")
         _isFeatured = State(initialValue: version?.featured ?? false)
+        _versionStatus = State(initialValue: version?.status ?? "listed")
     }
 
     private var canSave: Bool {
@@ -268,6 +329,14 @@ private struct VersionEditorSheet: View {
                         Text("Alpha").tag("alpha")
                     }
                     Toggle("Featured", isOn: $isFeatured)
+                    // Only an existing version can change visibility; a new one is listed.
+                    if version != nil {
+                        Picker(NSLocalizedString("Visibility", comment: "Version status"), selection: $versionStatus) {
+                            Text(NSLocalizedString("Listed", comment: "Version status")).tag("listed")
+                            Text(NSLocalizedString("Unlisted", comment: "Version status")).tag("unlisted")
+                            Text(NSLocalizedString("Archived", comment: "Version status")).tag("archived")
+                        }
+                    }
                 } header: {
                     Text(NSLocalizedString("Version", comment: "Version section"))
                 } footer: {
@@ -590,7 +659,7 @@ private struct VersionEditorSheet: View {
                     versionType: versionType,
                     loaders: loaders,
                     featured: KotlinBoolean(bool: isFeatured),
-                    status: nil
+                    status: versionStatus
                 )
                 try await model.updateVersion(versionID: version.id, update: update)
             } else if !selectedFiles.isEmpty {
@@ -803,4 +872,292 @@ private struct VersionEditorSheet: View {
         selectedFileSizes.remove(at: index)
         primaryFileIndex = min(primaryFileIndex, max(selectedFiles.count - 1, 0))
     }
+}
+
+/// Narrows a long version list the way Modrinth's own version page does.
+///
+/// Loaders and game versions go in menus rather than inline chips: a mature project
+/// ships for dozens of game versions, and a wall of chips buries the release channel
+/// most people came to filter on.
+private struct VersionFilterBarView: View {
+    let facets: VersionFacets
+    @Binding var filter: VersionFilter
+    let matchCount: Int
+    let totalCount: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                TextField(
+                    NSLocalizedString("Search versions", comment: "Version filter"),
+                    text: Binding(
+                        get: { filter.query },
+                        set: { filter = filter.doCopy(
+                            query: $0,
+                            channels: filter.channels,
+                            loaders: filter.loaders,
+                            gameVersions: filter.gameVersions,
+                            featuredOnly: filter.featuredOnly
+                        ) }
+                    )
+                )
+                .textFieldStyle(.plain)
+                .ryntraNoAutocapitalization()
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    if !facets.channels.isEmpty {
+                        facetMenu(
+                            title: NSLocalizedString("Channel", comment: "Version filter"),
+                            values: facets.channels,
+                            selected: filter.channels
+                        ) { filter = filter.toggleChannel(value: $0) }
+                    }
+                    if !facets.loaders.isEmpty {
+                        facetMenu(
+                            title: NSLocalizedString("Loader", comment: "Version filter"),
+                            values: facets.loaders,
+                            selected: filter.loaders
+                        ) { filter = filter.toggleLoader(value: $0) }
+                    }
+                    if !facets.gameVersions.isEmpty {
+                        facetMenu(
+                            title: NSLocalizedString("Game version", comment: "Version filter"),
+                            values: facets.gameVersions,
+                            selected: filter.gameVersions
+                        ) { filter = filter.toggleGameVersion(value: $0) }
+                    }
+                    Button {
+                        filter = filter.doCopy(
+                            query: filter.query,
+                            channels: filter.channels,
+                            loaders: filter.loaders,
+                            gameVersions: filter.gameVersions,
+                            featuredOnly: !filter.featuredOnly
+                        )
+                    } label: {
+                        Label(
+                            NSLocalizedString("Featured", comment: "Version filter"),
+                            systemImage: filter.featuredOnly ? "star.fill" : "star"
+                        )
+                        .font(.caption.weight(.semibold))
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(filter.featuredOnly ? .ryntraGreen : .secondary)
+                }
+            }
+
+            if filter.isActive {
+                HStack {
+                    Text(String(
+                        format: NSLocalizedString("%1$d of %2$d versions", comment: "Version filter count"),
+                        matchCount,
+                        totalCount
+                    ))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    Spacer()
+                    Button(NSLocalizedString("Clear", comment: "Version filter")) {
+                        filter = VersionFilter(
+                            query: "",
+                            channels: Set<String>(),
+                            loaders: Set<String>(),
+                            gameVersions: Set<String>(),
+                            featuredOnly: false
+                        )
+                    }
+                    .font(.caption.weight(.semibold))
+                }
+            }
+        }
+        .padding(.bottom, 6)
+    }
+
+    private func facetMenu(
+        title: String,
+        values: [String],
+        selected: Set<String>,
+        onToggle: @escaping (String) -> Void
+    ) -> some View {
+        Menu {
+            ForEach(values, id: \.self) { value in
+                Button {
+                    onToggle(value)
+                } label: {
+                    if selected.contains(value) {
+                        Label(value, systemImage: "checkmark")
+                    } else {
+                        Text(value)
+                    }
+                }
+            }
+        } label: {
+            Label(
+                selected.isEmpty ? title : "\(title) · \(selected.count)",
+                systemImage: "chevron.down"
+            )
+            .font(.caption.weight(.semibold))
+        }
+        .buttonStyle(.bordered)
+        .tint(selected.isEmpty ? .secondary : .ryntraGreen)
+    }
+}
+
+/// Everything Modrinth records about one release, in one place.
+private struct VersionDetailSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let version: ProjectVersion
+    let canEdit: Bool
+    let onEdit: () -> Void
+
+    @State private var changelogBlocks: [MarkdownBlock] = []
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    header
+                    compatibility
+                    changelog
+                    files
+                    dependencies
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(20)
+            }
+            .ryntraScreenBackdrop()
+            .navigationTitle(version.versionNumber)
+            .ryntraInlineNavigationTitle()
+            .task(id: version.id) {
+                let markdown = version.changelog
+                changelogBlocks = markdown.isEmpty ? [] : await Task.detached(priority: .userInitiated) {
+                    MarkdownParser.shared.parse(markdown: markdown)
+                }.value
+            }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(NSLocalizedString("Done", comment: "Finish viewing")) { dismiss() }
+                }
+                if canEdit {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(NSLocalizedString("Edit", comment: "Version action"), action: onEdit)
+                    }
+                }
+            }
+        }
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(version.name).font(.headline)
+            HStack(spacing: 10) {
+                Label(ryntraExactCount(version.downloads), systemImage: "arrow.down.circle")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.ryntraGreen)
+                if let published = ryntraProjectDate(version.datePublished) {
+                    Text(published).font(.caption).foregroundStyle(.secondary)
+                }
+                Text(version.versionType.capitalized).font(.caption).foregroundStyle(.secondary)
+                if version.featured {
+                    Label(NSLocalizedString("Featured", comment: "Version detail"), systemImage: "star.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var compatibility: some View {
+        if !version.loaders.isEmpty || !version.gameVersions.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                RyntraSectionLabel(text: NSLocalizedString("Compatibility", comment: "Version detail"))
+                Text((version.loaders.map(\.capitalized) + version.gameVersions).joined(separator: " · "))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var changelog: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            RyntraSectionLabel(text: NSLocalizedString("Changelog", comment: "Version detail"))
+            if changelogBlocks.isEmpty {
+                Text(NSLocalizedString("No changelog was published for this version.", comment: "Version detail"))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(Array(changelogBlocks.enumerated()), id: \.offset) { _, block in
+                    MarkdownBlockView(block: block)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var files: some View {
+        if !version.files.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                RyntraSectionLabel(text: NSLocalizedString("Files", comment: "Version detail"))
+                ForEach(version.files, id: \.url) { file in
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(file.filename).font(.subheadline)
+                                Text(ryntraFileSize(file.size))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Button {
+                                if let url = URL(string: file.url) { ryntraOpenExternalURL(url) }
+                            } label: {
+                                Image(systemName: "arrow.down.circle")
+                            }
+                            .buttonStyle(.borderless)
+                            .accessibilityLabel(NSLocalizedString("Download file", comment: "Version detail"))
+                        }
+                        // Hashes are how a build is verified against what was published,
+                        // so they are one-tap copies rather than unselectable text.
+                        HStack(spacing: 8) {
+                            ForEach(file.hashes.sorted(by: { $0.key < $1.key }), id: \.key) { algorithm, value in
+                                Button {
+                                    ryntraCopyToPasteboard(value)
+                                } label: {
+                                    Label(algorithm.uppercased(), systemImage: "doc.on.doc")
+                                        .font(.caption2.weight(.semibold))
+                                }
+                                .buttonStyle(.bordered)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var dependencies: some View {
+        if !version.dependencies.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                RyntraSectionLabel(text: NSLocalizedString("Dependencies", comment: "Version detail"))
+                ForEach(Array(version.dependencies.enumerated()), id: \.offset) { _, dependency in
+                    Text(dependency.title ?? dependency.fileName ?? dependency.projectId ?? "")
+                        .font(.subheadline)
+                }
+            }
+        }
+    }
+}
+
+func ryntraFileSize(_ bytes: Int64) -> String {
+    guard bytes > 0 else { return "—" }
+    return ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
 }

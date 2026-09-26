@@ -1,5 +1,6 @@
 package com.ryntra.mobile.ui.dashboard.project.create
 
+import com.ryntra.mobile.ui.components.RyntraContentLoading
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
@@ -24,7 +25,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -285,10 +285,7 @@ private fun ProjectStepProgress(step: Int) {
 @Composable
 private fun ProjectCreationLoading() {
     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            CircularProgressIndicator()
-            Text(stringResource(R.string.project_create_loading), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+        RyntraContentLoading(label = stringResource(R.string.project_create_loading))
     }
 }
 

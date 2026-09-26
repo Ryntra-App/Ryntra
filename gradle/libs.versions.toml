@@ -1,22 +1,23 @@
 [versions]
-agp = "9.1.0"
-kotlin = "2.4.10"
-ktor = "3.5.2"
+agp = "9.4.1"
+kotlin = "2.4.20"
+ktor = "3.6.0"
 coroutines = "1.11.0"
 serialization = "1.11.0"
-composeBom = "2026.06.01"
+composeBom = "2026.09.00"
 activityCompose = "1.13.0"
-appcompat = "1.7.1"
-lifecycle = "2.10.0"
-navigation = "2.9.8"
-coil = "3.5.0"
+appcompat = "1.8.0"
+lifecycle = "2.11.0"
+navigation = "2.10.1"
+coil = "3.6.3"
 androidxBrowser = "1.10.0"
-androidxCore = "1.18.0"
+androidxCore = "1.19.0"
 workManager = "2.11.2"
-haze = "1.7.2"
+glance = "1.2.0"
+haze = "1.7.3"
 composeIcons = "2.2.1"
-jetbrainsMarkdown = "0.7.8"
-firebaseBom = "34.17.0"
+jetbrainsMarkdown = "0.7.14"
+firebaseBom = "34.19.0"
 
 [libraries]
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -30,7 +31,10 @@ ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "kto
 ktor-serialization-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
-androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+# The alpha BOM, not the stable one: Material 3 Expressive is only public in
+# material3 1.5.0-alpha. It pins foundation/ui/runtime as one matching set, which
+# overriding material3 on its own would not.
+androidx-compose-bom = { module = "androidx.compose:compose-bom-alpha", version.ref = "composeBom" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
 androidx-compose-material-icons-core = { module = "androidx.compose.material:material-icons-core" }
 androidx-compose-ui = { module = "androidx.compose.ui:ui" }
@@ -42,6 +46,8 @@ androidx-navigation-compose = { module = "androidx.navigation:navigation-compose
 androidx-browser = { module = "androidx.browser:browser", version.ref = "androidxBrowser" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
 androidx-work-runtime = { module = "androidx.work:work-runtime", version.ref = "workManager" }
+androidx-glance-appwidget = { module = "androidx.glance:glance-appwidget", version.ref = "glance" }
+androidx-glance-material3 = { module = "androidx.glance:glance-material3", version.ref = "glance" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coil" }
 coil-svg = { module = "io.coil-kt.coil3:coil-svg", version.ref = "coil" }

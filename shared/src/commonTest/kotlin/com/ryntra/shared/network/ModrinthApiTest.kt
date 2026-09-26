@@ -8,6 +8,8 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -17,6 +19,7 @@ import kotlin.test.assertTrue
 import com.ryntra.shared.model.CreateVersionRequest
 import com.ryntra.shared.model.CreateProjectRequest
 import com.ryntra.shared.model.AnalyticsQuery
+import com.ryntra.shared.model.PayoutStatus
 import com.ryntra.shared.model.ProjectAttentionKind
 import com.ryntra.shared.model.ProjectFileUpload
 import com.ryntra.shared.model.ProjectMemberUpdate
@@ -162,6 +165,7 @@ class ModrinthApiTest {
                 endTime = "2026-07-03T00:00:00Z",
                 slices = 2,
                 projectIds = listOf("project-1", "project-2"),
+                periodDays = 2,
             ),
             includeRevenue = false,
             token = "mrp_test",
@@ -175,6 +179,48 @@ class ModrinthApiTest {
         assertEquals("version_uploaded", response.events.single().kind)
         assertEquals("1.0.0", response.events.single().versionNumber)
         api.close()
+    }
+
+    @Test
+    fun analyticsFetchesTheCurrentAndPreviousPeriodsAsSeparateWindows() = runTest {
+        val requestedStarts = mutableListOf<String>()
+        val lock = Mutex()
+        val engine = MockEngine { request ->
+            val body = request.bodyText()
+            val start = body.substringAfter("\"start\":\"").substringBefore("\"")
+            lock.withLock { requestedStarts += start }
+            val content = if ("project_revenue" in body) {
+                """{"metrics":[[],[]],"project_events":[]}"""
+            } else {
+                val downloads = if (start == "2026-07-03T00:00:00Z") 5 else 2
+                """{"metrics":[
+                    [{"metric_kind":"downloads","source_project":"p","downloads":$downloads}],
+                    [{"metric_kind":"downloads","source_project":"p","downloads":$downloads}]
+                ],"project_events":[]}"""
+            }
+            respond(content = content, status = HttpStatusCode.OK, headers = jsonHeaders)
+        }
+
+        val report = DashboardRepository(ModrinthApi(testClient(engine))).loadAnalytics(
+            AnalyticsQuery(
+                startTime = "2026-07-01T00:00:00Z",
+                endTime = "2026-07-05T00:00:00Z",
+                slices = 4,
+                projectIds = listOf("p"),
+                currentStartTime = "2026-07-03T00:00:00Z",
+                currentSlices = 2,
+                periodDays = 2,
+            ),
+            token = "mrp_test",
+        )
+
+        // Core and revenue, each over the previous and the current window.
+        assertEquals(4, requestedStarts.size)
+        assertEquals(setOf("2026-07-01T00:00:00Z", "2026-07-03T00:00:00Z"), requestedStarts.toSet())
+        assertEquals(2, report.points.size)
+        assertEquals(10.0, report.totals.downloads)
+        assertEquals(4.0, report.previousTotals.downloads)
+        assertTrue(report.isCoreAvailable)
     }
 
     @Test
@@ -206,6 +252,7 @@ class ModrinthApiTest {
                 endTime = "2026-07-02T00:00:00Z",
                 slices = 1,
                 projectIds = listOf("project-1"),
+                periodDays = 1,
             ),
             includeRevenue = true,
             token = "mrp_test",
@@ -250,25 +297,33 @@ class ModrinthApiTest {
     }
 
     @Test
-    fun walletEndpointsNormalizeBalancesAndTransactions() = runTest {
+    fun walletEndpointsReadLabrinthV3PayoutShapes() = runTest {
         val engine = MockEngine { request ->
             when (request.url.encodedPath) {
-                "/v2/user/user-1/payouts" -> respond(
-                    content = """{
-                        "all_time":"84.50",
-                        "last_month":"6.25",
-                        "payouts":[{"created":"2026-06-01T12:00:00Z","amount":"25.00","status":"success"}]
-                    }""".trimIndent(),
+                "/v3/payout/history" -> respond(
+                    content = """[
+                        {"type":"payout_available","created":"2026-07-30T00:00:00Z","payout_source":"creator_rewards","amount":"2.87"},
+                        {"type":"withdrawal","id":"pay1","status":"in-transit","created":"2026-08-02T10:00:00Z",
+                         "amount":"25.00","fee":"0.50","method_type":"paypal","method_id":null,"method_address":"me@example.com"}
+                    ]""".trimIndent(),
                     status = HttpStatusCode.OK,
                     headers = jsonHeaders,
                 )
                 "/v3/payout/balance" -> respond(
                     content = """{
-                        "available_now":"10.50",
-                        "pending":2.25,
+                        "available":"0.01",
                         "withdrawn_lifetime":"71.75",
-                        "currency":"USD"
+                        "withdrawn_ytd":"25.00",
+                        "pending":"13.98",
+                        "dates":{"2026-09-29T00:00:00Z":"2.87","2026-10-30T00:00:00Z":"5.33"},
+                        "requested_form_type":null,
+                        "form_completion_status":"tin-mismatch"
                     }""".trimIndent(),
+                    status = HttpStatusCode.OK,
+                    headers = jsonHeaders,
+                )
+                "/_internal/globals" -> respond(
+                    content = """{"tax_compliance_thresholds":{"2025":600,"2026":2000},"captcha_enabled":true}""",
                     status = HttpStatusCode.OK,
                     headers = jsonHeaders,
                 )
@@ -277,15 +332,69 @@ class ModrinthApiTest {
         }
         val api = ModrinthApi(testClient(engine))
 
-        val history = api.getPayoutHistory("user-1", "mrp_test")
+        val history = api.getPayoutHistory("mrp_test")
         val balance = api.getPayoutBalance("mrp_test")
+        val thresholds = api.getTaxFormThresholds()
 
-        assertEquals(84.5, history.allTime)
-        assertEquals(6.25, history.lastMonth)
-        assertEquals(25.0, history.transactions.single().amount)
-        assertEquals(10.5, balance.available)
-        assertEquals(2.25, balance.pending)
-        assertEquals(71.75, balance.withdrawnLifetime)
+        assertEquals(listOf("pay1", null), history.transactions.map { it.id })
+        val withdrawal = history.transactions.first()
+        assertEquals(PayoutStatus.InTransit, withdrawal.status)
+        assertEquals(0.5, withdrawal.fee)
+        assertEquals("paypal", withdrawal.methodType)
+        assertTrue(withdrawal.canCancel)
+        assertEquals("creator_rewards", history.transactions.last().payoutSource)
+        assertEquals(0.01, balance.available)
+        assertEquals(13.98, balance.pending)
+        assertEquals(25.0, balance.withdrawnThisYear)
+        assertEquals(5.33, balance.dates["2026-10-30T00:00:00Z"])
+        assertEquals("tin-mismatch", balance.formCompletionStatus)
+        assertEquals(mapOf(2025 to 600.0, 2026 to 2000.0), thresholds)
+        api.close()
+    }
+
+    @Test
+    fun readsAreRetriedWhenModrinthAnswersWithABadGateway() = runTest {
+        var attempts = 0
+        val engine = MockEngine {
+            attempts++
+            if (attempts == 1) {
+                respond("", status = HttpStatusCode.BadGateway)
+            } else {
+                respond("""{"tax_compliance_thresholds":{"2026":2000}}""", HttpStatusCode.OK, jsonHeaders)
+            }
+        }
+        val api = ModrinthApi(testClient(engine))
+
+        assertEquals(mapOf(2026 to 2000.0), api.getTaxFormThresholds())
+        assertEquals(2, attempts)
+        api.close()
+    }
+
+    @Test
+    fun writesAreNeverRetriedSoTheyCannotApplyTwice() = runTest {
+        var attempts = 0
+        val engine = MockEngine {
+            attempts++
+            respond("", status = HttpStatusCode.BadGateway)
+        }
+        val api = ModrinthApi(testClient(engine))
+
+        assertFailsWith<ApiException> { api.cancelPayout("pay1", "mrp_test") }
+        assertEquals(1, attempts)
+        api.close()
+    }
+
+    @Test
+    fun cancellingAWithdrawalDeletesItOnV3() = runTest {
+        val engine = MockEngine { request ->
+            assertEquals(HttpMethod.Delete, request.method)
+            assertEquals("/v3/payout/pay1", request.url.encodedPath)
+            respond(content = "", status = HttpStatusCode.NoContent)
+        }
+        val api = ModrinthApi(testClient(engine))
+
+        api.cancelPayout("pay1", "mrp_test")
+
         api.close()
     }
 
@@ -455,7 +564,9 @@ class ModrinthApiTest {
 
     @Test
     fun notificationIdsAreResolvedToProjectAndVersionNames() = runTest {
+        val lookupPaths = mutableListOf<String>()
         val engine = MockEngine { request ->
+            if (request.url.encodedPath != "/v2/user/user-1/notifications") lookupPaths += request.url.encodedPath
             when (request.url.encodedPath) {
                 "/v2/user/user-1/notifications" -> respond(
                     content = """[{
@@ -472,13 +583,13 @@ class ModrinthApiTest {
                     status = HttpStatusCode.OK,
                     headers = jsonHeaders,
                 )
-                "/v2/project/project-1" -> respond(
-                    content = """{"id":"project-1","slug":"ryntra","title":"Ryntra"}""",
+                "/v2/projects" -> respond(
+                    content = """[{"id":"project-1","slug":"ryntra","title":"Ryntra"}]""",
                     status = HttpStatusCode.OK,
                     headers = jsonHeaders,
                 )
-                "/v2/version/version-1" -> respond(
-                    content = """{
+                "/v2/versions" -> respond(
+                    content = """[{
                         "id":"version-1",
                         "project_id":"project-1",
                         "name":"Ryntra 3.0",
@@ -489,7 +600,7 @@ class ModrinthApiTest {
                         "downloads":0,
                         "dependencies":[],
                         "files":[]
-                    }""".trimIndent(),
+                    }]""".trimIndent(),
                     status = HttpStatusCode.OK,
                     headers = jsonHeaders,
                 )
@@ -499,6 +610,9 @@ class ModrinthApiTest {
         val api = ModrinthApi(testClient(engine))
 
         val notification = api.getNotifications("user-1", "mrp_test").single()
+
+        // One bulk lookup per kind, however many notifications there are.
+        assertEquals(listOf("/v2/projects", "/v2/versions"), lookupPaths.sorted())
 
         assertEquals("Ryntra released 3.0.0", notification.title)
         assertEquals("Download 3.0.0 for Ryntra", notification.text)

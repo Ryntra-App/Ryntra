@@ -72,7 +72,7 @@ class NotificationWorker(
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val built = NotificationCompat.Builder(applicationContext, NotificationChannels.MODRINTH_UPDATES)
+        val builder = NotificationCompat.Builder(applicationContext, NotificationChannels.MODRINTH_UPDATES)
             .setSmallIcon(R.drawable.ryntra_launcher_monochrome)
             .setContentTitle(text.title)
             .setContentText(text.body)
@@ -80,7 +80,12 @@ class NotificationWorker(
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
-            .build()
+        val built = NotificationActionReceiver.addActions(
+            context = applicationContext,
+            builder = builder,
+            notificationId = notification.id,
+            canAcceptInvitation = notification.actions.any { it.teamJoinId != null },
+        ).build()
         if (!canPostNotifications()) return
         try {
             NotificationManagerCompat.from(applicationContext).notify(notification.id.hashCode(), built)

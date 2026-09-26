@@ -117,13 +117,10 @@ struct AnalyticsView: View {
                 sectionTitle("Wallet")
                 AnalyticsWalletView(
                     report: model.walletReport,
-                    isLoading: model.isAnalyticsLoading && model.walletReport == nil,
-                    errorMessage: model.walletError
+                    isLoading: model.isWalletLoading && model.walletReport == nil,
+                    errorMessage: model.walletError,
+                    isPlatformNative: isPlatformNative
                 )
-                if let wallet = model.walletReport, !wallet.transactions.isEmpty {
-                    sectionTitle("Recent payouts")
-                    AnalyticsPayoutHistoryView(report: wallet)
-                }
 
                 projectPicker.padding(.top, 12)
 
@@ -175,7 +172,10 @@ struct AnalyticsView: View {
             .padding(.top, 8)
             .padding(.bottom, isPlatformNative ? 20 : 96)
         }
-        .background(Color.ryntraBackground)
+        .ryntraScreenBackdrop()
+        // The wallet is loaded once with the dashboard; pulling is how a creator checks
+        // whether a payout has landed since
+        .refreshable { await model.refreshWallet() }
         .task(id: analyticsTaskKey) {
             guard isActive else { return }
             await model.loadAnalytics(projects: dashboard.projects, rangeDays: rangeDays)
@@ -350,17 +350,26 @@ struct AnalyticsView: View {
     }
 
     private func analyticsAvailabilityMessage(_ report: AnalyticsReport) -> String {
+        // 408, -1 and 0 are the shared AnalyticsStatus values for a request that timed out,
+        // could not reach Modrinth, or came back unreadable.
         switch report.coreStatus {
         case 401:
-            return "Analytics needs a fresh Modrinth sign-in. Sign out and connect again."
+            return NSLocalizedString("Analytics needs a fresh Modrinth sign-in. Sign out and connect again.", comment: "Analytics status")
         case 403:
-            return "This Modrinth token cannot read analytics. Sign in with analytics permission enabled."
+            return NSLocalizedString("This Modrinth token cannot read analytics. Sign in with analytics permission enabled.", comment: "Analytics status")
         case 429:
-            return "Modrinth is rate limiting analytics right now. Try again shortly."
+            return NSLocalizedString("Modrinth is rate limiting analytics right now. Try again shortly.", comment: "Analytics status")
+        case 408:
+            return NSLocalizedString("Modrinth took too long to answer. Long ranges take longer to compute.", comment: "Analytics status")
+        case -1:
+            return NSLocalizedString("Could not reach Modrinth. Check your connection.", comment: "Analytics status")
         case 0:
-            return "Analytics could not be decoded from Modrinth. Lifetime totals remain exact."
+            return NSLocalizedString("Modrinth sent analytics Ryntra could not read.", comment: "Analytics status")
         default:
-            return "Modrinth analytics request failed (\(report.coreStatus)). Lifetime totals remain exact."
+            return String(
+                format: NSLocalizedString("Modrinth could not load analytics (error %d).", comment: "Analytics status"),
+                report.coreStatus
+            )
         }
     }
 

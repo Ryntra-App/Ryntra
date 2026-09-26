@@ -1,25 +1,26 @@
 package com.ryntra.mobile.ui.dashboard
 
+import com.ryntra.mobile.AppScreenRequest
 import androidx.annotation.StringRes
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -32,6 +33,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.preferredFrameRate
@@ -65,6 +68,8 @@ import com.ryntra.mobile.ui.theme.RyntraDesign
 import com.ryntra.mobile.ui.dashboard.account.AccountScreen
 import com.ryntra.mobile.ui.dashboard.browse.BrowseScreen
 import com.ryntra.mobile.ui.dashboard.notifications.NotificationsScreen
+import com.ryntra.mobile.ui.dashboard.wallet.WalletAffiliateState
+import com.ryntra.mobile.ui.dashboard.wallet.WalletScreen
 import com.ryntra.mobile.ui.dashboard.analytics.AnalyticsScreen
 import com.ryntra.mobile.ui.dashboard.organizations.OrganizationDetailScreen
 import com.ryntra.mobile.ui.dashboard.organizations.OrganizationsScreen
@@ -106,9 +111,11 @@ private enum class DashboardLayer {
     Organization,
     Notifications,
     Browse,
+    Wallet,
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun DashboardScreen(
     dashboard: Dashboard,
     isRefreshing: Boolean = false,
@@ -138,6 +145,11 @@ fun DashboardScreen(
     instantNotifications: InstantNotificationState = InstantNotificationState(),
     preferences: RyntraPreferences = RyntraPreferences(),
     onLoadAnalytics: (Int) -> Unit = {},
+    onRetryAnalytics: (Int) -> Unit = {},
+    onRefreshWallet: () -> Unit = {},
+    requestedScreen: AppScreenRequest? = null,
+    onRequestedScreenShown: () -> Unit = {},
+    onCancelPayout: (String) -> Unit = {},
     onChangeProjectIcon: (String, ProjectFileUpload) -> Unit = { _, _ -> },
     onDeleteProjectIcon: (String) -> Unit = {},
     onSubmitProjectForModeration: (String) -> Unit = {},
@@ -196,6 +208,7 @@ fun DashboardScreen(
     var isProfileVisible by rememberSaveable { mutableStateOf(false) }
     var isNotificationsVisible by rememberSaveable { mutableStateOf(false) }
     var isBrowseVisible by rememberSaveable { mutableStateOf(false) }
+    var isWalletVisible by rememberSaveable { mutableStateOf(false) }
     var isCreatingProject by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     var retainedProjectDetail by remember { mutableStateOf<ProjectDetailState?>(null) }
@@ -205,11 +218,14 @@ fun DashboardScreen(
     val tabStateHolder = rememberSaveableStateHolder()
     val hazeState = rememberHazeState()
     val colors = RyntraDesign.colors
-    val motion = RyntraDesign.motion
+    // Read outside the transition lambdas below, which are not composable scopes.
+    val slideSpec = RyntraDesign.spatialSpec<IntOffset>()
+    val scaleSpec = RyntraDesign.spatialSpec<Float>()
+    val fadeSpec = RyntraDesign.effectsSpec<Float>()
     val retryLabel = stringResource(R.string.common_retry)
     val isPlatformNative = RyntraDesign.isPlatformNative
     val detailTitle = projectDetail?.project?.title ?: organizationDetail?.organization?.name
-    val isDetailVisible = isProfileVisible || isNotificationsVisible || isBrowseVisible ||
+    val isDetailVisible = isProfileVisible || isNotificationsVisible || isBrowseVisible || isWalletVisible ||
         projectDetail != null || organizationDetail != null
     val contentLayer = when {
         projectDetail != null -> DashboardLayer.Project
@@ -217,14 +233,49 @@ fun DashboardScreen(
         isProfileVisible -> DashboardLayer.Profile
         isNotificationsVisible -> DashboardLayer.Notifications
         isBrowseVisible -> DashboardLayer.Browse
+        isWalletVisible -> DashboardLayer.Wallet
         else -> DashboardLayer.Tabs
     }
+    // The collapsing headline belongs to the tab roots; a pushed screen keeps a
+    // pinned bar so its back button never scrolls away. Both are remembered so the
+    // active one can change without tearing down the scaffold.
+    val collapsingTopBarBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val pinnedTopBarBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val topBarScrollBehavior = if (isDetailVisible) pinnedTopBarBehavior else collapsingTopBarBehavior
     val requestCloseProject = {
         if (hasUnsavedProjectChanges) {
             isConfirmingProjectClose = true
         } else {
             onCloseProject()
         }
+    }
+
+    // A screen swapped in under a collapsed bar could be too short to scroll the
+    // headline back out, leaving it stuck shut.
+    LaunchedEffect(contentLayer, destination) {
+        collapsingTopBarBehavior.state.heightOffset = 0f
+        collapsingTopBarBehavior.state.contentOffset = 0f
+    }
+
+    // A widget tap names a screen; it opens over whatever tab was last shown.
+    LaunchedEffect(requestedScreen) {
+        val screen = requestedScreen ?: return@LaunchedEffect
+        isProfileVisible = false
+        isBrowseVisible = false
+        isNotificationsVisible = false
+        isWalletVisible = false
+        when (screen) {
+            AppScreenRequest.Wallet -> {
+                isWalletVisible = true
+                onRefreshWallet()
+            }
+            AppScreenRequest.Analytics -> destination = DashboardDestination.Analytics
+            AppScreenRequest.Notifications -> {
+                isNotificationsVisible = true
+                onRefreshNotifications()
+            }
+        }
+        onRequestedScreenShown()
     }
 
     LaunchedEffect(projectDetail?.project?.id) {
@@ -256,8 +307,14 @@ fun DashboardScreen(
     val tabs = remember(destinationLabels) {
         destinations.mapIndexed { index, item -> RyntraTab(destinationLabels[index], item.icon) }
     }
+    val selectDestination = { target: DashboardDestination ->
+        destination = target
+        isProfileVisible = false
+        isBrowseVisible = false
+        isWalletVisible = false
+    }
     BackHandler(
-        enabled = isProfileVisible || isNotificationsVisible || isBrowseVisible ||
+        enabled = isProfileVisible || isNotificationsVisible || isBrowseVisible || isWalletVisible ||
             projectDetail != null || organizationDetail != null,
     ) {
         when {
@@ -265,6 +322,7 @@ fun DashboardScreen(
             organizationDetail != null -> onCloseOrganization()
             isProfileVisible -> isProfileVisible = false
             isNotificationsVisible -> isNotificationsVisible = false
+            isWalletVisible -> isWalletVisible = false
             isBrowseVisible -> {
                 isBrowseVisible = false
                 onCloseBrowse()
@@ -272,42 +330,115 @@ fun DashboardScreen(
         }
     }
 
-    Box(
+    Scaffold(
+        topBar = {
+            RyntraTopBar(
+                title = detailTitle ?: when {
+                    isProfileVisible -> stringResource(R.string.nav_profile)
+                    isNotificationsVisible -> stringResource(R.string.notifications_title)
+                    isBrowseVisible -> stringResource(R.string.browse_title)
+                    isWalletVisible -> stringResource(R.string.wallet_title)
+                    else -> destinationLabels[destination.ordinal]
+                },
+                avatarUrl = dashboard.account.avatarUrl,
+                avatarDescription = stringResource(R.string.nav_open_account, dashboard.account.username),
+                isRefreshing = isRefreshing,
+                onAvatarClick = { isProfileVisible = true },
+                navigationIcon = if (isDetailVisible) Lucide.ArrowLeft else null,
+                navigationDescription = if (isDetailVisible) stringResource(R.string.nav_back) else null,
+                onNavigationClick = {
+                    when {
+                        projectDetail != null -> requestCloseProject()
+                        organizationDetail != null -> onCloseOrganization()
+                        isProfileVisible -> isProfileVisible = false
+                        isNotificationsVisible -> isNotificationsVisible = false
+                        isWalletVisible -> isWalletVisible = false
+                        isBrowseVisible -> {
+                            isBrowseVisible = false
+                            onCloseBrowse()
+                        }
+                    }
+                },
+                showAvatar = !isDetailVisible,
+                onSearchClick = if (!isDetailVisible) {
+                    {
+                        isBrowseVisible = true
+                        onOpenBrowse()
+                    }
+                } else {
+                    null
+                },
+                searchDescription = stringResource(R.string.browse_open),
+                onNotificationsClick = if (!isDetailVisible) {
+                    {
+                        isNotificationsVisible = true
+                        onRefreshNotifications()
+                    }
+                } else {
+                    null
+                },
+                unreadNotificationCount = notifications.unreadCount,
+                notificationsDescription = stringResource(R.string.notifications_title),
+                scrollBehavior = topBarScrollBehavior,
+            )
+        },
+        bottomBar = {
+            // Material's navigation bar is a real scaffold bar, so content is laid out
+            // above it. The Ryntra tab bar is glass over the content and is placed in
+            // the content layer below instead.
+            if (isPlatformNative && !isDetailVisible) {
+                RyntraTabBar(
+                    tabs = tabs,
+                    selectedIndex = destination.ordinal,
+                    onSelect = { selectDestination(destinations[it]) },
+                    hazeState = hazeState,
+                    glassQuality = preferences.glassQuality,
+                )
+            }
+        },
+        snackbarHost = {
+            // The scaffold lifts a snackbar above its own bottomBar. The Ryntra tab
+            // bar is not one, so that theme has to clear it by hand.
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = if (isPlatformNative || isDetailVisible) {
+                    Modifier
+                } else {
+                    Modifier.padding(bottom = 86.dp)
+                },
+            )
+        },
+        containerColor = colors.background,
         modifier = Modifier
             .fillMaxSize()
             .preferredFrameRate(FrameRateCategory.High)
-            .background(colors.background),
-    ) {
+            .nestedScroll(topBarScrollBehavior.nestedScrollConnection),
+    ) { contentPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .then(if (isDetailVisible || isPlatformNative) Modifier else Modifier.hazeSource(hazeState))
-                    .statusBarsPadding()
-                    .navigationBarsPadding()
-                    .padding(top = if (isPlatformNative) 64.dp else 84.dp),
+                    .padding(contentPadding)
+                    .then(if (isDetailVisible || isPlatformNative) Modifier else Modifier.hazeSource(hazeState)),
             ) {
                 AnimatedContent(
                     targetState = contentLayer,
                     transitionSpec = {
-                        val duration = motion.duration(300)
                         when {
                             targetState == DashboardLayer.Tabs -> {
-                                fadeIn(tween(duration)) togetherWith
+                                fadeIn(fadeSpec) togetherWith
                                     slideOutOfContainer(
                                         towards = androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.End,
-                                        animationSpec = tween(duration),
+                                        animationSpec = slideSpec,
                                     )
                             }
                             initialState == DashboardLayer.Tabs -> {
                                 slideIntoContainer(
                                     towards = androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Start,
-                                    animationSpec = tween(duration),
-                                ) togetherWith
-                                    fadeOut(tween(motion.duration(120)))
+                                    animationSpec = slideSpec,
+                                ) togetherWith fadeOut(fadeSpec)
                             }
-                            else -> fadeIn(tween(motion.duration(180))) togetherWith
-                                fadeOut(tween(motion.duration(120)))
+                            else -> fadeIn(fadeSpec) togetherWith fadeOut(fadeSpec)
                         }
                     },
                     label = "Dashboard layer",
@@ -429,15 +560,29 @@ fun DashboardScreen(
                             onNotificationProjectClick(projectReference)
                         },
                     )
+                    DashboardLayer.Wallet -> WalletScreen(
+                        report = analytics.wallet,
+                        isLoading = analytics.isWalletLoading,
+                        errorMessage = analytics.walletErrorMessage,
+                        cancellingPayoutId = analytics.cancellingPayoutId,
+                        actionErrorMessage = analytics.walletActionErrorMessage,
+                        onRefresh = onRefreshWallet,
+                        onCancelPayout = onCancelPayout,
+                        affiliate = WalletAffiliateState(
+                            report = analytics.affiliate,
+                            isLoading = analytics.isAffiliateLoading,
+                            errorMessage = analytics.affiliateErrorMessage,
+                        ),
+                    )
                     DashboardLayer.Tabs -> AnimatedContent(
                         targetState = destination,
                         transitionSpec = {
-                            fadeIn(
-                                animationSpec = tween(
-                                    durationMillis = motion.duration(220),
-                                    delayMillis = motion.duration(90),
-                                ),
-                            ) togetherWith fadeOut(tween(motion.duration(90)))
+                            // Material's fade-through: the outgoing screen clears out
+                            // first, and the incoming one is lifted in on a slight scale
+                            // so the swap reads as new content rather than a dissolve of
+                            // two screens over each other.
+                            (fadeIn(fadeSpec) + scaleIn(initialScale = 0.92f, animationSpec = scaleSpec))
+                                .togetherWith(fadeOut(fadeSpec))
                         },
                         label = "Dashboard destination",
                         modifier = Modifier.fillMaxSize(),
@@ -470,6 +615,12 @@ fun DashboardScreen(
                                 dashboard = dashboard,
                                 state = analytics,
                                 onRangeChange = onLoadAnalytics,
+                                onRetry = onRetryAnalytics,
+                                onOpenWallet = {
+                                    isWalletVisible = true
+                                    onRefreshWallet()
+                                },
+                                onRetryWallet = onRefreshWallet,
                             )
                             }
                         }
@@ -477,74 +628,16 @@ fun DashboardScreen(
                     }
                 }
             }
-            RyntraTopBar(
-                title = detailTitle ?: when {
-                    isProfileVisible -> stringResource(R.string.nav_profile)
-                    isNotificationsVisible -> stringResource(R.string.notifications_title)
-                    isBrowseVisible -> stringResource(R.string.browse_title)
-                    else -> destinationLabels[destination.ordinal]
-                },
-                avatarUrl = dashboard.account.avatarUrl,
-                avatarDescription = stringResource(R.string.nav_open_account, dashboard.account.username),
-                isRefreshing = isRefreshing,
-                onAvatarClick = { isProfileVisible = true },
-                navigationIcon = if (isDetailVisible) Lucide.ArrowLeft else null,
-                navigationDescription = if (isDetailVisible) stringResource(R.string.nav_back) else null,
-                onNavigationClick = {
-                    when {
-                        projectDetail != null -> requestCloseProject()
-                        organizationDetail != null -> onCloseOrganization()
-                        isProfileVisible -> isProfileVisible = false
-                        isNotificationsVisible -> isNotificationsVisible = false
-                        isBrowseVisible -> {
-                            isBrowseVisible = false
-                            onCloseBrowse()
-                        }
-                    }
-                },
-                showAvatar = !isDetailVisible,
-                onSearchClick = if (!isDetailVisible) {
-                    {
-                        isBrowseVisible = true
-                        onOpenBrowse()
-                    }
-                } else {
-                    null
-                },
-                searchDescription = stringResource(R.string.browse_open),
-                onNotificationsClick = if (!isDetailVisible) {
-                    {
-                        isNotificationsVisible = true
-                        onRefreshNotifications()
-                    }
-                } else {
-                    null
-                },
-                unreadNotificationCount = notifications.unreadCount,
-                notificationsDescription = stringResource(R.string.notifications_title),
-                modifier = Modifier.align(Alignment.TopCenter),
-            )
-            if (!isDetailVisible) {
+            if (!isPlatformNative && !isDetailVisible) {
                 RyntraTabBar(
                     tabs = tabs,
                     selectedIndex = destination.ordinal,
-                    onSelect = {
-                        destination = destinations[it]
-                        isProfileVisible = false
-                        isBrowseVisible = false
-                    },
+                    onSelect = { selectDestination(destinations[it]) },
                     hazeState = hazeState,
                     glassQuality = preferences.glassQuality,
                     modifier = Modifier.align(Alignment.BottomCenter),
                 )
             }
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .navigationBarsPadding()
-                    .padding(start = 18.dp, end = 18.dp, bottom = 96.dp),
-            )
             if (isCreatingProject) {
                 CreateProjectDialog(
                     loadMetadata = onLoadProjectCreationMetadata,

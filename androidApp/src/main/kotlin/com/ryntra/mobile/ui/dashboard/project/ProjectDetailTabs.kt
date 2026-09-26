@@ -16,7 +16,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LeadingIconTab
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryScrollableTabRow
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,12 +64,22 @@ internal fun ProjectDetailTabs(
     onSelect: (ProjectDetailTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = MaterialTheme.colorScheme
-    val outerShape = RoundedCornerShape(11.dp)
     val availableTabs = ProjectDetailTab.entries.filter { tab ->
         !isReadOnly || tab == ProjectDetailTab.Overview || tab == ProjectDetailTab.Versions
     }
     val isScrollable = availableTabs.size > 4
+    if (RyntraDesign.isPlatformNative) {
+        PlatformDetailTabs(
+            selected = selected,
+            availableTabs = availableTabs,
+            isScrollable = isScrollable,
+            onSelect = onSelect,
+            modifier = modifier,
+        )
+        return
+    }
+    val colors = MaterialTheme.colorScheme
+    val outerShape = RoundedCornerShape(11.dp)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
@@ -110,4 +125,53 @@ internal fun ProjectDetailTabs(
             }
         }
     }
+}
+
+// Material navigates between views inside a screen with a tab row, not with a
+// segmented button — the row owns the sliding indicator, the ripple and the
+// selected-tab semantics that a hand-built strip has to reimplement.
+@Composable
+private fun PlatformDetailTabs(
+    selected: ProjectDetailTab,
+    availableTabs: List<ProjectDetailTab>,
+    isScrollable: Boolean,
+    onSelect: (ProjectDetailTab) -> Unit,
+    modifier: Modifier,
+) {
+    val selectedIndex = availableTabs.indexOf(selected).coerceAtLeast(0)
+    if (isScrollable) {
+        // The row already sits inside the list's 16dp gutter; the 52dp default would
+        // add a second inset and leave the first tab stranded.
+        PrimaryScrollableTabRow(
+            selectedTabIndex = selectedIndex,
+            edgePadding = 0.dp,
+            modifier = modifier,
+        ) {
+            availableTabs.forEach { tab -> DetailTab(tab = tab, isSelected = tab == selected, onSelect = onSelect) }
+        }
+    } else {
+        PrimaryTabRow(selectedTabIndex = selectedIndex, modifier = modifier) {
+            availableTabs.forEach { tab -> DetailTab(tab = tab, isSelected = tab == selected, onSelect = onSelect) }
+        }
+    }
+}
+
+@Composable
+private fun DetailTab(
+    tab: ProjectDetailTab,
+    isSelected: Boolean,
+    onSelect: (ProjectDetailTab) -> Unit,
+) {
+    LeadingIconTab(
+        selected = isSelected,
+        onClick = { onSelect(tab) },
+        text = {
+            Text(
+                text = stringResource(tab.labelRes),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
+        icon = { Icon(tab.icon, contentDescription = null, modifier = Modifier.size(18.dp)) },
+    )
 }

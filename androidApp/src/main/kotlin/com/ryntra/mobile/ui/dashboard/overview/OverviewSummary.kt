@@ -1,5 +1,7 @@
 package com.ryntra.mobile.ui.dashboard.overview
 
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,6 +31,9 @@ import com.composables.icons.lucide.UsersRound
 import com.ryntra.mobile.ui.components.formatExactCount
 import com.ryntra.mobile.R
 import com.ryntra.mobile.ui.theme.RyntraDesign
+import com.ryntra.mobile.ui.components.ExpressiveStatTile
+import com.ryntra.mobile.ui.components.StatTone
+import androidx.compose.ui.draw.clip
 
 @Composable
 internal fun CreatorSummary(
@@ -43,6 +48,10 @@ internal fun CreatorSummary(
         style = MaterialTheme.typography.bodyMedium,
         modifier = Modifier.padding(top = 8.dp, bottom = 14.dp),
     )
+    if (RyntraDesign.isPlatformNative) {
+        PlatformCreatorSummary(projectCount, organizationCount, snapshot)
+        return
+    }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -123,6 +132,73 @@ private fun CompactFact(icon: ImageVector, text: String, modifier: Modifier) {
             style = MaterialTheme.typography.labelSmall,
             maxLines = 1,
             modifier = Modifier.padding(start = 5.dp),
+        )
+    }
+}
+
+// The two totals a creator checks first lead the dashboard as large tonal tiles; the
+// counts that only need a glance follow as a quieter line underneath.
+@Composable
+private fun PlatformCreatorSummary(
+    projectCount: Int,
+    organizationCount: Int,
+    snapshot: OverviewSnapshot,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        ExpressiveStatTile(
+            icon = Lucide.Download,
+            label = stringResource(R.string.analytics_downloads),
+            value = formatExactCount(snapshot.totalDownloads),
+            tone = StatTone.Primary,
+            modifier = Modifier.weight(1f),
+        )
+        ExpressiveStatTile(
+            icon = Lucide.Heart,
+            label = stringResource(R.string.analytics_followers),
+            value = formatExactCount(snapshot.totalFollowers),
+            tone = StatTone.Tertiary,
+            modifier = Modifier.weight(1f),
+        )
+    }
+    // Chips size to their own text rather than sharing three equal columns: in Russian
+    // "1 команда" and "18 проектов" differ enough that fixed thirds left one short of the
+    // edge and clipped another.
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp),
+    ) {
+        FactChip(Lucide.Package, pluralStringResource(R.plurals.overview_project_count, projectCount, projectCount))
+        FactChip(
+            Lucide.BadgeCheck,
+            pluralStringResource(R.plurals.overview_approved_count, snapshot.approvedProjects, snapshot.approvedProjects),
+        )
+        FactChip(Lucide.UsersRound, pluralStringResource(R.plurals.overview_team_count, organizationCount, organizationCount))
+    }
+}
+
+@Composable
+private fun FactChip(icon: ImageVector, text: String) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(colors.surfaceContainerHigh)
+            .padding(horizontal = 14.dp, vertical = 9.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = colors.primary, modifier = Modifier.size(16.dp))
+        Text(
+            text = text,
+            color = colors.onSurface,
+            style = MaterialTheme.typography.labelLarge,
+            maxLines = 1,
+            modifier = Modifier.padding(start = 8.dp),
         )
     }
 }
