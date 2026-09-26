@@ -90,6 +90,9 @@ data class ProjectSearchQuery(
 
     fun cleared(): ProjectSearchQuery = ProjectSearchQuery(text = text, sort = sort)
 
+    /** Resets what the filter sheet sets, keeping the content type chosen above it. */
+    fun withoutVersionAndLoaderFilters(): ProjectSearchQuery = copy(gameVersions = emptyList(), loaders = emptyList(), offset = 0)
+
     fun nextPage(): ProjectSearchQuery = copy(offset = offset + limit)
 
     private fun List<String>.toggled(value: String): List<String> =
@@ -206,6 +209,8 @@ data class GameVersion(
 data class ModLoader(
     val name: String,
     val supportedProjectTypes: List<String> = emptyList(),
+    /** Modrinth's own SVG for the loader, stroked with `currentColor`. */
+    val iconSvg: String? = null,
 )
 
 /** Filter options fetched once from Modrinth's tag routes. */
@@ -230,6 +235,9 @@ data class BrowseMetadata(
             .map { it.name }
         return loaders.filter { projectType in it.supportedProjectTypes }.map { it.name }
     }
+
+    /** The SVG Modrinth draws next to [loader], if it has one. */
+    fun loaderIcon(loader: String): String? = loaders.firstOrNull { it.name == loader }?.iconSvg
 
     companion object {
         const val MAX_VERSION_OPTIONS = 40

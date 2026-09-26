@@ -459,6 +459,10 @@
     <string name="markdown_preview_empty">Nothing to preview</string>
     <string name="common_retry">Retry</string>
     <string name="common_clear_search">Clear search</string>
+    <string name="filters_reset">Reset</string>
+    <string name="filters_done">Done</string>
+    <string name="filters_show_all">Show all %1$d</string>
+    <string name="filters_show_less">Show fewer</string>
     <string name="support_title">Support the author</string>
     <string name="support_donation_alerts">DonationAlerts</string>
     <string name="support_donation_alerts_hint">One-time support for Ryntra development</string>
@@ -871,7 +875,6 @@
     <string name="browse_filters">Filters</string>
     <string name="browse_filters_active">Filters · %1$d</string>
     <string name="browse_filters_loading">Loading filter options…</string>
-    <string name="browse_filters_reset">Reset filters</string>
     <string name="browse_filter_game_versions">Minecraft version</string>
     <string name="browse_filter_loaders">Loader</string>
     <string name="browse_category_all">All</string>

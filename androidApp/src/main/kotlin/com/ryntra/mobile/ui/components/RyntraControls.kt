@@ -79,9 +79,11 @@ fun RyntraSearchField(
     placeholder: String,
     leadingIcon: ImageVector,
     modifier: Modifier = Modifier,
+    onSearch: (() -> Unit)? = null,
 ) {
+    val keyboardActions = onSearch?.let { KeyboardActions(onSearch = { it() }) } ?: KeyboardActions.Default
     if (RyntraDesign.isPlatformNative) {
-        PlatformSearchField(value, onValueChange, placeholder, leadingIcon, modifier)
+        PlatformSearchField(value, onValueChange, placeholder, leadingIcon, keyboardActions, modifier)
         return
     }
     RyntraTextField(
@@ -90,6 +92,8 @@ fun RyntraSearchField(
         placeholder = placeholder,
         leadingIcon = leadingIcon,
         leadingIconDescription = null,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = keyboardActions,
         modifier = modifier,
     )
 }
@@ -104,6 +108,7 @@ private fun PlatformSearchField(
     onValueChange: (String) -> Unit,
     placeholder: String,
     leadingIcon: ImageVector,
+    keyboardActions: KeyboardActions,
     modifier: Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -124,6 +129,7 @@ private fun PlatformSearchField(
             null
         },
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = keyboardActions,
         colors = TextFieldDefaults.colors(
             focusedContainerColor = colors.surfaceContainerHigh,
             unfocusedContainerColor = colors.surfaceContainerHigh,

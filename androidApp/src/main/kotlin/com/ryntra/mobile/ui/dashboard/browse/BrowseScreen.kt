@@ -1,5 +1,6 @@
 package com.ryntra.mobile.ui.dashboard.browse
 
+import com.ryntra.mobile.ui.components.RyntraSearchField
 import com.ryntra.mobile.ui.components.RyntraContentLoading
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -12,8 +13,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,14 +28,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Search
 import com.ryntra.mobile.BrowseState
 import com.ryntra.mobile.R
 import com.ryntra.mobile.ui.components.RyntraEmptyState
-import com.ryntra.mobile.ui.components.RyntraTextField
 import com.ryntra.mobile.ui.components.label
 import com.ryntra.mobile.ui.dashboard.projects.ProjectRow
 import com.ryntra.shared.model.ProjectSearchHit
@@ -62,7 +59,7 @@ fun BrowseScreen(
 ) {
     val keyboard = LocalSoftwareKeyboardController.current
     val listState = rememberLazyListState()
-    var isFilterPanelOpen by rememberSaveable { mutableStateOf(false) }
+    var isFilterSheetOpen by rememberSaveable { mutableStateOf(false) }
 
     // Paging is driven by proximity to the end rather than by the last item appearing, so the next
     // page is already in flight by the time the user reaches it. The effect is keyed on the page
@@ -83,17 +80,15 @@ fun BrowseScreen(
         contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 36.dp),
     ) {
         item(key = "browse-search", contentType = "search") {
-            RyntraTextField(
+            RyntraSearchField(
                 value = state.query.text,
                 onValueChange = onTextChange,
                 placeholder = stringResource(R.string.browse_search_placeholder),
                 leadingIcon = Lucide.Search,
-                leadingIconDescription = null,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = {
+                onSearch = {
                     keyboard?.hide()
                     onSubmit()
-                }),
+                },
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -109,22 +104,9 @@ fun BrowseScreen(
         item(key = "browse-tools", contentType = "tools") {
             BrowseToolRow(
                 query = state.query,
-                isFilterPanelOpen = isFilterPanelOpen,
                 onSortChange = { onQueryChange(state.query.withSort(it)) },
-                onToggleFilterPanel = { isFilterPanelOpen = !isFilterPanelOpen },
-                modifier = Modifier.padding(top = 10.dp),
-            )
-        }
-
-        item(key = "browse-filters", contentType = "filters") {
-            BrowseFilterPanel(
-                isOpen = isFilterPanelOpen,
-                query = state.query,
-                metadata = state.metadata,
-                onToggleGameVersion = { onQueryChange(state.query.togglingGameVersion(it)) },
-                onToggleLoader = { onQueryChange(state.query.togglingLoader(it)) },
-                onReset = { onQueryChange(state.query.cleared()) },
-                modifier = Modifier.padding(top = 10.dp),
+                onOpenFilters = { isFilterSheetOpen = true },
+                modifier = Modifier.padding(top = 4.dp),
             )
         }
 
@@ -195,6 +177,17 @@ fun BrowseScreen(
                 }
             }
         }
+    }
+
+    if (isFilterSheetOpen) {
+        BrowseFilterSheet(
+            query = state.query,
+            metadata = state.metadata,
+            onToggleGameVersion = { onQueryChange(state.query.togglingGameVersion(it)) },
+            onToggleLoader = { onQueryChange(state.query.togglingLoader(it)) },
+            onReset = { onQueryChange(state.query.withoutVersionAndLoaderFilters()) },
+            onDismiss = { isFilterSheetOpen = false },
+        )
     }
 }
 

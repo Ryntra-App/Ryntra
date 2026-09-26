@@ -35,8 +35,13 @@ private data class GameVersionTagDto(
 private data class LoaderTagDto(
     val name: String,
     @SerialName("supported_project_types") val supportedProjectTypes: List<String> = emptyList(),
+    val icon: String? = null,
 ) {
-    fun toModel(): ModLoader = ModLoader(name = name, supportedProjectTypes = supportedProjectTypes)
+    fun toModel(): ModLoader = ModLoader(
+        name = name,
+        supportedProjectTypes = supportedProjectTypes,
+        iconSvg = icon?.takeIf { it.trimStart().startsWith("<svg") },
+    )
 }
 
 @Serializable

@@ -463,6 +463,10 @@
     <string name="markdown_preview_empty">Здесь пока нечего показывать</string>
     <string name="common_retry">Повторить</string>
     <string name="common_clear_search">Очистить поиск</string>
+    <string name="filters_reset">Сбросить</string>
+    <string name="filters_done">Готово</string>
+    <string name="filters_show_all">Показать все (%1$d)</string>
+    <string name="filters_show_less">Свернуть</string>
     <string name="support_title">Поддержать автора</string>
     <string name="support_donation_alerts">DonationAlerts</string>
     <string name="support_donation_alerts_hint">Разовая поддержка разработки Ryntra</string>
@@ -875,7 +879,6 @@
     <string name="browse_filters">Фильтры</string>
     <string name="browse_filters_active">Фильтры · %1$d</string>
     <string name="browse_filters_loading">Загружаем варианты фильтров…</string>
-    <string name="browse_filters_reset">Сбросить фильтры</string>
     <string name="browse_filter_game_versions">Версия Minecraft</string>
     <string name="browse_filter_loaders">Загрузчик</string>
     <string name="browse_category_all">Все</string>

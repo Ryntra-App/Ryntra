@@ -1,20 +1,24 @@
 package com.ryntra.mobile.ui.dashboard.project.versions
 
+import com.ryntra.mobile.ui.components.RyntraMenuChip
+import com.ryntra.mobile.ui.components.RyntraFilterSheet
+import com.ryntra.mobile.ui.components.RyntraFilterSection
+import com.ryntra.mobile.ui.components.RyntraFilterChips
+import com.composables.icons.lucide.Gamepad2
+import com.composables.icons.lucide.Wrench
+import com.composables.icons.lucide.Tag
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -27,7 +31,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.composables.icons.lucide.ChevronDown
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Search
 import com.composables.icons.lucide.Star
@@ -75,6 +78,7 @@ internal fun VersionFilterBar(
             if (facets.channels.isNotEmpty()) {
                 FacetChip(
                     label = stringResource(R.string.version_filter_channel),
+                    icon = Lucide.Tag,
                     selectedCount = filter.channels.size,
                     onClick = { openSheet = VersionFacetSheet.Channel },
                 )
@@ -82,6 +86,7 @@ internal fun VersionFilterBar(
             if (facets.loaders.isNotEmpty()) {
                 FacetChip(
                     label = stringResource(R.string.version_filter_loader),
+                    icon = Lucide.Wrench,
                     selectedCount = filter.loaders.size,
                     onClick = { openSheet = VersionFacetSheet.Loader },
                 )
@@ -89,6 +94,7 @@ internal fun VersionFilterBar(
             if (facets.gameVersions.isNotEmpty()) {
                 FacetChip(
                     label = stringResource(R.string.version_filter_game_version),
+                    icon = Lucide.Gamepad2,
                     selectedCount = filter.gameVersions.size,
                     onClick = { openSheet = VersionFacetSheet.GameVersion },
                 )
@@ -119,84 +125,69 @@ internal fun VersionFilterBar(
     }
 
     openSheet?.let { sheet ->
-        val (titleRes, values, selected, onToggle) = when (sheet) {
+        val model = when (sheet) {
             VersionFacetSheet.Channel -> FacetSheetModel(
-                R.string.version_filter_channel,
-                facets.channels,
-                filter.channels,
-            ) { onFilterChange(filter.toggleChannel(it)) }
+                titleRes = R.string.version_filter_channel,
+                icon = Lucide.Tag,
+                values = facets.channels,
+                selected = filter.channels,
+                onToggle = { onFilterChange(filter.toggleChannel(it)) },
+                onClear = { onFilterChange(filter.copy(channels = emptySet())) },
+            )
             VersionFacetSheet.Loader -> FacetSheetModel(
-                R.string.version_filter_loader,
-                facets.loaders,
-                filter.loaders,
-            ) { onFilterChange(filter.toggleLoader(it)) }
+                titleRes = R.string.version_filter_loader,
+                icon = Lucide.Wrench,
+                values = facets.loaders,
+                selected = filter.loaders,
+                onToggle = { onFilterChange(filter.toggleLoader(it)) },
+                onClear = { onFilterChange(filter.copy(loaders = emptySet())) },
+            )
             VersionFacetSheet.GameVersion -> FacetSheetModel(
-                R.string.version_filter_game_version,
-                facets.gameVersions,
-                filter.gameVersions,
-            ) { onFilterChange(filter.toggleGameVersion(it)) }
+                titleRes = R.string.version_filter_game_version,
+                icon = Lucide.Gamepad2,
+                values = facets.gameVersions,
+                selected = filter.gameVersions,
+                onToggle = { onFilterChange(filter.toggleGameVersion(it)) },
+                onClear = { onFilterChange(filter.copy(gameVersions = emptySet())) },
+            )
         }
-        FacetSheet(
-            title = stringResource(titleRes),
-            values = values,
-            selected = selected,
-            onToggle = onToggle,
+        val title = stringResource(model.titleRes)
+        RyntraFilterSheet(
+            title = title,
+            canReset = model.selected.isNotEmpty(),
+            onReset = model.onClear,
             onDismiss = { openSheet = null },
-        )
+        ) {
+            RyntraFilterSection(title, model.icon) {
+                RyntraFilterChips(
+                    values = model.values,
+                    isSelected = { it in model.selected },
+                    onToggle = model.onToggle,
+                    foldedCount = FOLDED_FACET_VALUES,
+                )
+            }
+        }
     }
 }
 
 private data class FacetSheetModel(
     val titleRes: Int,
+    val icon: ImageVector,
     val values: List<String>,
     val selected: Set<String>,
     val onToggle: (String) -> Unit,
+    val onClear: () -> Unit,
 )
 
-@Composable
-private fun FacetChip(label: String, selectedCount: Int, onClick: () -> Unit) {
-    FilterChip(
-        selected = selectedCount > 0,
-        onClick = onClick,
-        label = { Text(if (selectedCount > 0) "$label · $selectedCount" else label) },
-        trailingIcon = { Icon(Lucide.ChevronDown, contentDescription = null, modifier = Modifier.size(18.dp)) },
-    )
-}
+/** Game versions run to dozens on a mature project; the newest dozen covers most filtering. */
+private const val FOLDED_FACET_VALUES = 12
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
-private fun FacetSheet(
-    title: String,
-    values: List<String>,
-    selected: Set<String>,
-    onToggle: (String) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
-        ) {
-            Text(text = title, style = MaterialTheme.typography.titleMedium)
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-            ) {
-                values.forEach { value ->
-                    FilterChip(
-                        selected = value in selected,
-                        onClick = { onToggle(value) },
-                        label = { Text(value) },
-                    )
-                }
-            }
-        }
-    }
+private fun FacetChip(label: String, icon: ImageVector, selectedCount: Int, onClick: () -> Unit) {
+    RyntraMenuChip(
+        label = if (selectedCount > 0) "$label · $selectedCount" else label,
+        icon = icon,
+        isActive = selectedCount > 0,
+        onClick = onClick,
+    )
 }
