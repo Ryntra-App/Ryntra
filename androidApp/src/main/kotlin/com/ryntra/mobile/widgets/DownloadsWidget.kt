@@ -1,12 +1,16 @@
 package com.ryntra.mobile.widgets
 
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.glance.action.actionStartActivity
+import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.LocalGlanceId
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
@@ -19,13 +23,9 @@ import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
-import androidx.glance.appwidget.action.ActionCallback
-import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
-import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.background
-import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -53,7 +53,8 @@ import kotlin.math.roundToInt
 
 /**
  * Downloads over the last 7, 30 or 90 days, picked on the widget itself. Each placed widget
- * keeps its own range, so two of them can show a week and a quarter side by side.
+ * keeps its own range in [WidgetRangeStore], so two of them can show a week and a quarter
+ * side by side.
  *
  * Small is the total and its trend; medium and large add the chart.
  */
@@ -66,12 +67,13 @@ class DownloadsWidget : GlanceAppWidget() {
         }
         provideContent {
             val snapshot = rememberWidgetSnapshot(context, initial)
+            val appWidgetId = GlanceAppWidgetManager(context).getAppWidgetId(LocalGlanceId.current)
+            val days = rememberRange(context, appWidgetId)
             GlanceTheme {
-                val days = currentState(RANGE_KEY)?.takeIf { it in RANGES } ?: DEFAULT_RANGE
                 val size = WidgetSize.current()
                 // Only the body opens the app, so the range buttons above it get their taps.
                 WidgetCard(context, destination = null) {
-                    Header(context, days, size)
+                    Header(context, appWidgetId, days, size)
                     Column(
                         modifier = GlanceModifier
                             .fillMaxSize()
@@ -94,7 +96,7 @@ class DownloadsWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun Header(context: Context, days: Int, size: WidgetSize) {
+    private fun Header(context: Context, appWidgetId: Int, days: Int, size: WidgetSize) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = GlanceModifier.fillMaxWidth()) {
             Box(modifier = GlanceModifier.defaultWeight()) {
                 WidgetHeader(context.getString(R.string.widget_downloads_title))
@@ -102,16 +104,18 @@ class DownloadsWidget : GlanceAppWidget() {
             if (size == WidgetSize.Small) {
                 // No room for three buttons: one shows the range and steps to the next.
                 val next = RANGES[(RANGES.indexOf(days) + 1) % RANGES.size]
-                RangeButton(context, days, isSelected = true, target = next)
+                RangeButton(context, appWidgetId, days, isSelected = true, target = next)
             } else {
-                RANGES.forEach { range -> RangeButton(context, range, isSelected = range == days, target = range) }
+                RANGES.forEach { range ->
+                    RangeButton(context, appWidgetId, range, isSelected = range == days, target = range)
+                }
             }
         }
     }
 
     /** 32dp tall, like a Material filter chip; anything smaller is hard to hit on a home screen. */
     @Composable
-    private fun RangeButton(context: Context, days: Int, isSelected: Boolean, target: Int) {
+    private fun RangeButton(context: Context, appWidgetId: Int, days: Int, isSelected: Boolean, target: Int) {
         val colors = GlanceTheme.colors
         Box(modifier = GlanceModifier.padding(start = 4.dp)) {
             Box(
@@ -120,7 +124,11 @@ class DownloadsWidget : GlanceAppWidget() {
                     .height(32.dp)
                     .cornerRadius(16.dp)
                     .background(if (isSelected) colors.primaryContainer else colors.surfaceVariant)
-                    .clickable(actionRunCallback<SelectRangeAction>(actionParametersOf(RANGE_PARAMETER to target)))
+                    .clickable(
+                        actionStartActivity<WidgetRangeActivity>(
+                            actionParametersOf(APP_WIDGET_ID_PARAMETER to appWidgetId, RANGE_PARAMETER to target),
+                        ),
+                    )
                     .padding(horizontal = 12.dp),
             ) {
                 Text(
@@ -133,6 +141,14 @@ class DownloadsWidget : GlanceAppWidget() {
                 )
             }
         }
+    }
+
+    @Composable
+    private fun rememberRange(context: Context, appWidgetId: Int): Int {
+        val store = remember { WidgetRangeStore(context) }
+        val ranges = remember(appWidgetId) { store.ranges(appWidgetId) }
+        val days by ranges.collectAsState(store.rangeFor(appWidgetId))
+        return days
     }
 
     @Composable
@@ -231,8 +247,8 @@ class DownloadsWidget : GlanceAppWidget() {
     internal companion object {
         val RANGES = listOf(7, 30, 90)
         const val DEFAULT_RANGE = 30
-        val RANGE_KEY: Preferences.Key<Int> = intPreferencesKey("range_days")
-        val RANGE_PARAMETER = ActionParameters.Key<Int>("range_days")
+        private val APP_WIDGET_ID_PARAMETER = ActionParameters.Key<Int>(WidgetRangeActivity.EXTRA_APP_WIDGET_ID)
+        private val RANGE_PARAMETER = ActionParameters.Key<Int>(WidgetRangeActivity.EXTRA_RANGE_DAYS)
 
         // Sizes, in dp, of what surrounds the chart in each layout.
         const val CARD_PADDING = 32f
@@ -243,17 +259,13 @@ class DownloadsWidget : GlanceAppWidget() {
     }
 }
 
-/** Stores the range picked on one widget and redraws only that widget. */
-class SelectRangeAction : ActionCallback {
-    override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
-        val days = parameters[DownloadsWidget.RANGE_PARAMETER] ?: return
-        updateAppWidgetState(context, glanceId) { state -> state[DownloadsWidget.RANGE_KEY] = days }
-        DownloadsWidget().update(context, glanceId)
-    }
-}
-
 class DownloadsWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = DownloadsWidget()
+
+    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
+        super.onDeleted(context, appWidgetIds)
+        WidgetRangeStore(context).remove(appWidgetIds)
+    }
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)

@@ -74,6 +74,14 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/stats_widget_info" />
         </receiver>
+        <!-- Range buttons on the downloads widget; invisible and gone the moment it stores the pick. -->
+        <activity
+            android:name=".widgets.WidgetRangeActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <receiver
             android:name=".widgets.DownloadsWidgetReceiver"
             android:exported="true"
