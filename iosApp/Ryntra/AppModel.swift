@@ -196,8 +196,19 @@ final class AppModel: ObservableObject {
         await instantNotificationCoordinator.updatePushToken(token)
     }
 
+    /// The account the app is showing, including while it reloads or after a failed refresh
+    private var currentDashboard: Dashboard? {
+        switch state {
+        case .ready(let dashboard): return dashboard
+        case .loading(let dashboard), .failed(_, let dashboard): return dashboard
+        case .signedOut: return nil
+        }
+    }
+
     func refreshNotifications() async {
-        guard case .ready = state else { return }
+        // A dashboard refresh in flight still has the account; skipping here left the
+        // notifications screen empty whenever it was opened during one
+        guard currentDashboard != nil else { return }
         guard !isNotificationsLoading else { return }
         isNotificationsLoading = true
         notificationsError = nil

@@ -703,7 +703,6 @@
 "Refresh" = "Обновить";
 "Relevance" = "Релевантность";
 "Remove from history" = "Убрать из истории";
-"Reset filters" = "Сбросить фильтры";
 "Resource packs" = "Ресурспаки";
 "Search Modrinth" = "Поиск по Modrinth";
 "Shaders" = "Шейдеры";
@@ -793,3 +792,9 @@
 "Modrinth lets only its website create, rename or revoke affiliate links, so links are shown by their code here." = "Создавать, переименовывать и отзывать партнёрские ссылки Modrinth разрешает только на сайте, поэтому здесь ссылки показаны по коду.";
 "No affiliate links yet. Create one on Modrinth to start tracking it here." = "Партнёрских ссылок пока нет. Создайте ссылку на Modrinth, и её статистика появится здесь.";
 "Affiliate statistics could not be loaded." = "Не удалось загрузить статистику партнёрских ссылок.";
+
+/* Browse filters */
+"Sort" = "Сортировка";
+"Reset" = "Сбросить";
+"Show fewer" = "Свернуть";
+"Show all (%d)" = "Показать все (%d)";

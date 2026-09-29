@@ -20,7 +20,7 @@ struct BrowseView: View {
     @State private var highlights = BrowseHighlights(popular: [], recentlyUpdated: [])
     @State private var isLoadingHighlights = false
     @State private var metadata = BrowseMetadata(gameVersions: [], loaders: [])
-    @State private var isFilterPanelOpen = false
+    @State private var isFilterSheetPresented = false
     @State private var searchTask: Task<Void, Never>?
 
     /// With nothing typed and nothing filtered there is no result set, so the strips take over.
@@ -29,18 +29,12 @@ struct BrowseView: View {
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 12) {
+#if os(macOS)
+                // The Mac toolbar belongs to the window, so the field stays in the content
                 searchField
+#endif
                 categoryRow
                 toolRow
-                if isFilterPanelOpen {
-                    BrowseFilterPanel(
-                        query: query,
-                        metadata: metadata,
-                        onToggleGameVersion: { apply(query.togglingGameVersion(version: $0)) },
-                        onToggleLoader: { apply(query.togglingLoader(loader: $0)) },
-                        onReset: { apply(query.cleared()) }
-                    )
-                }
 
                 if let errorMessage {
                     Text(errorMessage)
@@ -62,10 +56,27 @@ struct BrowseView: View {
         }
         .ryntraInteractiveKeyboardDismissal()
         .ryntraScreenBackdrop()
+#if !os(macOS)
+        .searchable(
+            text: Binding(get: { query.text }, set: { setText($0) }),
+            prompt: NSLocalizedString("Search Modrinth", comment: "Browse placeholder")
+        )
+        .onSubmit(of: .search) { submit() }
+#endif
+        .sheet(isPresented: $isFilterSheetPresented) {
+            BrowseFilterSheet(
+                query: query,
+                metadata: metadata,
+                onToggleGameVersion: { apply(query.togglingGameVersion(version: $0)) },
+                onToggleLoader: { apply(query.togglingLoader(loader: $0)) },
+                onReset: { apply(query.withoutVersionAndLoaderFilters()) }
+            )
+        }
         .task { await loadSupportingData() }
         .onDisappear { searchTask?.cancel() }
     }
 
+#if os(macOS)
     private var searchField: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
@@ -95,13 +106,15 @@ struct BrowseView: View {
             RoundedRectangle(cornerRadius: 10).stroke(Color.ryntraSeparator, lineWidth: 0.5)
         }
     }
+#endif
 
     private var categoryRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(BrowseCatalogue.categories, id: \.apiValue) { category in
-                    BrowseChip(
+                    BrowseCategoryButton(
                         title: BrowseCatalogue.label(for: category),
+                        systemImage: BrowseCatalogue.symbol(for: category),
                         isSelected: category == query.category
                     ) {
                         apply(query.withCategory(category: category))
@@ -112,11 +125,25 @@ struct BrowseView: View {
         }
     }
 
+    /// Sort as a menu of choices, so the current one carries the system checkmark, and the
+    /// filters in a sheet, the way Apple's own apps keep a result list uncluttered
     private var toolRow: some View {
         HStack(spacing: 8) {
             Menu {
-                ForEach(BrowseCatalogue.sorts, id: \.apiValue) { sort in
-                    Button(BrowseCatalogue.label(for: sort)) { apply(query.withSort(sort: sort)) }
+                Picker(
+                    NSLocalizedString("Sort", comment: "Browse sort menu"),
+                    selection: Binding(
+                        get: { query.effectiveSort.apiValue },
+                        set: { value in
+                            guard let sort = BrowseCatalogue.sorts.first(where: { $0.apiValue == value }) else { return }
+                            apply(query.withSort(sort: sort))
+                        }
+                    )
+                ) {
+                    ForEach(BrowseCatalogue.sorts, id: \.apiValue) { sort in
+                        Label(BrowseCatalogue.label(for: sort), systemImage: BrowseCatalogue.symbol(for: sort))
+                            .tag(sort.apiValue)
+                    }
                 }
             } label: {
                 Label(BrowseCatalogue.label(for: query.effectiveSort), systemImage: "arrow.up.arrow.down")
@@ -127,22 +154,26 @@ struct BrowseView: View {
 
             Spacer(minLength: 8)
 
+            let activeFilterCount = query.gameVersions.count + query.loaders.count
             Button {
-                isFilterPanelOpen.toggle()
+                isFilterSheetPresented = true
             } label: {
-                let count = query.gameVersions.count + query.loaders.count
                 Label(
-                    count > 0
+                    activeFilterCount > 0
                         ? String.localizedStringWithFormat(
                             NSLocalizedString("Filters · %d", comment: "Browse filters with count"),
-                            count
+                            activeFilterCount
                         )
                         : NSLocalizedString("Filters", comment: "Browse filters"),
-                    systemImage: "slider.horizontal.3"
+                    systemImage: activeFilterCount > 0
+                        ? "line.3.horizontal.decrease.circle.fill"
+                        : "line.3.horizontal.decrease.circle"
                 )
                 .font(.subheadline)
             }
             .buttonStyle(.bordered)
+            .buttonBorderShape(.capsule)
+            .tint(activeFilterCount > 0 ? Color.accentColor : Color.secondary)
         }
     }
 
@@ -425,93 +456,137 @@ private struct BrowseStrip: View {
     }
 }
 
-private struct BrowseFilterPanel: View {
+/// Loaders and Minecraft versions as a grouped form of checkmark rows, the system pattern for
+/// picking several values. Changes apply as they are made; Done only closes the sheet
+private struct BrowseFilterSheet: View {
+    @Environment(\.dismiss) private var dismiss
     let query: ProjectSearchQuery
     let metadata: BrowseMetadata
     let onToggleGameVersion: (String) -> Void
     let onToggleLoader: (String) -> Void
     let onReset: () -> Void
 
+    /// Twelve releases cover the last few years; older ones are one tap further
+    private static let foldedVersionCount = 12
+    @State private var showsAllVersions = false
+
     var body: some View {
         let versions = metadata.defaultReleaseVersions
         let loaders = metadata.loadersFor(category: query.category)
-
-        VStack(alignment: .leading, spacing: 14) {
-            if versions.isEmpty && loaders.isEmpty {
-                HStack(spacing: 10) {
-                    ProgressView().controlSize(.small)
-                    Text(NSLocalizedString("Loading filter options…", comment: "Browse filters"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            } else {
-                if !versions.isEmpty {
-                    filterGroup(
-                        title: NSLocalizedString("Minecraft version", comment: "Browse filter"),
-                        values: versions,
-                        selected: query.gameVersions,
-                        onToggle: onToggleGameVersion
-                    )
-                }
-                if !loaders.isEmpty {
-                    filterGroup(
-                        title: NSLocalizedString("Loader", comment: "Browse filter"),
-                        values: loaders,
-                        selected: query.loaders,
-                        onToggle: onToggleLoader
-                    )
-                }
-                if query.hasFilters {
-                    Button(NSLocalizedString("Reset filters", comment: "Browse action"), action: onReset)
-                        .buttonStyle(.bordered)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 14))
-    }
-
-    private func filterGroup(
-        title: String,
-        values: [String],
-        selected: [String],
-        onToggle: @escaping (String) -> Void
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(.caption.weight(.medium)).foregroundStyle(.secondary)
-            // A wrapping chip grid has no SwiftUI primitive before iOS 16 layouts; a horizontal
-            // scroller keeps every option reachable without one.
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(values, id: \.self) { value in
-                        BrowseChip(title: value, isSelected: selected.contains(value)) { onToggle(value) }
+        NavigationStack {
+            Form {
+                if versions.isEmpty && loaders.isEmpty {
+                    HStack(spacing: 10) {
+                        ProgressView()
+                        Text(NSLocalizedString("Loading filter options…", comment: "Browse filters"))
+                            .foregroundStyle(.secondary)
                     }
                 }
-                .padding(.vertical, 2)
+                if !loaders.isEmpty {
+                    Section {
+                        ForEach(loaders, id: \.self) { loader in
+                            checkRow(
+                                title: loader.capitalized,
+                                isSelected: query.loaders.contains(loader)
+                            ) { onToggleLoader(loader) }
+                        }
+                    } header: {
+                        Label(NSLocalizedString("Loader", comment: "Browse filter"), systemImage: "wrench.and.screwdriver")
+                    }
+                }
+                if !versions.isEmpty {
+                    Section {
+                        ForEach(visibleVersions(versions), id: \.self) { version in
+                            checkRow(
+                                title: version,
+                                isSelected: query.gameVersions.contains(version)
+                            ) { onToggleGameVersion(version) }
+                        }
+                        if versions.count > Self.foldedVersionCount {
+                            Button(
+                                showsAllVersions
+                                    ? NSLocalizedString("Show fewer", comment: "Browse filters")
+                                    : String.localizedStringWithFormat(
+                                        NSLocalizedString("Show all (%d)", comment: "Browse filters"),
+                                        versions.count
+                                    )
+                            ) {
+                                withAnimation { showsAllVersions.toggle() }
+                            }
+                        }
+                    } header: {
+                        Label(NSLocalizedString("Minecraft version", comment: "Browse filter"), systemImage: "gamecontroller")
+                    }
+                }
+            }
+            .formStyle(.grouped)
+            .navigationTitle(NSLocalizedString("Filters", comment: "Browse filters"))
+            .ryntraInlineNavigationTitle()
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(NSLocalizedString("Reset", comment: "Browse filters"), action: onReset)
+                        .disabled(query.gameVersions.isEmpty && query.loaders.isEmpty)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(NSLocalizedString("Done", comment: "Sheet action")) { dismiss() }
+                }
             }
         }
+#if os(macOS)
+        // A Mac sheet sizes itself to its content, and a Form has no intrinsic height
+        .frame(minWidth: 420, minHeight: 520)
+#else
+        .presentationDetents([.medium, .large])
+#endif
+    }
+
+    /// A selection past the fold is never hidden
+    private func visibleVersions(_ versions: [String]) -> [String] {
+        guard !showsAllVersions, versions.count > Self.foldedVersionCount else { return versions }
+        let folded = Array(versions.prefix(Self.foldedVersionCount))
+        let selectedBeyond = versions.dropFirst(Self.foldedVersionCount).filter { query.gameVersions.contains($0) }
+        return folded + selectedBeyond
+    }
+
+    private func checkRow(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack {
+                Text(title).foregroundStyle(.primary)
+                Spacer()
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.tint)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
-private struct BrowseChip: View {
+/// A content type as a capsule button with the symbol the site uses for it
+private struct BrowseCategoryButton: View {
     let title: String
+    let systemImage: String
     let isSelected: Bool
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.caption.weight(isSelected ? .semibold : .regular))
-                .foregroundStyle(isSelected ? Color.ryntraOnAccent : Color.primary)
-                .padding(.horizontal, 12)
-                .frame(minHeight: 32)
-                .background(
-                    isSelected ? Color.ryntraGreen : Color.ryntraSurfaceRaised,
-                    in: Capsule()
-                )
+        if isSelected {
+            button.buttonStyle(.borderedProminent)
+        } else {
+            button.buttonStyle(.bordered).tint(.secondary)
         }
-        .buttonStyle(.plain)
+    }
+
+    private var button: some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage).font(.subheadline)
+        }
+        .buttonBorderShape(.capsule)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -532,6 +607,31 @@ enum BrowseCatalogue {
         case "resourcepack": return NSLocalizedString("Resource packs", comment: "Browse category")
         case "modpack": return NSLocalizedString("Modpacks", comment: "Browse category")
         default: return category.apiValue ?? ""
+        }
+    }
+
+    /// SF Symbols closest to the icons modrinth.com gives each content type
+    static func symbol(for category: BrowseCategory) -> String {
+        switch category.apiValue {
+        case nil: return "square.grid.2x2"
+        case "mod": return "cube"
+        case "plugin": return "powerplug"
+        case "datapack": return "curlybraces"
+        case "shader": return "eyeglasses"
+        case "resourcepack": return "paintbrush"
+        case "modpack": return "shippingbox"
+        default: return "square.grid.2x2"
+        }
+    }
+
+    static func symbol(for sort: ProjectSearchSort) -> String {
+        switch sort.apiValue {
+        case "relevance": return "sparkles"
+        case "downloads": return "arrow.down.circle"
+        case "follows": return "heart"
+        case "updated": return "arrow.clockwise"
+        case "newest": return "calendar.badge.plus"
+        default: return "arrow.up.arrow.down"
         }
     }
 

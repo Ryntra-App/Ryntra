@@ -703,7 +703,6 @@
 "Refresh" = "Refresh";
 "Relevance" = "Relevance";
 "Remove from history" = "Remove from history";
-"Reset filters" = "Reset filters";
 "Resource packs" = "Resource packs";
 "Search Modrinth" = "Search Modrinth";
 "Shaders" = "Shaders";
@@ -793,3 +792,9 @@
 "Modrinth lets only its website create, rename or revoke affiliate links, so links are shown by their code here." = "Modrinth lets only its website create, rename or revoke affiliate links, so links are shown by their code here.";
 "No affiliate links yet. Create one on Modrinth to start tracking it here." = "No affiliate links yet. Create one on Modrinth to start tracking it here.";
 "Affiliate statistics could not be loaded." = "Affiliate statistics could not be loaded.";
+
+/* Browse filters */
+"Sort" = "Sort";
+"Reset" = "Reset";
+"Show fewer" = "Show fewer";
+"Show all (%d)" = "Show all (%d)";
