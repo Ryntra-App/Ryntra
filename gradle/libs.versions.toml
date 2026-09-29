@@ -16,7 +16,7 @@ workManager = "2.11.2"
 glance = "1.2.0"
 haze = "1.7.3"
 composeIcons = "2.2.1"
-jetbrainsMarkdown = "0.7.14"
+jetbrainsMarkdown = "0.7.16"
 firebaseBom = "34.19.0"
 
 [libraries]
