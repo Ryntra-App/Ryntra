@@ -32,19 +32,17 @@ struct OrganizationsView: View {
 
     private var organizationList: some View {
         List {
-#if os(macOS)
-            // A `searchable` field lands in the window titlebar on macOS, so it
-            // would appear and disappear as this tab comes and goes, shoving
-            // the rest of the toolbar around. Keeping it in the content mirrors
-            // how Projects searches and leaves the titlebar identical on every
-            // tab.
-            Section {
-                searchField
+            if !RyntraSearchPlacement.usesSystemSearchBar(themeStyle: storedThemeStyle) {
+                Section {
+                    RyntraSearchField(
+                        text: $query,
+                        prompt: NSLocalizedString("Search teams", comment: "Teams search")
+                    )
                     .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 0, trailing: 16))
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
+                }
             }
-#endif
 
             Section {
                 teamsSummary
@@ -133,40 +131,14 @@ struct OrganizationsView: View {
         }
         .listStyle(.plain)
         .ryntraScreenBackdrop()
-#if !os(macOS)
-        .searchable(
+        .ryntraSystemSearch(
             text: $query,
-            prompt: NSLocalizedString("Search teams", comment: "Teams search")
+            prompt: NSLocalizedString("Search teams", comment: "Teams search"),
+            isEnabled: RyntraSearchPlacement.usesSystemSearchBar(themeStyle: storedThemeStyle)
         )
-#endif
         .refreshable { model.refresh() }
     }
 
-#if os(macOS)
-    private var searchField: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(.secondary)
-            TextField(NSLocalizedString("Search teams", comment: "Teams search"), text: $query)
-                .textFieldStyle(.plain)
-                .ryntraNoAutocapitalization()
-                .autocorrectionDisabled()
-            if !query.isEmpty {
-                Button {
-                    query = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(NSLocalizedString("Clear search", comment: "Search action"))
-            }
-        }
-        .padding(.horizontal, 14)
-        .frame(minHeight: 40)
-        .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-    }
-#endif
 
     private var teamsSummary: some View {
         HStack(spacing: 0) {

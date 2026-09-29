@@ -7,6 +7,7 @@ import SwiftUI
 /// creator's own workspace, and browsing other people's projects is a different errand.
 struct BrowseView: View {
     @EnvironmentObject private var model: AppModel
+    @AppStorage("themeStyle") private var storedThemeStyle = RyntraThemeStyle.platform.rawValue
 
     let onOpenHit: (ProjectSearchHit) -> Void
 
@@ -26,13 +27,20 @@ struct BrowseView: View {
     /// With nothing typed and nothing filtered there is no result set, so the strips take over.
     private var isShowingHighlights: Bool { !query.hasText && !query.hasFilters }
 
+    private var usesSystemSearch: Bool {
+        RyntraSearchPlacement.usesSystemSearchBar(themeStyle: storedThemeStyle)
+    }
+
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 12) {
-#if os(macOS)
-                // The Mac toolbar belongs to the window, so the field stays in the content
-                searchField
-#endif
+                if !usesSystemSearch {
+                    RyntraSearchField(
+                        text: Binding(get: { query.text }, set: { setText($0) }),
+                        prompt: NSLocalizedString("Search Modrinth", comment: "Browse placeholder"),
+                        onSubmit: { submit() }
+                    )
+                }
                 categoryRow
                 toolRow
 
@@ -56,13 +64,12 @@ struct BrowseView: View {
         }
         .ryntraInteractiveKeyboardDismissal()
         .ryntraScreenBackdrop()
-#if !os(macOS)
-        .searchable(
+        .ryntraSystemSearch(
             text: Binding(get: { query.text }, set: { setText($0) }),
-            prompt: NSLocalizedString("Search Modrinth", comment: "Browse placeholder")
+            prompt: NSLocalizedString("Search Modrinth", comment: "Browse placeholder"),
+            isEnabled: usesSystemSearch,
+            onSubmit: { submit() }
         )
-        .onSubmit(of: .search) { submit() }
-#endif
         .sheet(isPresented: $isFilterSheetPresented) {
             BrowseFilterSheet(
                 query: query,
@@ -75,38 +82,6 @@ struct BrowseView: View {
         .task { await loadSupportingData() }
         .onDisappear { searchTask?.cancel() }
     }
-
-#if os(macOS)
-    private var searchField: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-            TextField(
-                NSLocalizedString("Search Modrinth", comment: "Browse placeholder"),
-                text: Binding(get: { query.text }, set: { setText($0) })
-            )
-            .textFieldStyle(.plain)
-            .ryntraNoAutocapitalization()
-            .autocorrectionDisabled()
-            .submitLabel(.search)
-            .onSubmit { submit() }
-            if !query.text.isEmpty {
-                Button {
-                    setText("")
-                } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(NSLocalizedString("Clear search", comment: "Browse action"))
-            }
-        }
-        .padding(.horizontal, 12)
-        .frame(minHeight: 44)
-        .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 10))
-        .overlay {
-            RoundedRectangle(cornerRadius: 10).stroke(Color.ryntraSeparator, lineWidth: 0.5)
-        }
-    }
-#endif
 
     private var categoryRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -192,23 +167,32 @@ struct BrowseView: View {
             .padding(.top, 6)
 
             ForEach(model.recentSearches, id: \.self) { recent in
+                // Two sibling buttons rather than a tap gesture on the row, so VoiceOver and
+                // the keyboard reach both actions
                 HStack(spacing: 12) {
-                    Image(systemName: "clock").foregroundStyle(.secondary).font(.caption)
-                    Text(recent).font(.subheadline).lineLimit(1)
-                    Spacer(minLength: 8)
+                    Button {
+                        setText(recent)
+                        submit()
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "clock").foregroundStyle(.secondary).font(.caption)
+                            Text(recent).font(.subheadline).lineLimit(1)
+                            Spacer(minLength: 8)
+                        }
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                     Button {
                         model.forgetSearch(recent)
                     } label: {
-                        Image(systemName: "xmark").font(.caption).foregroundStyle(.secondary)
+                        Image(systemName: "xmark")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .ryntraMinimumTouchTarget()
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(NSLocalizedString("Remove from history", comment: "Browse action"))
-                }
-                .frame(minHeight: 36)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    setText(recent)
-                    submit()
                 }
             }
         }

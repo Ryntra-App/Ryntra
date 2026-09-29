@@ -342,3 +342,73 @@ private struct RyntraChromeModifier: ViewModifier {
         }
     }
 }
+
+/// Where a screen's search field lives.
+///
+/// The system search bar belongs to the navigation bar, so it only exists on iOS in the
+/// platform theme. The Ryntra theme hides the navigation bar for its own top bar, which
+/// took a `searchable` field down with it, and on macOS the field would land in the window
+/// titlebar and shift the rest of the toolbar as tabs change. Both keep the field in the
+/// content instead.
+enum RyntraSearchPlacement {
+    static func usesSystemSearchBar(themeStyle: String) -> Bool {
+#if os(macOS)
+        false
+#else
+        themeStyle == RyntraThemeStyle.platform.rawValue
+#endif
+    }
+}
+
+extension View {
+    /// The system search bar, when ``RyntraSearchPlacement`` says the screen has one
+    @ViewBuilder
+    func ryntraSystemSearch(
+        text: Binding<String>,
+        prompt: String,
+        isEnabled: Bool,
+        onSubmit: @escaping () -> Void = {}
+    ) -> some View {
+#if os(macOS)
+        self
+#else
+        if isEnabled {
+            searchable(text: text, prompt: prompt)
+                .onSubmit(of: .search, onSubmit)
+        } else {
+            self
+        }
+#endif
+    }
+}
+
+/// The in-content search field used where there is no system search bar
+struct RyntraSearchField: View {
+    @Binding var text: String
+    let prompt: String
+    var onSubmit: () -> Void = {}
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            TextField(prompt, text: $text)
+                .textFieldStyle(.plain)
+                .ryntraNoAutocapitalization()
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+                .onSubmit(onSubmit)
+            if !text.isEmpty {
+                Button {
+                    text = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(NSLocalizedString("Clear search", comment: "Search action"))
+            }
+        }
+        .padding(.horizontal, 12)
+        .frame(minHeight: 40)
+        .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+}

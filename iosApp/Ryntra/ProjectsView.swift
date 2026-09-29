@@ -49,10 +49,12 @@ struct ProjectsView: View {
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 16) {
-#if os(macOS)
-                // The Mac toolbar belongs to the window, so the field stays in the content
-                searchField
-#endif
+                if !RyntraSearchPlacement.usesSystemSearchBar(themeStyle: storedThemeStyle) {
+                    RyntraSearchField(
+                        text: $query,
+                        prompt: NSLocalizedString("Search projects", comment: "Project search")
+                    )
+                }
                 projectSummary
                 sortPicker
             if filteredProjects.isEmpty {
@@ -110,12 +112,11 @@ struct ProjectsView: View {
             .padding(.bottom, isPlatformNative ? 20 : 96)
         }
         .ryntraScreenBackdrop()
-#if !os(macOS)
-        .searchable(
+        .ryntraSystemSearch(
             text: $query,
-            prompt: NSLocalizedString("Search projects", comment: "Project search")
+            prompt: NSLocalizedString("Search projects", comment: "Project search"),
+            isEnabled: RyntraSearchPlacement.usesSystemSearchBar(themeStyle: storedThemeStyle)
         )
-#endif
         .refreshable { model.refresh() }
         .toolbar {
             ToolbarItem(placement: .ryntraTrailing) {
@@ -168,30 +169,6 @@ struct ProjectsView: View {
         }
     }
 
-#if os(macOS)
-    private var searchField: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(.secondary)
-            TextField(NSLocalizedString("Search projects", comment: "Project search"), text: $query)
-                .ryntraNoAutocapitalization()
-                .autocorrectionDisabled()
-            if !query.isEmpty {
-                Button {
-                    query = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(NSLocalizedString("Clear search", comment: "Search action"))
-            }
-        }
-        .padding(.horizontal, 14)
-        .frame(minHeight: 50)
-        .background(Color.ryntraSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-    }
-#endif
 
     private var sortPicker: some View {
         Picker("Sort projects", selection: $storedSortMode) {
