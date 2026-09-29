@@ -798,3 +798,13 @@
 "Reset" = "Reset";
 "Show fewer" = "Show fewer";
 "Show all (%d)" = "Show all (%d)";
+
+/* Settings, profile and sorting */
+"A-Z" = "A-Z";
+"Avatar actions" = "Avatar actions";
+"Choose photo" = "Choose photo";
+"Light" = "Light";
+"Dark" = "Dark";
+"OK" = "OK";
+"Show project banners" = "Show project banners";
+"No members yet. Invite collaborators to this organization." = "No members yet. Invite collaborators to this organization.";

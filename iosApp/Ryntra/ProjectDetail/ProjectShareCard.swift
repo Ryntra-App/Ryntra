@@ -187,7 +187,7 @@ struct ProjectShareCardCanvas: View {
                             Text("modrinth.com\(project.modrinthDisplayPath)")
                                 .lineLimit(1)
                             Spacer(minLength: 4)
-                            Text("RYNTRA").fontWeight(.bold)
+                            Text(verbatim: "RYNTRA").fontWeight(.bold)
                         }
                         .font(.system(size: max(8, min(size.width, size.height) * 0.024)))
                         .foregroundStyle(palette.secondary)

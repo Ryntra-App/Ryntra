@@ -798,3 +798,49 @@
 "Reset" = "Сбросить";
 "Show fewer" = "Свернуть";
 "Show all (%d)" = "Показать все (%d)";
+
+/* Settings, profile and sorting */
+"A-Z" = "А-Я";
+"Avatar actions" = "Действия с аватаром";
+"Choose photo" = "Выбрать фото";
+"Light" = "Светлая";
+"Dark" = "Тёмная";
+"OK" = "ОК";
+"Show project banners" = "Показывать баннеры проектов";
+"No members yet. Invite collaborators to this organization." = "Участников пока нет. Пригласите соавторов в эту организацию.";
+
+/* Analytics ranges */
+"7D" = "7 дн.";
+"30D" = "30 дн.";
+"90D" = "90 дн.";
+"180D" = "180 дн.";
+
+/* Onboarding and sign-in */
+"Your Modrinth workspace, native on mobile" = "Ваше рабочее пространство Modrinth — нативно на мобильных";
+"Connect to Modrinth" = "Подключиться к Modrinth";
+"Continue with Modrinth" = "Продолжить с Modrinth";
+"Stored securely in Keychain" = "Надёжно хранится в Связке ключей";
+"Could not refresh" = "Не удалось обновить";
+
+/* App updates */
+"Update available" = "Доступно обновление";
+"A new release is ready to download." = "Новая версия готова к загрузке.";
+"Later" = "Позже";
+"Download" = "Скачать";
+
+/* Profile and appearance */
+"Edit profile" = "Редактировать профиль";
+"Your username and bio are shown on your Modrinth profile." = "Имя пользователя и описание видны в вашем профиле Modrinth.";
+"Platform follows the native controls and appearance of this device. Ryntra preserves the dark glass interface." = "Platform повторяет нативные элементы управления и оформление устройства. Ryntra сохраняет тёмный стеклянный интерфейс.";
+
+/* Project editing */
+"Type" = "Тип";
+"Tell people about your work" = "Расскажите о своей работе";
+"Nothing to preview yet." = "Пока нечего показать в предпросмотре.";
+"No categories are available for this type." = "Для этого типа нет категорий.";
+"Optional. Help users find your source code, support, documentation, and community. Links must start with https:// or http://." = "Необязательно. Помогите людям найти исходный код, поддержку, документацию и сообщество. Ссылки должны начинаться с https:// или http://.";
+"The draft remains private until you add a version and submit it to Modrinth moderation." = "Черновик останется закрытым, пока вы не добавите версию и не отправите проект на модерацию Modrinth.";
+
+/* Member search */
+"Search" = "Найти";
+"Result" = "Результат";
