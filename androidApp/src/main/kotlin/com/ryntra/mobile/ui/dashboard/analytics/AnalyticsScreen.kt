@@ -116,16 +116,8 @@ fun AnalyticsScreen(
             bottom = RyntraDesign.bottomContentPadding,
         ),
     ) {
-        item(key = "analytics-range", contentType = "controls") {
-            AnalyticsRangeHeader(
-                selectedDays = state.rangeDays,
-                isLoading = state.isLoading,
-                isLive = report?.isCoreAvailable == true,
-                onSelect = onRangeChange,
-            )
-        }
         item(key = "analytics-wallet-title", contentType = "heading") {
-            RyntraSectionLabel(stringResource(R.string.analytics_wallet), modifier = Modifier.padding(top = 18.dp, bottom = 10.dp))
+            RyntraSectionLabel(stringResource(R.string.analytics_wallet), modifier = Modifier.padding(bottom = 10.dp))
         }
         item(key = "analytics-wallet", contentType = "wallet") {
             WalletSummaryCard(
@@ -137,15 +129,23 @@ fun AnalyticsScreen(
                 onOpenUrl = uriHandler::openUri,
             )
         }
-        item(key = "analytics-period-title", contentType = "heading") {
-            RyntraSectionLabel(
-                text = stringResource(R.string.analytics_last_days, state.rangeDays),
-                modifier = Modifier.padding(top = 24.dp, bottom = 10.dp),
-            )
+        // The range only scopes what follows; the wallet above is all-time.
+        item(key = "analytics-range", contentType = "controls") {
+            Box(modifier = Modifier.padding(top = 28.dp)) {
+                AnalyticsRangeHeader(
+                    selectedDays = state.rangeDays,
+                    isLoading = state.isLoading,
+                    isLive = report?.isCoreAvailable == true,
+                    onSelect = onRangeChange,
+                )
+            }
+        }
+        item(key = "analytics-period-filters", contentType = "controls") {
             AnalyticsProjectPicker(
                 projects = projects,
                 selectedProjectId = selectedProjectId,
                 onSelect = { selectedProjectId = it },
+                modifier = Modifier.padding(top = 14.dp),
             )
             Spacer(modifier = Modifier.height(14.dp))
             if (report != null && !report.isCoreAvailable) {

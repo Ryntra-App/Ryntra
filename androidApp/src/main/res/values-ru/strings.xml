@@ -24,7 +24,6 @@
     <string name="analytics_project">Проект</string>
     <string name="analytics_all_projects">Все проекты</string>
     <string name="analytics_days_short">%1$d дн.</string>
-    <string name="analytics_last_days">Последние %1$d дней</string>
     <string name="analytics_wallet">Кошелёк</string>
     <string name="analytics_downloads">Скачивания</string>
     <string name="analytics_views">Просмотры</string>

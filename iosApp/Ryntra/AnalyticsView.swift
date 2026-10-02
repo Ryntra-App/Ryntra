@@ -88,6 +88,7 @@ struct AnalyticsView: View {
 
     let dashboard: Dashboard
     let isActive: Bool
+    let onOpenWallet: () -> Void
     @State private var rangeDays = 30
     @State private var selectedMetric = AnalyticsMetric.downloads
     @State private var selectedProjectID: String?
@@ -113,18 +114,19 @@ struct AnalyticsView: View {
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                performanceHeader
-                sectionTitle("Wallet")
+                RyntraSectionLabel(text: "Wallet").padding(.bottom, 8)
                 AnalyticsWalletView(
                     report: model.walletReport,
                     isLoading: model.isWalletLoading && model.walletReport == nil,
                     errorMessage: model.walletError,
-                    isPlatformNative: isPlatformNative
+                    isPlatformNative: isPlatformNative,
+                    onOpenWallet: onOpenWallet
                 )
 
-                projectPicker.padding(.top, 12)
+                // The range only scopes what follows; the wallet above is all-time.
+                performanceHeader.padding(.top, 28)
+                projectPicker.padding(.vertical, 12)
 
-                sectionTitle("Last \(rangeDays) days")
                 if let error = model.analyticsError {
                     notice(error)
                 } else if let report, !report.isCoreAvailable {

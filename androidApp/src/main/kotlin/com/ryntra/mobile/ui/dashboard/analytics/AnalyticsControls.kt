@@ -101,10 +101,11 @@ internal fun AnalyticsProjectPicker(
     projects: List<Project>,
     selectedProjectId: String?,
     onSelect: (String?) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val selectedProject = projects.firstOrNull { it.id == selectedProjectId }
-    Box {
+    Box(modifier = modifier) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier

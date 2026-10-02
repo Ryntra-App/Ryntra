@@ -8,20 +8,60 @@ private let modrinthRevenueURL = URL(string: "https://modrinth.com/dashboard/rev
 private let modrinthRevenueInfoURL = URL(string: "https://modrinth.com/legal/cmp-info#pending")!
 private let modrinthSupportURL = URL(string: "https://support.modrinth.com")!
 
+/// The wallet screen pushed from Analytics
+struct WalletScreen: View {
+    @EnvironmentObject private var model: AppModel
+    @AppStorage("themeStyle") private var storedThemeStyle = RyntraThemeStyle.platform.rawValue
+
+    private var isPlatformNative: Bool {
+        storedThemeStyle == RyntraThemeStyle.platform.rawValue
+    }
+
+    var body: some View {
+        ScrollView {
+            AnalyticsWalletView(
+                report: model.walletReport,
+                isLoading: model.isWalletLoading && model.walletReport == nil,
+                errorMessage: model.walletError,
+                isPlatformNative: isPlatformNative
+            )
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, isPlatformNative ? 20 : 96)
+        }
+        .ryntraScreenBackdrop()
+        .refreshable { await model.refreshWallet() }
+    }
+}
+
 /// The creator wallet, laid out like modrinth.com/dashboard/revenue: the balance split by
 /// payout date, tax status, withdrawal and the latest transactions. Withdrawing stays on the
-/// site because it runs through Modrinth's tax form and payout-method checks
+/// site because it runs through Modrinth's tax form and payout-method checks.
+///
+/// Given `onOpenWallet`, it shrinks to the balance card Analytics shows above its charts
 struct AnalyticsWalletView: View {
     @EnvironmentObject private var model: AppModel
     let report: WalletReport?
     let isLoading: Bool
     let errorMessage: String?
     let isPlatformNative: Bool
+    var onOpenWallet: (() -> Void)?
     @State private var isHistoryPresented = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if let report, report.isBalanceAvailable {
+            if let report, report.isBalanceAvailable, let onOpenWallet {
+                WalletComplianceNotices(report: report)
+                WalletCard(isPlatformNative: isPlatformNative) {
+                    WalletBalanceBreakdown(report: report, showsDetails: false)
+                    Button(action: onOpenWallet) {
+                        Label(NSLocalizedString("Open wallet", comment: "Wallet action"), systemImage: "chevron.right")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .padding(.top, 8)
+                }
+            } else if let report, report.isBalanceAvailable {
                 WalletComplianceNotices(report: report)
                 WalletCard(isPlatformNative: isPlatformNative) {
                     WalletBalanceBreakdown(report: report)
@@ -59,7 +99,10 @@ struct AnalyticsWalletView: View {
                 }
             }
         }
-        .task { await model.loadAffiliateReport() }
+        .task {
+            guard onOpenWallet == nil else { return }
+            await model.loadAffiliateReport()
+        }
         .sheet(isPresented: $isHistoryPresented) {
             if let report {
                 WalletHistoryView(report: report)
@@ -212,6 +255,7 @@ private func balanceSlices(_ report: WalletReport) -> [BalanceSlice] {
 
 private struct WalletBalanceBreakdown: View {
     let report: WalletReport
+    var showsDetails = true
 
     var body: some View {
         let slices = balanceSlices(report)
@@ -236,7 +280,7 @@ private struct WalletBalanceBreakdown: View {
                         .padding(.top, 4)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(slice.label).font(.subheadline)
-                        if let detail = slice.detail {
+                        if showsDetails, let detail = slice.detail {
                             Text(detail).font(.caption).foregroundStyle(.secondary)
                         }
                     }

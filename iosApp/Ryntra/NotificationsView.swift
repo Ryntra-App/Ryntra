@@ -24,6 +24,16 @@ struct NotificationsView: View {
                 .listRowInsets(EdgeInsets())
             }
 
+            // Above the list, so a failed refresh is seen without scrolling a long inbox
+            if let error = model.notificationsError {
+                Section {
+                    Text(error).foregroundStyle(.red)
+                    Button(NSLocalizedString("Retry", comment: "Common retry")) {
+                        Task { await model.refreshNotifications() }
+                    }
+                }
+            }
+
             Section {
                 if model.isNotificationsLoading && model.notifications.isEmpty {
                     HStack(spacing: 10) {
@@ -83,17 +93,6 @@ struct NotificationsView: View {
                 }
             } footer: {
                 Text(NSLocalizedString("Loaded directly from your Modrinth account.", comment: "Notification source"))
-            }
-
-            // With nothing listed the error is the whole screen; with a list it is a note
-            // under it, and the list stays usable
-            if let error = model.notificationsError {
-                Section {
-                    Text(error).foregroundStyle(.red)
-                    Button(NSLocalizedString("Retry", comment: "Common retry")) {
-                        Task { await model.refreshNotifications() }
-                    }
-                }
             }
         }
         .ryntraGroupedListStyle()

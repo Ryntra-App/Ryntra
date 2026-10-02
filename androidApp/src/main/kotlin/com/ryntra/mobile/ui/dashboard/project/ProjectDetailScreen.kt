@@ -324,18 +324,6 @@ fun ProjectDetailScreen(
                         project.description.ifBlank { stringResource(R.string.project_summary_empty) },
                     )
                 }
-                if (markdownBlocks.isNotEmpty()) {
-                    item(key = "description-heading", contentType = "heading") {
-                        DetailHeading(stringResource(R.string.project_description))
-                    }
-                    itemsIndexed(
-                        items = markdownBlocks,
-                        key = { index, _ -> "markdown-$index" },
-                        contentType = { _, block -> block.type },
-                    ) { _, block ->
-                        Box(modifier = Modifier.padding(bottom = 9.dp)) { MarkdownBlockView(block) }
-                    }
-                }
                 item {
                     DetailHeading(stringResource(R.string.project_environment))
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -389,6 +377,19 @@ fun ProjectDetailScreen(
                             ResourceRow(resource.label) { uriHandler.openUri(resource.url) }
                             HorizontalDivider(color = RyntraDesign.colors.separator)
                         }
+                    }
+                }
+                // Last, so a long README does not bury the facts above it.
+                if (markdownBlocks.isNotEmpty()) {
+                    item(key = "description-heading", contentType = "heading") {
+                        DetailHeading(stringResource(R.string.project_description))
+                    }
+                    itemsIndexed(
+                        items = markdownBlocks,
+                        key = { index, _ -> "markdown-$index" },
+                        contentType = { _, block -> block.type },
+                    ) { _, block ->
+                        Box(modifier = Modifier.padding(bottom = 9.dp)) { MarkdownBlockView(block) }
                     }
                 }
             }

@@ -24,7 +24,6 @@
     <string name="analytics_project">Project</string>
     <string name="analytics_all_projects">All projects</string>
     <string name="analytics_days_short">%1$dd</string>
-    <string name="analytics_last_days">Last %1$d days</string>
     <string name="analytics_wallet">Wallet</string>
     <string name="analytics_downloads">Downloads</string>
     <string name="analytics_views">Views</string>

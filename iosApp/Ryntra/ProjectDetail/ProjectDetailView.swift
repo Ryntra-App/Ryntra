@@ -225,6 +225,14 @@ struct ProjectDetailView: View {
         metrics
         section("Summary", value: project.description_.isEmpty ? "No summary provided." : project.description_)
 
+        environment
+        categories
+        gallery
+        dependenciesList
+        details
+        resourcesList
+
+        // Last, so a long README does not bury the facts above it
         if !markdownBlocks.isEmpty {
             DetailHeading(title: "Description")
             VStack(alignment: .leading, spacing: 9) {
@@ -233,13 +241,6 @@ struct ProjectDetailView: View {
                 }
             }
         }
-
-        environment
-        dependenciesList
-        categories
-        gallery
-        details
-        resourcesList
     }
 
     private var projectTabs: some View {

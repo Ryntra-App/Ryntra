@@ -173,6 +173,20 @@ fun NotificationsScreen(
             }
         }
 
+        // With nothing listed, the empty state already says the load failed and offers a retry.
+        state.errorMessage?.takeIf { state.items.isNotEmpty() }?.let { message ->
+            item(key = "notification-error") {
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier
+                        .padding(horizontal = 4.dp, vertical = 8.dp)
+                        .semantics { liveRegion = LiveRegionMode.Polite },
+                )
+            }
+        }
+
         if (isFirstLoad) {
             item(key = "notification-loading") {
                 RyntraContentLoading(
@@ -203,20 +217,6 @@ fun NotificationsScreen(
                         notification.projectReference?.let(onOpenProject)
                             ?: uriHandler.openUri(notification.link.toModrinthUrl())
                     },
-                )
-            }
-        }
-
-        // With nothing listed, the empty state already says the load failed and offers a retry.
-        state.errorMessage?.takeIf { state.items.isNotEmpty() }?.let { message ->
-            item(key = "notification-error") {
-                Text(
-                    text = message,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier
-                        .padding(horizontal = 4.dp, vertical = 8.dp)
-                        .semantics { liveRegion = LiveRegionMode.Polite },
                 )
             }
         }

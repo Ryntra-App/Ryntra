@@ -19,6 +19,7 @@ struct DashboardView: View {
         case profile
         case notifications
         case browse
+        case wallet
         case project(String)
         case organization(String)
     }
@@ -147,6 +148,7 @@ struct DashboardView: View {
         case .profile: "Profile"
         case .notifications: NSLocalizedString("Notifications", comment: "Screen title")
         case .browse: NSLocalizedString("Browse Modrinth", comment: "Screen title")
+        case .wallet: NSLocalizedString("Wallet", comment: "Screen title")
         case .project(let projectID): routedProjects[projectID]?.title ?? ""
         case .organization(let organizationID): routedOrganizations[organizationID]?.name ?? ""
         case nil: selection.label
@@ -167,6 +169,8 @@ struct DashboardView: View {
             NotificationsView(onOpenProject: { openNotificationProject($0) })
         case .browse:
             BrowseView(onOpenHit: { openSearchHit($0) })
+        case .wallet:
+            WalletScreen()
         case .project(let projectID):
             if let project = routedProjects[projectID] {
                 ProjectDetailView(
@@ -191,6 +195,8 @@ struct DashboardView: View {
     private func refreshAll() {
         if path.last == .notifications {
             Task { await model.refreshNotifications() }
+        } else if path.last == .wallet {
+            Task { await model.refreshWallet() }
         } else {
             model.refresh()
         }
@@ -229,7 +235,7 @@ struct DashboardView: View {
             )
             .transition(.opacity)
         case .analytics:
-            AnalyticsView(dashboard: dashboard, isActive: true)
+            AnalyticsView(dashboard: dashboard, isActive: true, onOpenWallet: { push(.wallet) })
                 .transition(.opacity)
         }
     }
@@ -274,7 +280,11 @@ struct DashboardView: View {
             .tag(RyntraDestination.teams)
 
             dashboardNavigationStack(for: .analytics) {
-                AnalyticsView(dashboard: dashboard, isActive: selection == .analytics)
+                AnalyticsView(
+                    dashboard: dashboard,
+                    isActive: selection == .analytics,
+                    onOpenWallet: { push(.wallet, in: .analytics) }
+                )
             }
             .tabItem { Label(RyntraDestination.analytics.label, systemImage: RyntraDestination.analytics.platformSymbol) }
             .tag(RyntraDestination.analytics)
@@ -338,6 +348,18 @@ struct DashboardView: View {
             BrowseView(onOpenHit: { openSearchHit($0, in: destination) })
                 .ryntraChrome(
                     title: NSLocalizedString("Browse Modrinth", comment: "Screen title"),
+                    dashboard: dashboard,
+                    isRefreshing: false,
+                    onAvatarTap: {},
+                    showsBackButton: true,
+                    onBack: { pop(in: destination) },
+                    showsAvatar: false,
+                    usesSystemBackButton: true
+                )
+        case .wallet:
+            WalletScreen()
+                .ryntraChrome(
+                    title: NSLocalizedString("Wallet", comment: "Screen title"),
                     dashboard: dashboard,
                     isRefreshing: false,
                     onAvatarTap: {},
