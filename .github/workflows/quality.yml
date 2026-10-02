@@ -47,3 +47,25 @@ jobs:
           -destination 'generic/platform=iOS Simulator'
           CODE_SIGNING_ALLOWED=NO
           build
+
+  macos-app:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - name: Build macOS app
+        # arm64 only: Kotlin/Native has no Intel macOS slice for the shared framework
+        run: >-
+          xcodebuild
+          -project iosApp/Ryntra.xcodeproj
+          -scheme Ryntra
+          -configuration Debug
+          -destination 'generic/platform=macOS'
+          ARCHS=arm64
+          ONLY_ACTIVE_ARCH=NO
+          CODE_SIGNING_ALLOWED=NO
+          build

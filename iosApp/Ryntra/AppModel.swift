@@ -44,7 +44,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var instantNotifications = InstantNotificationStatus()
     @Published private(set) var appUpdate: AppUpdate?
     @Published private(set) var recentSearches: [String] =
-        UserDefaults.standard.stringArray(forKey: Self.recentSearchesKey) ?? []
+        UserDefaults.standard.stringArray(forKey: AppModel.recentSearchesKey) ?? []
 
     /// Recent catalogue queries. Kept in UserDefaults rather than the keychain: it is
     /// convenience data, and nothing here identifies the account.
