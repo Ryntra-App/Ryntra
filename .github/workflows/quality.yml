@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 25
           cache: gradle
       - uses: actions/setup-python@v7
         with:
@@ -36,7 +36,7 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 25
           cache: gradle
       - name: Build iOS app
         run: >-
@@ -55,7 +55,7 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 25
           cache: gradle
       - name: Build macOS app
         # arm64 only: Kotlin/Native has no Intel macOS slice for the shared framework
