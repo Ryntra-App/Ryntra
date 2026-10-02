@@ -21,7 +21,6 @@
     <string name="analytics_refreshing">Refreshing data</string>
     <string name="analytics_live">Live analytics</string>
     <string name="analytics_limited">Limited analytics</string>
-    <string name="analytics_project">Project</string>
     <string name="analytics_all_projects">All projects</string>
     <string name="analytics_days_short">%1$dd</string>
     <string name="analytics_wallet">Wallet</string>
@@ -105,8 +104,6 @@
     <string name="settings_language">Language</string>
     <string name="settings_language_hint">Choose English, Russian, or follow the device language</string>
     <string name="settings_language_system">System</string>
-    <string name="settings_language_english">English</string>
-    <string name="settings_language_russian">Русский</string>
     <string name="settings_glass_fast">Fast</string>
     <string name="settings_glass_balanced">Balanced</string>
     <string name="settings_glass_best">Best</string>
@@ -138,7 +135,6 @@
     <string name="settings_clear_images">Clear image cache</string>
     <string name="settings_clear_images_hint">Free locally cached project images and badges</string>
     <string name="settings_about">About</string>
-    <string name="settings_unofficial">Unofficial Modrinth client</string>
     <string name="settings_unofficial_with_version">Unofficial Modrinth client · v%1$s</string>
     <string name="settings_author">Author</string>
     <string name="settings_author_name">sawiq</string>
@@ -229,9 +225,6 @@
     <string name="organizations_members_no_team">Modrinth did not return a team id for this organization, so invites are unavailable right now.</string>
     <string name="organizations_members_manage_hint">Invite, edit roles and permissions, remove members, or transfer ownership.</string>
     <string name="organizations_loading_members">Loading members</string>
-    <string name="organizations_owner">Owner</string>
-    <string name="organizations_member_role_default">Member</string>
-    <string name="organizations_invite_pending">Pending</string>
     <string name="organizations_open_modrinth">Manage organizations on Modrinth</string>
     <string name="organizations_open_page">Open on Modrinth</string>
     <string name="organizations_projects_failed">Projects unavailable</string>
@@ -278,7 +271,6 @@
     <string name="project_gallery_add_title">Add gallery image</string>
     <string name="project_gallery_empty">No gallery images yet</string>
     <string name="project_gallery_empty_hint">Add screenshots — the featured image is used as the project banner.</string>
-    <string name="project_gallery_manage_hint">Tap an image to open full size. Use actions to set banner, edit, or delete.</string>
     <string name="project_gallery_close">Close</string>
     <string name="project_gallery_save">Save</string>
     <string name="project_gallery_too_large">Gallery images must be 5 MiB or smaller.</string>
@@ -369,7 +361,6 @@
     <string name="project_edit_status_license">Status and license</string>
     <string name="project_edit_status_license_hint">Visibility and reuse terms</string>
     <string name="project_edit_status">Status</string>
-    <string name="project_edit_license_id">License ID</string>
     <string name="project_edit_links">Links</string>
     <string name="project_edit_links_hint">Source, issues, wiki and community</string>
     <string name="project_edit_source">Source code</string>
@@ -377,7 +368,6 @@
     <string name="project_edit_wiki">Wiki</string>
     <string name="project_edit_discord">Discord</string>
     <string name="project_edit_updating_assets">Updating project assets</string>
-    <string name="project_edit_saved">Saved</string>
     <string name="project_edit_save">Save changes</string>
     <string name="project_edit_unsaved">Unsaved changes</string>
     <string name="project_edit_required_hint">Title and summary are required</string>
@@ -389,7 +379,6 @@
     <string name="project_edit_discard">Discard</string>
     <string name="project_edit_image_unreadable">Unable to read that image.</string>
     <string name="project_edit_icon_too_large">Project icons must be 256 KiB or smaller.</string>
-    <string name="project_markdown_preview_empty">Nothing to preview</string>
     <string name="notifications_title">Notifications</string>
     <string name="notifications_unread_count">%1$d unread</string>
     <string name="notifications_source_hint">From your Modrinth account</string>
@@ -430,7 +419,6 @@
     <string name="notification_content_moderator_generic">Modrinth sent new feedback about one of your projects.</string>
     <string name="project_tab_moderation">Moderation</string>
     <string name="moderation_title">Moderation messages</string>
-    <string name="moderation_status">Project status</string>
     <string name="moderation_refresh">Refresh moderation</string>
     <string name="moderation_no_thread">No moderation thread</string>
     <string name="moderation_no_thread_hint">A thread appears after the project is submitted for review.</string>
@@ -469,10 +457,7 @@
     <string name="support_ton_usdt">USDT · TON</string>
     <string name="support_address_copied">Wallet address copied.</string>
     <string name="project_create">Create project</string>
-    <string name="project_create_intro">Start with a private draft. You can add a release and submit it for review when it is ready.</string>
     <string name="project_create_identity">Basics</string>
-    <string name="project_create_compatibility">Discoverability</string>
-    <string name="project_create_content">Description</string>
     <string name="project_create_name">Project name</string>
     <string name="project_create_slug">Modrinth URL slug</string>
     <string name="project_create_summary">Short summary</string>
@@ -490,7 +475,6 @@
     <string name="project_create_retry">Retry</string>
     <string name="project_create_add_icon">Choose icon</string>
     <string name="project_create_private_note">The project stays private as a draft until you add a version and submit it.</string>
-    <string name="project_create_private_title">Safe to finish later</string>
     <string name="project_create_step_count">Step %1$d of %2$d</string>
     <string name="project_create_step_basics">Give the project an identity</string>
     <string name="project_create_step_basics_help">Choose how creators will recognize and find it on Modrinth.</string>
@@ -517,7 +501,6 @@
     <string name="project_create_categories_help">Choose focused categories that genuinely describe the project.</string>
     <string name="project_create_categories_selected">Selected: %1$d</string>
     <string name="project_create_choose_categories">Choose categories</string>
-    <string name="project_create_change_categories">Change categories · %1$d selected</string>
     <string name="project_create_categories_none">Optional. Add only the categories that clearly fit.</string>
     <string name="project_create_categories_summary_more">%1$s and %2$d more</string>
     <string name="project_create_categories_picker_help">Select up to 3 focused categories. A shorter, more accurate list helps people find the project.</string>
@@ -581,14 +564,10 @@
     <string name="project_create_license_url_help">Link to the complete terms of your custom license.</string>
     <string name="project_create_license_url_error">Enter a valid http:// or https:// link to the license terms.</string>
     <string name="project_create_required">Required</string>
-    <string name="project_create_license_id">SPDX license</string>
-    <string name="project_create_license_field_help">Examples: MIT, Apache-2.0, GPL-3.0-only</string>
     <string name="project_create_license_legal_note">This summary is only a quick guide. Read the full license terms before publishing.</string>
     <string name="project_create_choose_license">Choose a license</string>
     <string name="project_create_choose_license_help">Search by name or SPDX identifier. Each option includes a plain-language summary.</string>
     <string name="project_create_search_licenses">Search licenses</string>
-    <string name="project_create_popular_licenses">Popular choices</string>
-    <string name="project_create_browse_licenses">Browse all licenses</string>
     <string name="project_create_selected">Selected</string>
     <string name="project_create_use_custom_license">Use “%1$s”</string>
     <string name="project_create_custom_license_help">Use a custom identifier only when you know it is accepted by Modrinth.</string>

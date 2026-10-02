@@ -21,7 +21,6 @@
     <string name="analytics_refreshing">Обновляем данные</string>
     <string name="analytics_live">Актуальная аналитика</string>
     <string name="analytics_limited">Доступна часть аналитики</string>
-    <string name="analytics_project">Проект</string>
     <string name="analytics_all_projects">Все проекты</string>
     <string name="analytics_days_short">%1$d дн.</string>
     <string name="analytics_wallet">Кошелёк</string>
@@ -105,8 +104,6 @@
     <string name="settings_language">Язык</string>
     <string name="settings_language_hint">Английский, русский или язык устройства</string>
     <string name="settings_language_system">Система</string>
-    <string name="settings_language_english">English</string>
-    <string name="settings_language_russian">Русский</string>
     <string name="settings_glass_fast">Быстро</string>
     <string name="settings_glass_balanced">Баланс</string>
     <string name="settings_glass_best">Максимум</string>
@@ -138,7 +135,6 @@
     <string name="settings_clear_images">Очистить кеш изображений</string>
     <string name="settings_clear_images_hint">Удалить локально сохранённые изображения проектов и значки</string>
     <string name="settings_about">О приложении</string>
-    <string name="settings_unofficial">Неофициальный клиент Modrinth</string>
     <string name="settings_unofficial_with_version">Неофициальный клиент Modrinth · v%1$s</string>
     <string name="settings_author">Автор</string>
     <string name="settings_author_name">sawiq</string>
@@ -231,9 +227,6 @@
     <string name="organizations_members_no_team">Modrinth не вернул team id организации, поэтому приглашения сейчас недоступны.</string>
     <string name="organizations_members_manage_hint">Приглашайте, меняйте роли и права, удаляйте участников или передавайте владение.</string>
     <string name="organizations_loading_members">Загружаем участников</string>
-    <string name="organizations_owner">Владелец</string>
-    <string name="organizations_member_role_default">Участник</string>
-    <string name="organizations_invite_pending">Ожидает</string>
     <string name="organizations_open_modrinth">Управлять организациями в Modrinth</string>
     <string name="organizations_open_page">Открыть в Modrinth</string>
     <string name="organizations_projects_failed">Проекты недоступны</string>
@@ -282,7 +275,6 @@
     <string name="project_gallery_add_title">Добавить в галерею</string>
     <string name="project_gallery_empty">В галерее пока пусто</string>
     <string name="project_gallery_empty_hint">Добавьте скриншоты — отмеченное как featured станет баннером.</string>
-    <string name="project_gallery_manage_hint">Нажмите на фото для полного размера. Действия: баннер, правка, удаление.</string>
     <string name="project_gallery_close">Закрыть</string>
     <string name="project_gallery_save">Сохранить</string>
     <string name="project_gallery_too_large">Изображение галереи должно быть не больше 5 МиБ.</string>
@@ -373,7 +365,6 @@
     <string name="project_edit_status_license">Статус и лицензия</string>
     <string name="project_edit_status_license_hint">Видимость и условия использования</string>
     <string name="project_edit_status">Статус</string>
-    <string name="project_edit_license_id">ID лицензии</string>
     <string name="project_edit_links">Ссылки</string>
     <string name="project_edit_links_hint">Исходники, задачи, Wiki и сообщество</string>
     <string name="project_edit_source">Исходный код</string>
@@ -381,7 +372,6 @@
     <string name="project_edit_wiki">Wiki</string>
     <string name="project_edit_discord">Discord</string>
     <string name="project_edit_updating_assets">Обновляем материалы проекта</string>
-    <string name="project_edit_saved">Сохранено</string>
     <string name="project_edit_save">Сохранить</string>
     <string name="project_edit_unsaved">Есть несохранённые изменения</string>
     <string name="project_edit_required_hint">Название и краткое описание обязательны</string>
@@ -393,7 +383,6 @@
     <string name="project_edit_discard">Отменить изменения</string>
     <string name="project_edit_image_unreadable">Не удалось прочитать изображение.</string>
     <string name="project_edit_icon_too_large">Иконка проекта должна быть не больше 256 КиБ.</string>
-    <string name="project_markdown_preview_empty">Нечего показывать</string>
     <string name="notifications_title">Уведомления</string>
     <string name="notifications_unread_count">Непрочитанных: %1$d</string>
     <string name="notifications_source_hint">Из вашего аккаунта Modrinth</string>
@@ -434,7 +423,6 @@
     <string name="notification_content_moderator_generic">Modrinth прислал новый отзыв об одном из ваших проектов.</string>
     <string name="project_tab_moderation">Модерация</string>
     <string name="moderation_title">Сообщения модерации</string>
-    <string name="moderation_status">Статус проекта</string>
     <string name="moderation_refresh">Обновить модерацию</string>
     <string name="moderation_no_thread">Нет ветки модерации</string>
     <string name="moderation_no_thread_hint">Она появится после отправки проекта на проверку.</string>
@@ -473,10 +461,7 @@
     <string name="support_ton_usdt">USDT · TON</string>
     <string name="support_address_copied">Адрес кошелька скопирован.</string>
     <string name="project_create">Создать проект</string>
-    <string name="project_create_intro">Сначала создаётся приватный черновик. Релиз и отправку на модерацию можно добавить позже.</string>
     <string name="project_create_identity">Основное</string>
-    <string name="project_create_compatibility">Поиск и совместимость</string>
-    <string name="project_create_content">Описание</string>
     <string name="project_create_name">Название проекта</string>
     <string name="project_create_slug">Адрес проекта на Modrinth</string>
     <string name="project_create_summary">Краткое описание</string>
@@ -494,7 +479,6 @@
     <string name="project_create_retry">Повторить</string>
     <string name="project_create_add_icon">Выбрать иконку</string>
     <string name="project_create_private_note">Проект останется приватным черновиком, пока вы не добавите версию и не отправите его на модерацию.</string>
-    <string name="project_create_private_title">Можно спокойно закончить позже</string>
     <string name="project_create_step_count">Шаг %1$d из %2$d</string>
     <string name="project_create_step_basics">Создайте узнаваемый образ</string>
     <string name="project_create_step_basics_help">Выберите, как авторы увидят и найдут проект на Modrinth.</string>
@@ -521,7 +505,6 @@
     <string name="project_create_categories_help">Выберите только те категории, которые точно описывают проект.</string>
     <string name="project_create_categories_selected">Выбрано: %1$d</string>
     <string name="project_create_choose_categories">Выбрать категории</string>
-    <string name="project_create_change_categories">Изменить категории · выбрано %1$d</string>
     <string name="project_create_categories_none">Необязательно. Добавляйте только действительно подходящие категории.</string>
     <string name="project_create_categories_summary_more">%1$s и ещё %2$d</string>
     <string name="project_create_categories_picker_help">Выберите до 3 точных категорий. Короткий список помогает людям найти проект.</string>
@@ -585,14 +568,10 @@
     <string name="project_create_license_url_help">Укажите ссылку на полный текст вашей собственной лицензии.</string>
     <string name="project_create_license_url_error">Укажите корректную ссылку на условия лицензии с http:// или https://.</string>
     <string name="project_create_required">Обязательное поле</string>
-    <string name="project_create_license_id">Лицензия SPDX</string>
-    <string name="project_create_license_field_help">Примеры: MIT, Apache-2.0, GPL-3.0-only</string>
     <string name="project_create_license_legal_note">Это лишь краткая подсказка. Перед публикацией прочитайте полный текст лицензии.</string>
     <string name="project_create_choose_license">Выберите лицензию</string>
     <string name="project_create_choose_license_help">Ищите по названию или SPDX-коду. У каждого варианта есть понятное краткое объяснение.</string>
     <string name="project_create_search_licenses">Поиск лицензий</string>
-    <string name="project_create_popular_licenses">Популярные варианты</string>
-    <string name="project_create_browse_licenses">Все лицензии</string>
     <string name="project_create_selected">Выбрано</string>
     <string name="project_create_use_custom_license">Использовать «%1$s»</string>
     <string name="project_create_custom_license_help">Указывайте собственный код, только если уверены, что Modrinth его принимает.</string>
