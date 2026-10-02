@@ -1,7 +1,9 @@
 name: Apple preview builds
 
 # Manual builds for testing without a Mac: an iOS simulator app zipped for
-# Appetize and an unsigned macOS app, both kept as run artifacts.
+# Appetize and an unsigned macOS app, both kept as run artifacts. The runner
+# must carry Xcode 26: an app built against an older SDK keeps the pre-26
+# look on iOS 26 instead of Liquid Glass.
 on:
   workflow_dispatch:
 
@@ -13,7 +15,7 @@ env:
 
 jobs:
   ios-simulator:
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v5
@@ -48,7 +50,7 @@ jobs:
           retention-days: 14
 
   macos:
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v5
