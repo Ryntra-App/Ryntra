@@ -10,11 +10,11 @@
 
 ## Community
 
-Join the Ryntra Discord server: https://discord.gg/6H5vDq2wk7
+Join the Ryntra Discord server: https://discord.gg/H8YuSxE8UU
 
 ## Screenshots
 
-<p align="center"><strong>Android · Material 3</strong></p>
+<p align="center"><strong>Android · Material 3 Expressive</strong></p>
 <p align="center">
   <a href="./docs/screenshots/dashboard.png"><img src="./docs/screenshots/dashboard.png" width="210" alt="Ryntra dashboard on Android" /></a>
   <a href="./docs/screenshots/projects.png"><img src="./docs/screenshots/projects.png" width="210" alt="Ryntra projects on Android" /></a>
@@ -23,7 +23,7 @@ Join the Ryntra Discord server: https://discord.gg/6H5vDq2wk7
 </p>
 <p align="center"><sub>Dashboard · Projects · Analytics · Teams</sub></p>
 
-<p align="center"><strong>iOS · SwiftUI</strong></p>
+<p align="center"><strong>iOS · SwiftUI with Liquid Glass</strong></p>
 <p align="center">
   <a href="./docs/screenshots/ios-dashboard.png"><img src="./docs/screenshots/ios-dashboard.png" width="210" alt="Ryntra dashboard on iOS" /></a>
   <a href="./docs/screenshots/ios-projects.png"><img src="./docs/screenshots/ios-projects.png" width="210" alt="Ryntra projects on iOS" /></a>
@@ -37,7 +37,7 @@ Join the Ryntra Discord server: https://discord.gg/6H5vDq2wk7
 ## What Ryntra Can Do
 
 - Sign in with Modrinth OAuth, with PAT login available as a fallback.
-- View, search, and manage your Modrinth projects.
+- View, search, and manage your Modrinth projects, and copy a link to any project in one tap.
 - Browse the public Modrinth catalogue with search, category tabs, game version and loader filters, and open any project read-only.
 - Edit project metadata, links, descriptions, status, icons, banners, and gallery images.
 - Manage versions, loaders, game versions, dependencies, files, and release metadata.
@@ -45,16 +45,17 @@ Join the Ryntra Discord server: https://discord.gg/6H5vDq2wk7
 - Work with teams and organizations, including members, permissions, invites, ownership, and organization projects.
 - Open related projects directly from notifications and accept organization or project invitations.
 - View analytics for downloads, views, playtime, revenue, trends, and per-project performance.
-- Check balance and payout history where Modrinth exposes that data.
+- Track your wallet like on modrinth.com: the balance split by payout date, withdrawal totals, the full transaction history by month with CSV export, and affiliate link stats.
+- Add home screen widgets on Android in three sizes, including a downloads chart for the last 7, 30, or 90 days.
 - Edit your Modrinth profile, avatar, bio, and account details.
-- Customize the app with Material 3 Android themes and native iOS appearance, including light and dark modes.
+- Customize the app with Material 3 Expressive themes on Android and the native look on iOS and macOS, including Liquid Glass on iOS 26 and light and dark modes.
 - Use the app in English, Russian, and other community-contributed languages.
 - Receive local background notifications or optional instant notifications through the limited relay.
 - Get native update notices from GitHub Releases with the correct APK or IPA download for your platform.
 
 ## Downloads
 
-Android builds are published as APK files in [GitHub Releases](https://github.com/Ryntra-App/Ryntra/releases).
+Android builds are published as APK files in [GitHub Releases](https://github.com/Ryntra-App/Ryntra/releases), next to the unsigned iOS IPA and the macOS DMG.
 
 iOS builds are distributed as an unsigned IPA for sideloading. To install the iOS app, use Sideloadly on a computer, sign in to iCloud on Apple's official iCloud app or website, connect your iPhone or iPad with a cable, install the IPA, then trust the developer profile in device settings and enable Developer Mode if iOS asks.
 
@@ -71,7 +72,7 @@ Tokens are stored locally on your device using Android Keystore or the iOS Keych
 ### Requirements
 
 - Android Studio with JBR 21 and Android SDK 36.
-- Xcode 16 or newer for iOS builds.
+- Xcode 26 or newer for iOS and macOS builds. An app built against an older SDK keeps the pre-iOS 26 look instead of Liquid Glass.
 - No Node.js, CocoaPods, or web runtime is required.
 
 ### Android Build
@@ -124,12 +125,18 @@ xcodebuild -project iosApp/Ryntra.xcodeproj -scheme Ryntra \
 
 The product lands in `Debug-iphonesimulator`, since the compatibility layer runs an iOS binary. Install it with `xcrun simctl install`.
 
+### GitHub Actions
+
+- `Native quality` runs on every push to `main`: localization checks, shared tests, the Android debug build, and the iOS and macOS builds on Xcode 26.
+- `Apple builds` is started by hand from the Actions tab. It produces `Ryntra-simulator.zip` for Appetize, the unsigned `Ryntra.<version>.ipa`, and `Ryntra.<version>.dmg` for macOS, so Apple builds need no Mac.
+
 ### Codemagic
 
-The repository includes three Codemagic workflows:
+The repository also includes four Codemagic workflows:
 
 - `android-native`, which runs shared tests and builds the Android debug APK.
 - `ios-native`, which builds a Release iOS Simulator app and packages `Ryntra-simulator.zip` for Appetize.
+- `macos-native`, which builds the Apple Silicon Mac app and packages it as a DMG.
 - `ios-unsigned-ipa`, which builds a Release ARM64 device app and packages `Ryntra-unsigned.ipa` for sideload signing.
 
 The unsigned device workflow intentionally disables Codemagic signing. It is still a Release build; Sideloadly applies the provisioning profile later.
@@ -159,7 +166,7 @@ Ryntra — неофициальное нативное мобильное при
 ## Возможности
 
 - Вход через Modrinth OAuth и запасной вход по PAT.
-- Просмотр, поиск и управление проектами Modrinth.
+- Просмотр, поиск и управление проектами Modrinth, копирование ссылки на любой проект в одно касание.
 - Обзор публичного каталога Modrinth: поиск, категории, фильтры по версии игры и загрузчику, открытие любого проекта в режиме просмотра.
 - Редактирование метаданных, ссылок, описаний, статуса, иконок, баннеров и галереи.
 - Управление версиями, загрузчиками, версиями игры, зависимостями, файлами и метаданными релизов.
@@ -167,16 +174,17 @@ Ryntra — неофициальное нативное мобильное при
 - Работа с командами и организациями: участники, права, приглашения, владелец и проекты организации.
 - Переход в связанные проекты прямо из уведомлений и принятие приглашений.
 - Аналитика по загрузкам, просмотрам, playtime, доходу, трендам и отдельным проектам.
-- Просмотр баланса и истории выплат, если эти данные доступны через Modrinth.
+- Кошелёк как на modrinth.com: баланс по датам выплат, суммы выводов, вся история операций по месяцам с экспортом в CSV и статистика партнёрских ссылок.
+- Виджеты на главный экран Android трёх размеров, в том числе график загрузок за 7, 30 или 90 дней.
 - Редактирование профиля, аватара, био и данных аккаунта.
-- Нативные темы Android Material 3 и iOS, светлый и тёмный режимы.
+- Material 3 Expressive на Android и нативный вид на iOS и macOS, включая Liquid Glass на iOS 26, светлый и тёмный режимы.
 - Поддержка английского, русского и других языков, которые добавляет сообщество.
 - Локальные фоновые уведомления и необязательная мгновенная доставка через relay-сервис.
 - Нативное уведомление о новых версиях с правильной ссылкой на APK или IPA.
 
 ## Установка
 
-Android-версия публикуется APK-файлом в [GitHub Releases](https://github.com/Ryntra-App/Ryntra/releases).
+Android-версия публикуется APK-файлом в [GitHub Releases](https://github.com/Ryntra-App/Ryntra/releases), рядом лежат unsigned IPA для iOS и DMG для macOS.
 
 iOS-версия доступна как unsigned IPA для sideloading. Чтобы установить приложение на iPhone или iPad, скачай IPA, подпиши его через Sideloadly или другой trusted sideloading-инструмент, установи приложение и доверь профиль разработчика в настройках устройства, если iOS попросит.
 
@@ -193,7 +201,7 @@ iOS-версия доступна как unsigned IPA для sideloading. Что
 ### Требования
 
 - Android Studio с JBR 21 и Android SDK 36.
-- Xcode 16 или новее для iOS-сборок.
+- Xcode 26 или новее для iOS и macOS. Со старым SDK приложение на iOS 26 остаётся в прежнем дизайне без Liquid Glass.
 - Node.js, CocoaPods и web-runtime не требуются.
 
 ### Android-сборка
@@ -244,12 +252,18 @@ xcodebuild -project iosApp/Ryntra.xcodeproj -scheme Ryntra \
 
 Продукт появится в `Debug-iphonesimulator`, потому что слой совместимости запускает iOS-бинарник. Установить его можно через `xcrun simctl install`.
 
+### GitHub Actions
+
+- `Native quality` запускается на каждый push в `main`: проверка переводов, shared-тесты, Android debug-сборка, а также iOS и macOS на Xcode 26.
+- `Apple builds` запускается вручную во вкладке Actions. Он собирает `Ryntra-simulator.zip` для Appetize, unsigned `Ryntra.<версия>.ipa` и `Ryntra.<версия>.dmg` для macOS, так что Mac для Apple-сборок не нужен.
+
 ### Codemagic
 
-В `codemagic.yaml` есть три workflow:
+В `codemagic.yaml` есть четыре workflow:
 
 - `android-native` запускает shared-тесты и собирает Android debug APK.
 - `ios-native` собирает Release-приложение для iOS Simulator и пакует `Ryntra-simulator.zip` для Appetize.
+- `macos-native` собирает приложение для Mac на Apple Silicon и пакует его в DMG.
 - `ios-unsigned-ipa` собирает Release ARM64-приложение и пакует `Ryntra-unsigned.ipa` для последующей подписи.
 
 Unsigned workflow намеренно отключает подпись Codemagic. Это всё равно Release-сборка, а provisioning profile добавляется через Sideloadly.
@@ -266,4 +280,4 @@ Unsigned workflow намеренно отключает подпись Codemagic
 
 ## Сообщество
 
-Discord-сервер Ryntra: https://discord.gg/6H5vDq2wk7
+Discord-сервер Ryntra: https://discord.gg/H8YuSxE8UU
