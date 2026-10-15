@@ -17,7 +17,7 @@ glance = "1.2.0"
 haze = "1.7.3"
 composeIcons = "2.2.1"
 jetbrainsMarkdown = "0.7.14"
-firebaseBom = "34.19.0"
+firebaseBom = "35.0.2"
 
 [libraries]
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
